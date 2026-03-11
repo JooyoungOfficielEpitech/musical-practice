@@ -1,0 +1,513 @@
+# Product Requirements Document: Musical Practice App
+
+**Version:** 1.0  
+**Date:** March 11, 2026  
+**Owner:** Product Team  
+**Status:** Ready for Development
+
+## Executive Summary
+
+Musical Practice App은 뮤지컬 배우 및 연습생을 위한 모바일 기반 노래 연습 솔루션입니다. 사용자가 악보 이미지를 업로드하면 AI/ML 기술로 MIDI 반주와 MR을 자동 생성하고, 실시간 음정 피드백과 메트로놈 기능을 제공하여 혼자서도 효과적으로 노래를 연습할 수 있도록 지원합니다[web:31][web:32].
+
+**핵심 가치 제안:**
+- 악보만으로 즉시 연습 가능 (MIDI 자동 반주 생성)
+- 실시간 음정 정확도 시각 피드백
+- 오프라인 우선 설계로 언제 어디서나 연습
+- 개인/단체 구독 모델로 확장 가능
+
+## Product Goals
+
+### Primary Objectives
+1. **사용자 온보딩 시간 단축**: 첫 악보 업로드부터 연습 시작까지 5분 이내
+2. **연습 효율성 증대**: 음정 정확도 피드백으로 사용자 음정 오류 30% 이상 개선[web:9]
+3. **사용자 리텐션**: 월간 활성 사용자(MAU) 70% 이상 유지
+4. **수익화**: 출시 6개월 내 유료 구독 전환율 15% 달성
+
+### Success Metrics
+- 일일 활성 사용자(DAU) 증가율
+- 세션당 평균 연습 시간 (목표: 20분 이상)
+- 악보 업로드 성공률 (목표: 95% 이상)
+- NPS (Net Promoter Score) 50 이상
+- 구독 갱신율 (목표: 80% 이상)
+
+## Target Audience
+
+### Primary Personas
+
+**Persona 1: 뮤지컬 연습생 (20-30대)**
+- 오디션 준비 중이거나 연기학원 재학생
+- MR과 악보는 있지만 개인 레슨 비용 부담
+- 혼자 연습 시 음정 확인이 어려움
+- 모바일 중심 라이프스타일
+
+**Persona 2: 아마추어 뮤지컬 동호회 멤버 (30-50대)**
+- 주말 커뮤니티 극단 활동
+- 단체 연습 전 개인 파트 숙지 필요
+- 악보 공유 및 진행 상황 추적 요구
+- 예산 제약 속 효율적 연습 방법 탐색
+
+**Persona 3: 보컬 트레이너/강사**
+- 학생들에게 과제 악보 배포
+- 학생별 진행 상황 모니터링 필요
+- B2B 솔루션으로 수업 효율 향상 희망
+
+## Core Features & Requirements
+
+### Must-Have Features (MVP)
+
+#### Feature 1: 악보 업로드 및 자동 처리
+**User Story:** 사용자가 악보 이미지를 업로드하면 MIDI 반주와 MR이 자동 생성되어 즉시 연습을 시작할 수 있다.
+
+**Functional Requirements:**
+- 이미지 업로드 (JPG, PNG, PDF 지원, 최대 20MB)
+- 배치 업로드 지원 (한 번에 최대 10장)
+- OCR 기반 악보 인식 및 MusicXML 변환
+- MIDI 반주 자동 생성 (템포, 키 정보 포함)
+- MR 오디오 추출 (선택 사항)
+- 처리 진행률 표시 (프로그레스 바)
+- 처리 실패 시 재시도 기능
+
+**Acceptance Criteria:**
+- 악보 업로드 후 30초 이내 MIDI 생성 완료
+- OCR 정확도 85% 이상 (표준 악보 기준)
+- 에러 발생 시 명확한 안내 메시지 제공
+- 생성된 MIDI 자동 저장 및 라이브러리 추가
+
+**Technical Specifications:**
+- Expo ImagePicker API로 갤러리/카메라 접근
+- 클라우드 OCR API (Google Vision API or Tesseract.js)
+- MusicXML 파싱 후 react-native-midi/Tone.js로 MIDI 생성
+- 오디오 처리용 expo-av 또는 expo-audio
+
+#### Feature 2: 실시간 음정 피드백 시스템
+**User Story:** 사용자가 노래를 부르면 실시간으로 자신의 음정이 기준 음정과 얼마나 차이 나는지 시각적으로 확인할 수 있다.
+
+**Functional Requirements:**
+- 마이크 입력을 통한 실시간 pitch detection
+- 기준 음정 라인과 사용자 음정 커브 오버레이 표시
+- 음정 정확도 색상 코드 (Green: ±15Hz 이내, Yellow: ±30Hz, Red: 초과)
+- 음정 안정성 및 vibrato 분석
+- 세션별 정확도 점수 (0-100점)
+- 녹음 및 리플레이 기능
+
+**Acceptance Criteria:**
+- 실시간 pitch detection 지연 < 100ms
+- 초당 30프레임 이상으로 부드러운 그래프 렌더링
+- 배경 소음 필터링 기능 포함
+- 사용자 음정 데이터 로컬 저장 (세션별)
+
+**Technical Specifications:**
+- react-native-pitchy 또는 @techoptio/react-native-live-pitch-detection[web:20][web:21]
+- YIN/ACF 알고리즘 기반 pitch extraction
+- react-native-svg 또는 Skia로 실시간 그래프 렌더링[web:26]
+- expo-av로 오디오 녹음/재생
+- iOS: AVAudioEngine, Android: AudioRecord API
+
+#### Feature 3: 악보 뷰어 및 연습 모드
+**User Story:** 사용자가 업로드한 악보를 보면서 메트로놈, 자동 스크롤, 구간 반복 기능을 활용해 효율적으로 연습한다.
+
+**Functional Requirements:**
+- 악보 이미지 뷰어 (줌, 스크롤 지원)
+- 메트로놈 (BPM 조절 30-240, 박자 설정)
+- 자동 스크롤 (MIDI 재생과 동기화)
+- 현재 연주 위치 하이라이트
+- 구간 반복 (A-B 루프)
+- 템포 조절 (50%-150%)
+- 전체 화면 연습 모드
+
+**Acceptance Criteria:**
+- 메트로놈 BPM 정확도 ±2 BPM 이내
+- 자동 스크롤과 MIDI 재생 동기화 지연 < 50ms
+- 구간 반복 설정 3탭 이내 완료
+
+**Technical Specifications:**
+- react-native-fast-image로 악보 이미지 캐싱
+- react-native-svg로 메트로놈 비주얼 표시
+- Tone.js Transport API로 MIDI 재생 제어
+- AsyncStorage로 연습 설정 저장
+
+### Should-Have Features (Post-MVP)
+
+#### Feature 4: 개인 라이브러리 관리
+- 악보/MIDI 파일 폴더 구조 관리
+- 즐겨찾기 및 태그 기능
+- 검색 및 필터링 (제목, 아티스트, 날짜)
+- 클라우드 백업 (유료 구독)
+
+#### Feature 5: 진행 상황 추적 및 통계
+- 세션별 연습 시간 기록
+- 주간/월간 음정 정확도 그래프
+- 목표 설정 및 달성률 표시
+- 연습 히스토리 캘린더 뷰
+
+#### Feature 6: 소셜 및 협업 기능
+- 단체 라이브러리 공유 (구독 플랜)
+- 멤버 간 악보 배포 (강사 → 학생)
+- 진행 상황 대시보드 (관리자용)
+- 댓글 및 연습 노트 공유
+
+### Could-Have Features (Future Roadmap)
+
+- AI 보컬 코치 제안 (음정 개선 팁)
+- 하모니 파트 연습 (다성 지원)
+- 커뮤니티 악보 마켓플레이스
+- 라이브 레슨 화상 통화 통합
+- 웨어러블 디바이스 연동 (호흡 모니터링)
+
+## User Flow & UX Journey
+
+### Primary User Flow
+
+\begin{enumerate}
+\item \textbf{온보딩 (첫 실행)}
+  \begin{itemize}
+  \item 스플래시 화면 → 튜토리얼 슬라이드 (3개) → 권한 요청 (마이크, 갤러리)
+  \item 계정 생성 (이메일/소셜 로그인) 또는 게스트 모드
+  \item 첫 악보 업로드 가이드 (데모 비디오 15초)
+  \end{itemize}
+
+\item \textbf{악보 업로드 플로우}
+  \begin{itemize}
+  \item 홈 화면 → "+" 버튼 → 갤러리/카메라 선택
+  \item 이미지 선택 (배치 가능) → 미리보기 확인
+  \item 처리 시작 → 프로그레스 바 (OCR → MIDI 생성 → 완료)
+  \item 성공 알림 → 라이브러리로 자동 이동
+  \end{itemize}
+
+\item \textbf{연습 세션 플로우}
+  \begin{itemize}
+  \item 라이브러리 → 악보 선택 → "연습 시작" 버튼
+  \item 연습 모드 화면: 악보 (상단 50\%), 음정 그래프 (하단 50\%)
+  \item 메트로놈 ON → MIDI 재생 → 마이크로 노래
+  \item 실시간 피드백 (색상 코드 + 점수)
+  \item 세션 종료 → 결과 요약 (정확도, 시간, 개선 포인트)
+  \end{itemize}
+
+\item \textbf{결과 확인 및 반복}
+  \begin{itemize}
+  \item 녹음 리플레이 청취 → 문제 구간 식별
+  \item A-B 루프 설정 → 해당 구간 집중 연습
+  \item 진행 상황 저장 → 다음 세션 이어하기
+  \end{itemize}
+\end{enumerate}
+
+### Navigation Structure
+
+**바텀 네비게이션 (4개 탭):**[web:38]
+1. **홈**: 최근 연습 악보, 퀵 스타트, 추천 연습
+2. **라이브러리**: 악보 목록 (폴더/태그 필터), 검색
+3. **연습**: 전체 화면 연습 모드 (네비게이션 숨김)
+4. **프로필**: 통계, 설정, 구독 관리
+
+### Error Handling & Edge Cases
+
+- **OCR 실패**: "악보 인식 실패. 더 선명한 이미지로 재시도해 주세요" + 재업로드 버튼
+- **마이크 권한 거부**: "음정 피드백을 위해 마이크 권한이 필요합니다" + 설정 이동 버튼
+- **네트워크 오류**: 오프라인 모드 자동 전환 + 동기화 대기열 표시
+- **배터리 절약**: 연습 중 화면 꺼짐 방지 (keep-awake 옵션)
+
+## Technical Architecture
+
+### Tech Stack
+
+\begin{table}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Category} & \textbf{Technology} \\
+\hline
+Cross-Platform Framework & React Native (Expo SDK 50+) \\
+\hline
+Programming Language & TypeScript \\
+\hline
+UI Components & React Native Paper, NativeBase \\
+\hline
+Navigation & React Navigation 6.x \\
+\hline
+State Management & Zustand or React Context + Hooks \\
+\hline
+Audio Processing & expo-av, expo-audio \\
+\hline
+Pitch Detection & react-native-pitchy, @techoptio/react-native-live-pitch-detection \\
+\hline
+MIDI Generation & Tone.js, react-native-midi \\
+\hline
+OCR & Google Cloud Vision API or Tesseract.js (Expo compatible) \\
+\hline
+File Storage & expo-file-system, AsyncStorage (local), AWS S3 (cloud) \\
+\hline
+Authentication & Firebase Auth or Supabase Auth \\
+\hline
+Backend & Supabase (PostgreSQL) or Firebase Firestore \\
+\hline
+Analytics & Firebase Analytics, Mixpanel \\
+\hline
+Crash Reporting & Sentry \\
+\hline
+Payment & RevenueCat (IAP wrapper) \\
+\hline
+\end{tabular}
+\caption{Core Technology Stack}
+\end{table}
+
+### System Architecture
+
+**Client (React Native App):**
+- Audio Input Layer (Microphone → Pitch Detection)
+- MIDI Playback Layer (Tone.js Engine)
+- UI/UX Layer (React Components)
+- Local Storage (AsyncStorage, expo-file-system)
+- Network Layer (API calls to backend/OCR services)
+
+**Backend Services:**
+- **OCR Service**: Google Vision API로 악보 이미지 → MusicXML
+- **File Storage**: AWS S3 또는 Supabase Storage
+- **User Database**: Supabase PostgreSQL (사용자, 세션, 악보 메타데이터)
+- **Authentication**: Supabase Auth (JWT 기반)
+- **Subscription Management**: RevenueCat (Apple/Google IAP)
+
+**Data Flow:**
+1. 사용자 악보 이미지 업로드 → S3 저장
+2. S3 URL → Google Vision API → MusicXML 반환
+3. MusicXML → 클라이언트에서 MIDI 생성 (Tone.js)
+4. MIDI + 메타데이터 → Supabase DB 저장
+5. 연습 세션 데이터 (음정, 점수) → Supabase DB 기록
+
+### Performance Requirements
+
+- **App Launch Time**: Cold start < 3초, Warm start < 1초
+- **OCR Processing**: 이미지당 < 30초
+- **MIDI Generation**: MusicXML → MIDI < 5초
+- **Pitch Detection Latency**: < 100ms (마이크 입력 → 화면 표시)
+- **Audio Playback Sync**: MIDI와 메트로놈 동기화 오차 < 50ms
+- **App Size**: APK/IPA < 50MB (초기 다운로드)
+- **Battery Consumption**: 30분 연습 시 배터리 < 10% 소모
+
+### Platform Support
+
+\begin{table}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Platform} & \textbf{Minimum Version} \\
+\hline
+iOS & 13.0+ \\
+\hline
+Android & API 21 (Android 5.0+) \\
+\hline
+\end{tabular}
+\caption{Supported Platforms}
+\end{table}
+
+**Device Requirements:**
+- RAM: 최소 2GB
+- 저장 공간: 최소 500MB 여유
+- 마이크: 필수
+- 네트워크: 초기 OCR 처리 시 필요 (이후 오프라인 가능)
+
+### Security & Privacy
+
+- **Data Encryption**: 전송 시 TLS 1.3, 저장 시 AES-256
+- **User Authentication**: JWT 토큰 기반, 리프레시 토큰 로테이션
+- **File Access**: 사용자별 폴더 격리 (S3 bucket policy)
+- **Permissions**: 최소 권한 원칙 (마이크, 갤러리만 요청)
+- **GDPR Compliance**: 사용자 데이터 삭제 요청 지원
+- **Privacy Policy**: 앱 내 명시, 수집 데이터 투명 공개
+
+## Business Model & Monetization
+
+### Subscription Tiers
+
+\begin{table}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Plan} & \textbf{Price} & \textbf{Features} \\
+\hline
+Free & \$0/month & 악보 3개, 로컬 저장, 기본 피드백 \\
+\hline
+Pro (개인) & \$9.99/month & 무제한 악보, 클라우드 백업, 고급 통계 \\
+\hline
+Team (단체) & \$29.99/month & 최대 10명, 공유 라이브러리, 관리자 대시보드 \\
+\hline
+Studio (기관) & Custom & 무제한 멤버, API 접근, 전담 지원 \\
+\hline
+\end{tabular}
+\caption{Subscription Plans}
+\end{table}
+
+**Trial Period:**
+- Pro 플랜 7일 무료 체험
+- Team 플랜 14일 무료 체험
+
+**Upgrade Prompts:**
+- Free 사용자가 4번째 악보 업로드 시 유료 전환 유도
+- 클라우드 백업 기능 사용 시 Pro 플랜 안내
+- 단체 공유 요청 시 Team 플랜 추천
+
+### Revenue Projections (6개월)
+
+- **Target Users**: 10,000 MAU
+- **Conversion Rate**: 15% (1,500 유료 구독자)
+- **Average ARPU**: \$8 (Pro/Team 혼합)
+- **Monthly Recurring Revenue (MRR)**: \$12,000
+- **6개월 누적 수익**: \$72,000
+
+## Development Roadmap
+
+### Phase 1: MVP Development (8주)
+
+**Week 1-2: 프로젝트 셋업 및 기본 인프라**
+- Expo 프로젝트 초기화 (TypeScript, ESLint, Prettier)
+- Supabase 프로젝트 생성 및 DB 스키마 설계
+- Firebase/RevenueCat 통합 (Auth, Analytics, IAP)
+- CI/CD 파이프라인 구축 (GitHub Actions → EAS Build)
+
+**Week 3-4: 악보 업로드 및 처리 기능**
+- 이미지 업로드 UI 구현
+- Google Vision API 통합 (OCR)
+- MusicXML → MIDI 변환 로직
+- 진행률 표시 및 에러 핸들링
+
+**Week 5-6: 실시간 음정 피드백 시스템**
+- react-native-pitchy 통합
+- 마이크 권한 요청 및 오디오 입력 처리
+- Pitch detection 알고리즘 최적화
+- 실시간 그래프 렌더링 (SVG/Skia)
+
+**Week 7-8: 연습 모드 및 악보 뷰어**
+- 악보 이미지 뷰어 (줌, 스크롤)
+- 메트로놈 구현 (Tone.js)
+- MIDI 재생 및 자동 스크롤 동기화
+- A-B 루프 및 템포 조절 기능
+
+### Phase 2: Beta Testing & Refinement (4주)
+
+**Week 9-10: 내부 테스트 및 버그 수정**
+- QA 테스트 (iOS/Android 실기기)
+- 성능 최적화 (배터리, 지연 개선)
+- UI/UX 폴리싱 (애니메이션, 피드백)
+
+**Week 11-12: 비공개 베타 테스트**
+- TestFlight/Google Play Beta 배포
+- 100명 베타 사용자 모집 (뮤지컬 커뮤니티)
+- 피드백 수집 및 우선순위 개선 사항 반영
+
+### Phase 3: Launch & Post-MVP Features (4주)
+
+**Week 13-14: 공식 출시 준비**
+- App Store/Google Play 제출
+- 마케팅 자료 준비 (스크린샷, 데모 비디오)
+- 프레스 릴리스 및 커뮤니티 홍보
+
+**Week 15-16: Post-MVP Feature 1 (진행 상황 추적)**
+- 세션별 연습 기록 저장
+- 주간/월간 통계 그래프
+- 목표 설정 UI
+
+## Testing Strategy
+
+### Testing Pyramid
+
+**Unit Tests (Jest):**
+- Pitch detection 정확도 테스트
+- MusicXML 파싱 로직
+- MIDI 생성 함수
+- 유틸리티 함수 (날짜, 포맷팅)
+
+**Integration Tests (React Native Testing Library):**
+- 악보 업로드 플로우 (mock API)
+- 연습 세션 시작 → 종료 플로우
+- 구독 결제 플로우 (mock IAP)
+
+**E2E Tests (Detox):**
+- 온보딩 → 악보 업로드 → 연습 → 결과 확인 (전체 플로우)
+- 로그인 → 클라우드 백업 → 로그아웃 → 복원
+
+**Manual QA Checklist:**
+- iOS/Android 실기기 테스트 (최소 5개 기종)
+- 다양한 악보 형식 (필기 악보, 인쇄 악보, PDF)
+- 네트워크 상태 변경 (오프라인 전환)
+- 배터리 소모 테스트 (30분 연속 사용)
+- 접근성 테스트 (VoiceOver, TalkBack)
+
+## Risk Assessment & Mitigation
+
+\begin{table}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Risk} & \textbf{Impact} & \textbf{Mitigation} \\
+\hline
+OCR 정확도 낮음 & High & 수동 보정 UI 제공, 사용자 피드백으로 학습 \\
+\hline
+Pitch detection 지연 & High & 네이티브 모듈 최적화, 버퍼 크기 조정 \\
+\hline
+배터리 과소모 & Medium & Background task 제한, 절전 모드 옵션 \\
+\hline
+저작권 이슈 & Medium & 사용자 업로드 콘텐츠 면책, 신고 시스템 \\
+\hline
+낮은 구독 전환율 & High & 무료 체험 연장, 온보딩 개선, A/B 테스트 \\
+\hline
+\end{tabular}
+\caption{Risk Matrix}
+\end{table}
+
+## Assumptions & Dependencies
+
+**Assumptions:**
+- 사용자는 악보 이미지에 접근 가능 (자체 보유 또는 제공받음)
+- 사용자는 기본적인 악보 읽기 능력 보유
+- 타겟 사용자의 90% 이상이 iOS 13+ 또는 Android 5.0+ 기기 보유
+- Google Vision API 월간 무료 할당량으로 초기 사용자 커버 가능
+
+**External Dependencies:**
+- Google Cloud Vision API 가용성 및 가격 정책
+- Expo SDK 업데이트 및 호환성
+- Apple/Google 앱 스토어 심사 정책 변경
+- RevenueCat 서비스 안정성
+- 오픈소스 라이브러리 유지보수 (react-native-pitchy 등)
+
+## Compliance & Legal
+
+- **Terms of Service**: 사용자 업로드 콘텐츠 책임 명시
+- **Privacy Policy**: 수집 데이터 (이메일, 오디오 세션, 악보 이미지) 명시
+- **COPPA Compliance**: 13세 미만 사용자 부모 동의 필요
+- **App Store Guidelines**: Apple Human Interface Guidelines 준수
+- **Google Play Policies**: 데이터 안전성 섹션 작성
+- **GDPR**: EU 사용자 데이터 삭제 요청 처리 (30일 이내)
+
+## Appendix
+
+### Glossary
+
+- **MR (Music Removed)**: 보컬이 제거된 반주 트랙
+- **MIDI**: Musical Instrument Digital Interface, 음악 정보 디지털 표준
+- **OCR**: Optical Character Recognition, 광학 문자 인식
+- **Pitch**: 음의 높낮이 (주파수)
+- **BPM**: Beats Per Minute, 분당 박자 수
+- **A-B Loop**: 특정 구간 반복 재생
+
+### References
+
+[1] Singscope - 실시간 피치 시각화 앱 사례. https://www.singscope.com
+
+[2] 음역대 측정 어플 추천 TOP 7: 목소리 음정 피치 확인 앱. appmoko. https://appmoko.tistory.com/212
+
+[3] Does real-time visual feedback improve pitch accuracy in singing? Academia.edu. 2005. https://www.academia.edu/1870455/
+
+[4] react-native-pitchy: A real-time pitch detection library for React Native. GitHub. 2024. https://github.com/rnheroes/react-native-pitchy
+
+[5] Real-time audio processing with Expo and native code. Expo Blog. 2025. https://expo.dev/blog/real-time-audio-processing-with-expo-and-native-code
+
+[6] 보컬 추출 MR 제거 무료 사이트 추천 - 랄라 AI. https://happyfridaymorning.co.kr/570
+
+[7] 모든 뮤지션들이 체험해 봐야 하는 6가지 훌륭한 악보 앱 - Tomplay. https://tomplay.com/kr/blog/post/6-great-sheet-music-apps-that-all-musicians-should-try-out
+
+[8] SWIFTSCALES - Vocal Trainer. Google Play. https://play.google.com/store/apps/details?id=com.swiftscales.music.vvt
+
+[9] What is Music? Design of a 'Sing In-Tune' App. whatismusic.info. 2014. https://whatismusic.info/blog/DesignOfASingInTuneApp
+
+[10] Best Apps to Master Your Singing Learning with Technology. The Curious Singer. 2023. https://thecurioussinger.com/apps-singing-music-learning/
+
+[11] How To Create a Product Requirements Document. Figma. 2024. https://www.figma.com/resource-library/product-requirements-document/
+
+[12] How to Create a Mobile App Development Requirements Document. Madappgang. 2025. https://madappgang.com/blog/mobile-app-prd-guidelines/
+
+[13] Mobile App Development Project Plan & Roadmap Guide 2026. TopOn. 2026. https://topon.tech/en/mobile-app-development-project-plan/
