@@ -17,12 +17,17 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.musicalpractice",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Musical Practice needs microphone access to detect your pitch and measure accuracy while singing."
+        "NSMicrophoneUsageDescription": "Musical Practice needs microphone access to detect your pitch and measure accuracy while singing.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "package": "com.musicalpractice",
-      "permissions": ["RECORD_AUDIO"],
+      "permissions": [
+        "RECORD_AUDIO",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#FFF5F8",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -39,6 +44,12 @@
           "microphonePermission": "Musical Practice needs microphone access to detect your pitch and measure accuracy while singing."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "74be559c-56dd-48f6-ad27-c40c3f550dcd"
+      }
+    },
+    "owner": "mmecoco"
   }
 }
