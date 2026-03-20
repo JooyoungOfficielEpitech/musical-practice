@@ -6,6 +6,7 @@ let isInitialized = false;
 
 /**
  * Convert base64-encoded PCM Int16 data to Float32Array.
+ * Optimized: uses Uint8Array + DataView for direct typed array conversion.
  */
 export function base64ToFloat32(base64: string): Float32Array {
   if (!base64 || base64.length === 0) {
@@ -23,10 +24,12 @@ export function base64ToFloat32(base64: string): Float32Array {
     bytes[i] = binaryString.charCodeAt(i);
   }
 
-  const int16Array = new Int16Array(bytes.buffer);
-  const float32Array = new Float32Array(int16Array.length);
-  for (let i = 0; i < int16Array.length; i++) {
-    float32Array[i] = int16Array[i] / 32768;
+  // Direct typed array view — no intermediate copy
+  const int16View = new DataView(bytes.buffer);
+  const sampleCount = len >>> 1; // len / 2
+  const float32Array = new Float32Array(sampleCount);
+  for (let i = 0; i < sampleCount; i++) {
+    float32Array[i] = int16View.getInt16(i * 2, true) / 32768;
   }
 
   return float32Array;
@@ -55,7 +58,7 @@ export function initAudioStream(
 
 /**
  * Start the audio stream. Returns cleanup function.
- * Throttles the callback to avoid CoreAudio overload.
+ * Ring buffer in pitchDetector handles backpressure — no frame dropping needed.
  */
 export function startAudioStream(
   onData: (audioData: Float32Array) => void,
@@ -64,20 +67,10 @@ export function startAudioStream(
     initAudioStream();
   }
 
-  let processing = false;
-
   LiveAudioStream.on("data", (base64Data: string) => {
-    // Drop frames if previous one is still being processed
-    if (processing) return;
-    processing = true;
-
-    try {
-      const float32Data = base64ToFloat32(base64Data);
-      if (float32Data.length > 0) {
-        onData(float32Data);
-      }
-    } finally {
-      processing = false;
+    const float32Data = base64ToFloat32(base64Data);
+    if (float32Data.length > 0) {
+      onData(float32Data);
     }
   });
 

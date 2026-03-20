@@ -1,12 +1,15 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { AppState, Platform } from "react-native";
-import { Audio } from "expo-av";
+import { AppState } from "react-native";
 import { initAudioStream, startAudioStream, stopAudioStream } from "@/lib/audio/audioStream";
 import { detectPitch, destroyDetector, initDetector } from "@/lib/audio/pitchDetector";
 import { DEFAULT_AUDIO_CONFIG } from "@/lib/audio/types";
 import type { PitchResult } from "@/lib/audio/types";
 
-const THROTTLE_MS = 100; // 10fps — reduces CPU load vs 15fps
+export const THROTTLE_MS = 50; // 20fps — responsive pitch detection
+
+interface UsePitchDetectionOptions {
+  onAudioData?: (data: Float32Array) => void;
+}
 
 interface UsePitchDetectionReturn {
   isListening: boolean;
@@ -16,7 +19,7 @@ interface UsePitchDetectionReturn {
   stopListening: () => void;
 }
 
-export function usePitchDetection(): UsePitchDetectionReturn {
+export function usePitchDetection(options?: UsePitchDetectionOptions): UsePitchDetectionReturn {
   const [isListening, setIsListening] = useState(false);
   const [currentPitch, setCurrentPitch] = useState<PitchResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +27,9 @@ export function usePitchDetection(): UsePitchDetectionReturn {
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const lastUpdateRef = useRef(0);
   const isListeningRef = useRef(false);
+  // Keep options in a ref so the audio callback always sees the latest value
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
 
   const stopListening = useCallback(() => {
     isListeningRef.current = false;
@@ -42,24 +48,21 @@ export function usePitchDetection(): UsePitchDetectionReturn {
   const startListening = useCallback(async () => {
     try {
       setError(null);
-
-      // Ensure audio session is configured for recording on iOS
-      if (Platform.OS === "ios") {
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: true,
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: false,
-          interruptionModeIOS: 1,
-          shouldDuckAndroid: false,
-          interruptionModeAndroid: 1,
-          playThroughEarpieceAndroid: false,
-        });
-      }
+      console.log("[PitchDetection] startListening — init detector + audio stream");
 
       initDetector(DEFAULT_AUDIO_CONFIG.sampleRate);
       initAudioStream(DEFAULT_AUDIO_CONFIG);
 
+      let dataCount = 0;
       const unsubscribe = startAudioStream((audioData) => {
+        dataCount++;
+        if (dataCount <= 3 || dataCount % 200 === 0) {
+          console.log(`[PitchDetection] audio data #${dataCount}, samples: ${audioData.length}, hasOnAudioData: ${!!optionsRef.current?.onAudioData}`);
+        }
+
+        // Forward raw audio data for recording (unthrottled)
+        optionsRef.current?.onAudioData?.(audioData);
+
         const now = Date.now();
         if (now - lastUpdateRef.current < THROTTLE_MS) return;
         lastUpdateRef.current = now;
@@ -73,9 +76,13 @@ export function usePitchDetection(): UsePitchDetectionReturn {
       unsubscribeRef.current = unsubscribe;
       isListeningRef.current = true;
       setIsListening(true);
+      console.log("[PitchDetection] listening started OK");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to start audio stream");
+      const msg = e instanceof Error ? e.message : "Failed to start audio stream";
+      console.error("[PitchDetection] startListening FAILED:", e);
+      setError(msg);
       stopListening();
+      throw e;
     }
   }, [stopListening]);
 

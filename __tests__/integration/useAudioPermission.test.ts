@@ -81,7 +81,7 @@ describe("useAudioPermission", () => {
     );
   });
 
-  it("configures audio session after permission is granted", async () => {
+  it("does NOT call setAudioModeAsync (LiveAudioStream handles audio session)", async () => {
     mockRequestPermissions.mockResolvedValue({ status: "granted" });
 
     const { result } = renderHook(() => useAudioPermission());
@@ -90,11 +90,9 @@ describe("useAudioPermission", () => {
       await result.current.requestPermission();
     });
 
-    expect(mockSetAudioMode).toHaveBeenCalledWith(
-      expect.objectContaining({
-        allowsRecordingIOS: true,
-      }),
-    );
+    // Audio session is managed by react-native-live-audio-stream natively.
+    // Calling expo-av's setAudioModeAsync conflicts with LiveAudioStream.
+    expect(mockSetAudioMode).not.toHaveBeenCalled();
   });
 
   it("does NOT configure audio session when denied", async () => {

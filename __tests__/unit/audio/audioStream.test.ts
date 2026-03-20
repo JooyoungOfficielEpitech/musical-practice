@@ -248,4 +248,27 @@ describe("audioStream", () => {
       expect(mockOn).toHaveBeenCalledWith("data", expect.any(Function));
     });
   });
+
+  describe("base64ToFloat32 performance", () => {
+    it("converts 4096 bytes (2048 samples) in under 5ms per call (1000 iterations)", () => {
+      // Create 4096 bytes of PCM data (2048 Int16 samples)
+      const int16 = new Int16Array(2048);
+      for (let i = 0; i < 2048; i++) {
+        int16[i] = Math.floor(Math.random() * 65536) - 32768;
+      }
+      const bytes = new Uint8Array(int16.buffer);
+      const base64 = btoa(String.fromCharCode(...bytes));
+
+      const iterations = 1000;
+      const start = performance.now();
+      for (let i = 0; i < iterations; i++) {
+        base64ToFloat32(base64);
+      }
+      const elapsed = performance.now() - start;
+      const avgMs = elapsed / iterations;
+
+      // Should be well under 5ms per call
+      expect(avgMs).toBeLessThan(5);
+    });
+  });
 });

@@ -32,5 +32,15 @@ export const DEFAULT_AUDIO_CONFIG: AudioStreamConfig = {
   audioSource: 6, // VOICE_RECOGNITION on Android
 };
 
+export interface Recording {
+  id: string;
+  sessionId: string;
+  title: string;
+  fileUri: string;
+  duration: number; // seconds
+  createdAt: number; // timestamp ms
+  fileSize: number; // bytes
+}
+
 export const CLARITY_THRESHOLD = 0.85;
 export const CENTS_THRESHOLD = 50; // ±50 cents = correct

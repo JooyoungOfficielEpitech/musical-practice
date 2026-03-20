@@ -2,7 +2,6 @@ import {
   frequencyToNote,
   noteToFrequency,
   calculateCents,
-  keyToFrequency,
 } from "../../../client/lib/audio/noteMapping";
 
 describe("noteMapping", () => {
@@ -140,18 +139,4 @@ describe("noteMapping", () => {
     });
   });
 
-  describe("keyToFrequency", () => {
-    it("defaults to octave 4", () => {
-      expect(keyToFrequency("A")).toBeCloseTo(440, 1);
-      expect(keyToFrequency("C")).toBeCloseTo(261.63, 0);
-    });
-
-    it("accepts custom octave", () => {
-      expect(keyToFrequency("A", 3)).toBeCloseTo(220, 1);
-    });
-
-    it("handles sharps", () => {
-      expect(keyToFrequency("F#")).toBeCloseTo(369.99, 0);
-    });
-  });
 });

@@ -1,13 +1,14 @@
 import { PitchDetector as PitchyDetector } from "pitchy";
 import { CLARITY_THRESHOLD } from "./types";
 import { frequencyToNote, calculateCents } from "./noteMapping";
+import { RingBuffer } from "./ringBuffer";
 import type { PitchResult } from "./types";
 
-const INPUT_SIZE = 2048;
+export const INPUT_SIZE = 2048;
+const RING_CAPACITY = 8192; // 4x INPUT_SIZE
 
 let detector: PitchyDetector<Float32Array> | null = null;
-// Accumulation buffer for when chunks arrive smaller than INPUT_SIZE
-let accumulator = new Float32Array(0);
+let ringBuffer = new RingBuffer(RING_CAPACITY);
 
 /**
  * Initialize the pitch detector with the given sample rate.
@@ -15,11 +16,11 @@ let accumulator = new Float32Array(0);
 export function initDetector(sampleRate: number): void {
   detector = PitchyDetector.forFloat32Array(INPUT_SIZE);
   detector.minVolumeDecibels = -30;
-  accumulator = new Float32Array(0);
+  ringBuffer.clear();
 }
 
 /**
- * Feed audio data into the accumulator and detect pitch when we have enough.
+ * Feed audio data into the ring buffer and detect pitch when we have enough.
  * Returns null if not enough data yet or clarity is below threshold.
  */
 export function detectPitch(
@@ -35,21 +36,18 @@ export function detectPitch(
     return null;
   }
 
-  // Accumulate incoming audio data
-  const newAccumulator = new Float32Array(accumulator.length + audioData.length);
-  newAccumulator.set(accumulator);
-  newAccumulator.set(audioData, accumulator.length);
-  accumulator = newAccumulator;
+  // Write into ring buffer (no allocation)
+  ringBuffer.write(audioData);
 
   // Need at least INPUT_SIZE samples
-  if (accumulator.length < INPUT_SIZE) {
+  if (ringBuffer.availableRead < INPUT_SIZE) {
     return null;
   }
 
-  // Take exactly INPUT_SIZE samples from the end (most recent data)
-  const inputBuffer = accumulator.slice(accumulator.length - INPUT_SIZE);
-  // Discard processed data — only keep samples that arrived after the window
-  accumulator = new Float32Array(0);
+  // Peek at INPUT_SIZE samples (most recent window)
+  const inputBuffer = ringBuffer.peek(INPUT_SIZE);
+  // Consume all buffered data
+  ringBuffer.clear();
 
   try {
     const [frequency, clarity] = detector!.findPitch(inputBuffer, sampleRate);
@@ -81,5 +79,5 @@ export function detectPitch(
  */
 export function destroyDetector(): void {
   detector = null;
-  accumulator = new Float32Array(0);
+  ringBuffer = new RingBuffer(RING_CAPACITY);
 }

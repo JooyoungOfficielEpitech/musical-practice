@@ -208,10 +208,10 @@ describe("pitchDetector", () => {
       expect(result).not.toBeNull();
     });
 
-    it("destroyDetector resets accumulator", () => {
+    it("destroyDetector resets ring buffer", () => {
       initDetector(44100);
 
-      // Add partial data to accumulator
+      // Add partial data to ring buffer
       detectPitch(new Float32Array(1024), 44100);
 
       // Destroy
@@ -223,6 +223,31 @@ describe("pitchDetector", () => {
       const result = detectPitch(new Float32Array(512), 44100);
       expect(result).toBeNull();
       expect(mockFindPitch).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("sliding window (stride 1024)", () => {
+    it("detects once with exactly 2048 samples (initial fill)", () => {
+      initDetector(44100);
+      mockFindPitch.mockReturnValue([440, 0.95]);
+
+      const result = detectPitch(new Float32Array(2048), 44100);
+      expect(result).not.toBeNull();
+      expect(mockFindPitch).toHaveBeenCalledTimes(1);
+    });
+
+    it("after initial detection, next 1024 samples trigger new detection with overlap", () => {
+      initDetector(44100);
+      mockFindPitch.mockReturnValue([440, 0.95]);
+
+      // Initial fill — triggers detection, clears buffer
+      detectPitch(new Float32Array(2048), 44100);
+      mockFindPitch.mockClear();
+
+      // Next chunk must still accumulate to INPUT_SIZE
+      const result = detectPitch(new Float32Array(1024), 44100);
+      // Not enough yet (need 2048, only have 1024)
+      expect(result).toBeNull();
     });
   });
 });

@@ -7,6 +7,7 @@ import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 interface CentsIndicatorProps {
   cents: number;
   maxCents?: number;
+  width?: number;
 }
 
 const SPRING_CONFIG = {
@@ -18,9 +19,12 @@ const SPRING_CONFIG = {
 export const CentsIndicator = memo(function CentsIndicator({
   cents,
   maxCents = 50,
+  width: propWidth,
 }: CentsIndicatorProps) {
   const { colors } = useTheme();
   const position = useSharedValue(0);
+  const trackWidth = propWidth ?? 220;
+  const halfRange = (trackWidth - 20) / 2; // dot travel range
 
   useEffect(() => {
     const clampedCents = Math.max(-maxCents, Math.min(maxCents, cents));
@@ -29,32 +33,45 @@ export const CentsIndicator = memo(function CentsIndicator({
   }, [cents, maxCents, position]);
 
   const dotStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: position.value * 100 }], // ±100px range
+    transform: [{ translateX: position.value * halfRange }],
   }));
 
   const centsAbs = Math.abs(cents);
   const dotColor =
     centsAbs <= 10 ? colors.success : centsAbs <= 25 ? colors.warning : colors.error;
 
+  // Zone widths proportional to total width (ratios from original 220px)
+  const zoneRed = Math.round(trackWidth * 0.1364);
+  const zoneYellow = Math.round(trackWidth * 0.1818);
+  const zoneGreen = Math.round(trackWidth * 0.3636);
+
   return (
-    <View style={styles.container}>
-      <View style={styles.labels}>
+    <View
+      style={styles.container}
+      accessibilityValue={{
+        min: -maxCents,
+        max: maxCents,
+        now: Math.round(cents),
+        text: `${cents > 0 ? "+" : ""}${Math.round(cents)} cents`,
+      }}
+    >
+      <View style={[styles.labels, { width: trackWidth }]}>
         <Text style={[styles.label, { color: colors.textSecondary }]}>Flat</Text>
         <Text style={[styles.centsValue, { color: dotColor }]}>
           {cents > 0 ? "+" : ""}{Math.round(cents)}¢
         </Text>
         <Text style={[styles.label, { color: colors.textSecondary }]}>Sharp</Text>
       </View>
-      <View style={styles.trackContainer}>
+      <View style={[styles.trackContainer, { width: trackWidth }]}>
         {/* Color zones */}
-        <View style={[styles.zone, styles.zoneRed, { backgroundColor: colors.error + "15" }]} />
-        <View style={[styles.zone, styles.zoneYellow, { backgroundColor: colors.warning + "15" }]} />
-        <View style={[styles.zone, styles.zoneGreen, { backgroundColor: colors.success + "20" }]} />
-        <View style={[styles.zone, styles.zoneYellow2, { backgroundColor: colors.warning + "15" }]} />
-        <View style={[styles.zone, styles.zoneRed2, { backgroundColor: colors.error + "15" }]} />
+        <View style={[styles.zone, { left: 0, width: zoneRed, backgroundColor: colors.errorLight }]} />
+        <View style={[styles.zone, { left: zoneRed, width: zoneYellow, backgroundColor: colors.warningLight }]} />
+        <View style={[styles.zone, { left: zoneRed + zoneYellow, width: zoneGreen, backgroundColor: colors.successLight }]} />
+        <View style={[styles.zone, { left: zoneRed + zoneYellow + zoneGreen, width: zoneYellow, backgroundColor: colors.warningLight }]} />
+        <View style={[styles.zone, { left: zoneRed + zoneYellow * 2 + zoneGreen, width: zoneRed, backgroundColor: colors.errorLight }]} />
 
         {/* Track line */}
-        <View style={[styles.track, { backgroundColor: colors.borderLight }]} />
+        <View style={[styles.track, { width: trackWidth - 20, backgroundColor: colors.borderLight }]} />
 
         {/* Center mark */}
         <View style={[styles.centerMark, { backgroundColor: colors.success }]} />
@@ -78,25 +95,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    width: 220,
   },
   label: { ...Typography.label },
   centsValue: { ...Typography.small, fontFamily: "Nunito_600SemiBold", fontWeight: "600" },
   trackContainer: {
-    width: 220,
     height: 24,
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
   },
   zone: { position: "absolute", height: 24, borderRadius: BorderRadius.xs },
-  zoneRed: { left: 0, width: 30 },
-  zoneYellow: { left: 30, width: 40 },
-  zoneGreen: { left: 70, width: 80 },
-  zoneYellow2: { left: 150, width: 40 },
-  zoneRed2: { left: 190, width: 30 },
   track: {
-    width: 200,
     height: 2,
     borderRadius: 1,
   },

@@ -1,11 +1,14 @@
-import React from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   StyleSheet,
   Text,
   View,
   ScrollView,
   Pressable,
+  Alert,
+  TextInput,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
@@ -36,12 +39,58 @@ function getWeeklyData(sessions: { startedAt: number; duration: number }[]) {
   });
 }
 
+const USERNAME_KEY = "@musicalpractice/username";
+
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { stats, sessions, sheets } = usePractice();
+  const { stats, sessions, sheets, clearAllData } = usePractice();
   const weeklyData = getWeeklyData(sessions);
   const maxMins = Math.max(...weeklyData.map((d) => d.mins), 1);
+  const [username, setUsername] = useState("Practice User");
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editName, setEditName] = useState("");
+
+  useEffect(() => {
+    AsyncStorage.getItem(USERNAME_KEY).then((name) => {
+      if (name) setUsername(name);
+    });
+  }, []);
+
+  const handleSaveName = useCallback(async () => {
+    const trimmed = editName.trim();
+    if (trimmed) {
+      setUsername(trimmed);
+      await AsyncStorage.setItem(USERNAME_KEY, trimmed);
+    }
+    setIsEditingName(false);
+  }, [editName]);
+
+  const handleMenuPress = useCallback((label: string) => {
+    Alert.alert(label, "This feature is coming soon.");
+  }, []);
+
+  const handleResetData = useCallback(() => {
+    Alert.alert(
+      "Reset All Data",
+      "This will delete all scores, sessions, and statistics. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reset",
+          style: "destructive",
+          onPress: async () => {
+            await clearAllData();
+            Alert.alert("Done", "All data has been reset.");
+          },
+        },
+      ],
+    );
+  }, [clearAllData]);
+
+  const handleUpgrade = useCallback(() => {
+    Alert.alert("Upgrade to Pro", "In-app purchases are coming soon. Stay tuned!");
+  }, []);
 
   return (
     <ScrollView
@@ -54,11 +103,37 @@ export default function ProfileScreen() {
       </View>
 
       <View style={[styles.profileCard, { backgroundColor: colors.surface }, Shadows.md]}>
-        <View style={[styles.avatarWrap, { backgroundColor: colors.primary + "18" }]}>
+        <View style={[styles.avatarWrap, { backgroundColor: colors.primaryLight }]}>
           <Ionicons name="person" size={32} color={colors.primary} />
         </View>
         <View style={styles.profileInfo}>
-          <Text style={[styles.profileName, { color: colors.text }]}>Practice User</Text>
+          {isEditingName ? (
+            <View style={styles.editNameRow}>
+              <TextInput
+                style={[styles.editNameInput, { color: colors.text, borderColor: colors.borderLight }]}
+                value={editName}
+                onChangeText={setEditName}
+                autoFocus
+                onSubmitEditing={handleSaveName}
+                returnKeyType="done"
+                placeholder="Enter your name"
+                placeholderTextColor={colors.textSecondary}
+              />
+              <Pressable onPress={handleSaveName} hitSlop={8} accessibilityLabel="Save name" accessibilityRole="button">
+                <Ionicons name="checkmark-circle" size={24} color={colors.success} />
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              onPress={() => { setEditName(username); setIsEditingName(true); }}
+              style={styles.nameRow}
+              accessibilityLabel="Edit your name"
+              accessibilityRole="button"
+            >
+              <Text style={[styles.profileName, { color: colors.text }]}>{username}</Text>
+              <Ionicons name="pencil-outline" size={14} color={colors.textSecondary} />
+            </Pressable>
+          )}
           <Text style={[styles.profileSub, { color: colors.textSecondary }]}>
             {sheets.length} score{sheets.length !== 1 ? "s" : ""} in library
           </Text>
@@ -78,7 +153,7 @@ export default function ProfileScreen() {
         <Text style={[styles.weekTitle, { color: colors.text }]}>This Week</Text>
         <View style={styles.chartRow}>
           {weeklyData.map((d) => (
-            <View key={d.day} style={styles.chartCol}>
+            <View key={d.day} style={styles.chartCol} accessible accessibilityLabel={`${d.day}: ${d.mins} minute${d.mins !== 1 ? "s" : ""} practiced`}>
               <View style={styles.barWrap}>
                 <View
                   style={[
@@ -120,6 +195,9 @@ export default function ProfileScreen() {
         ].map((item) => (
           <Pressable
             key={item.label}
+            onPress={() => handleMenuPress(item.label)}
+            accessibilityLabel={item.label}
+            accessibilityRole="button"
             style={({ pressed }) => [
               styles.menuItem,
               { backgroundColor: pressed ? colors.backgroundSecondary : colors.surface },
@@ -132,9 +210,24 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
           </Pressable>
         ))}
+        <Pressable
+          onPress={handleResetData}
+          accessibilityLabel="Reset all data"
+          accessibilityRole="button"
+          style={({ pressed }) => [
+            styles.menuItem,
+            { backgroundColor: pressed ? colors.backgroundSecondary : colors.surface },
+          ]}
+        >
+          <View style={[styles.menuIconWrap, { backgroundColor: colors.errorLight }]}>
+            <Ionicons name="trash-outline" size={20} color={colors.error} />
+          </View>
+          <Text style={[styles.menuLabel, { color: colors.error }]}>Reset All Data</Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+        </Pressable>
       </View>
 
-      <View style={[styles.subscriptionCard, { backgroundColor: colors.primary + "0D", borderColor: colors.primary + "25" }]}>
+      <View style={[styles.subscriptionCard, { backgroundColor: colors.primaryLight, borderColor: colors.primarySubtle }]}>
         <View style={styles.subHeader}>
           <Ionicons name="diamond-outline" size={22} color={colors.primary} />
           <Text style={[styles.subTitle, { color: colors.text }]}>Upgrade to Pro</Text>
@@ -143,6 +236,9 @@ export default function ProfileScreen() {
           Unlimited scores, cloud backup, and advanced analytics
         </Text>
         <Pressable
+          onPress={handleUpgrade}
+          accessibilityLabel="Upgrade to Pro for $9.99 per month"
+          accessibilityRole="button"
           style={({ pressed }) => [
             styles.subBtn,
             { backgroundColor: colors.primaryDark, transform: [{ scale: pressed ? 0.98 : 1 }] },
@@ -164,6 +260,9 @@ const styles = StyleSheet.create({
   profileInfo: { flex: 1 },
   profileName: { ...Typography.subtitle, fontSize: 18 },
   profileSub: { ...Typography.small, marginTop: 2 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: Spacing.xs },
+  editNameRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
+  editNameInput: { flex: 1, ...Typography.subtitle, fontSize: 18, borderBottomWidth: 1, paddingVertical: 2 },
   statsRow: { flexDirection: "row", paddingHorizontal: Spacing.xl, gap: Spacing.sm + 2, marginBottom: Spacing.sm + 2 },
   weekCard: { marginHorizontal: Spacing.xl, marginTop: Spacing.sm + 2, borderRadius: BorderRadius.lg, padding: Spacing.md + 6, marginBottom: Spacing["2xl"] },
   weekTitle: { ...Typography.subtitle, marginBottom: Spacing.lg },

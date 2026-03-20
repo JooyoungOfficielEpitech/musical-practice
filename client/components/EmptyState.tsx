@@ -25,6 +25,8 @@ export function EmptyState({ icon, title, message, actionLabel, onAction }: Empt
       {actionLabel && onAction && (
         <Pressable
           onPress={onAction}
+          accessibilityLabel={actionLabel}
+          accessibilityRole="button"
           style={({ pressed }) => [
             styles.button,
             { backgroundColor: colors.primaryDark, opacity: pressed ? 0.9 : 1 },

@@ -10,17 +10,21 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { CompositeNavigationProp, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { useTheme } from "@/hooks/useTheme";
 import { usePractice } from "@/context/PracticeContext";
 import { SheetCard } from "@/components/SheetCard";
 import { StatCard } from "@/components/StatCard";
 import { EmptyState } from "@/components/EmptyState";
 import { Spacing, BorderRadius, Typography, Shadows } from "@/constants/theme";
-import type { RootStackParamList } from "@/types/navigation";
+import type { RootStackParamList, TabParamList } from "@/types/navigation";
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type NavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<TabParamList>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
 function formatMinutes(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -61,7 +65,9 @@ export default function HomeScreen() {
           </Text>
         </View>
         <Pressable
-          onPress={() => {}}
+          onPress={() => navigation.navigate("Profile")}
+          accessibilityLabel="Go to profile"
+          accessibilityRole="button"
           style={({ pressed }) => [styles.avatarBtn, { opacity: pressed ? 0.8 : 1 }]}
         >
           <Ionicons name="person-circle" size={38} color={colors.primary} />
@@ -76,18 +82,20 @@ export default function HomeScreen() {
 
       <View style={styles.quickStartSection}>
         <Pressable
-          onPress={() => {}}
+          onPress={() => navigation.navigate("Practice")}
+          accessibilityLabel="Start quick practice"
+          accessibilityRole="button"
           style={({ pressed }) => [
             styles.quickStartBtn,
             { backgroundColor: colors.primaryDark, transform: [{ scale: pressed ? 0.98 : 1 }] },
           ]}
         >
-          <View style={styles.quickStartIcon}>
+          <View style={[styles.quickStartIcon, { backgroundColor: colors.overlayLight }]}>
             <Ionicons name="play-circle" size={32} color={colors.buttonText} />
           </View>
           <View style={styles.quickStartText}>
             <Text style={[styles.quickStartTitle, { color: colors.buttonText }]}>Quick Practice</Text>
-            <Text style={styles.quickStartSub}>Start with metronome</Text>
+            <Text style={[styles.quickStartSub, { color: colors.overlayText }]}>Start with metronome</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.buttonText} />
         </Pressable>
@@ -97,7 +105,13 @@ export default function HomeScreen() {
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Scores</Text>
           {sheets.length > 0 && (
-            <Pressable onPress={() => {}}>
+            <Pressable
+              onPress={() => navigation.navigate("Library")}
+              accessibilityRole="button"
+              accessibilityLabel="See all scores"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={{ minHeight: 44, justifyContent: "center" }}
+            >
               <Text style={[styles.seeAll, { color: colors.primary }]}>See all</Text>
             </Pressable>
           )}
@@ -108,7 +122,7 @@ export default function HomeScreen() {
             title="No scores yet"
             message="Upload your first sheet music to start practicing"
             actionLabel="Add Score"
-            onAction={() => {}}
+            onAction={() => navigation.navigate("Library")}
           />
         ) : (
           <FlatList
@@ -131,10 +145,10 @@ export default function HomeScreen() {
 
       {todaySessions.length > 0 && (
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text, paddingHorizontal: Spacing.xl }]}>Today's Sessions</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text, paddingHorizontal: Spacing.xl }]}>{"Today's Sessions"}</Text>
           {todaySessions.map((session) => (
             <View key={session.id} style={[styles.sessionItem, { backgroundColor: colors.surface }]}>
-              <View style={[styles.sessionIcon, { backgroundColor: colors.primary + "18" }]}>
+              <View style={[styles.sessionIcon, { backgroundColor: colors.primaryLight }]}>
                 <Ionicons name="musical-note" size={18} color={colors.primary} />
               </View>
               <View style={styles.sessionInfo}>
@@ -175,17 +189,17 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: Spacing.xl, marginBottom: Spacing.xl },
   greeting: { ...Typography.h2 },
   subtitle: { ...Typography.body, marginTop: 2 },
-  avatarBtn: { padding: 2 },
+  avatarBtn: { padding: 6 },
   statsRow: { flexDirection: "row", paddingHorizontal: Spacing.xl, gap: Spacing.sm + 2, marginBottom: Spacing.xl },
   quickStartSection: { paddingHorizontal: Spacing.xl, marginBottom: Spacing["2xl"] },
   quickStartBtn: { flexDirection: "row", alignItems: "center", borderRadius: BorderRadius.lg, padding: Spacing.lg, gap: Spacing.sm + 6 },
   quickStartIcon: {
-    width: 48, height: 48, borderRadius: BorderRadius.sm, backgroundColor: "rgba(255,255,255,0.2)",
+    width: 48, height: 48, borderRadius: BorderRadius.sm,
     alignItems: "center", justifyContent: "center",
   },
   quickStartText: { flex: 1 },
   quickStartTitle: { ...Typography.subtitle },
-  quickStartSub: { ...Typography.small, color: "rgba(255,255,255,0.8)", marginTop: 1 },
+  quickStartSub: { ...Typography.small, marginTop: 1 },
   section: { marginBottom: Spacing["2xl"] },
   sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: Spacing.xl, marginBottom: Spacing.sm + 6 },
   sectionTitle: { ...Typography.subtitle, fontSize: 18 },

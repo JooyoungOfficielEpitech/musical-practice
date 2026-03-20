@@ -10,7 +10,7 @@ import {
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 
@@ -52,7 +52,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
             },
           ]}
         >
-          <Feather name="alert-circle" size={20} color={colors.text} />
+          <Ionicons name="alert-circle-outline" size={20} color={colors.text} />
         </Pressable>
       ) : null}
 
@@ -83,12 +83,12 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
           transparent
           onRequestClose={() => setIsModalVisible(false)}
         >
-          <View style={styles.modalOverlay}>
+          <View style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}>
             <View style={[styles.modalContainer, { backgroundColor: colors.backgroundDefault }]}>
               <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.modalTitle, { color: colors.text }]}>Error Details</Text>
                 <Pressable onPress={() => setIsModalVisible(false)} style={styles.closeButton}>
-                  <Feather name="x" size={24} color={colors.text} />
+                  <Ionicons name="close" size={24} color={colors.text} />
                 </Pressable>
               </View>
               <ScrollView
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     minWidth: 200,
   },
   buttonText: { fontWeight: "600", textAlign: "center", fontSize: 16 },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+  modalOverlay: { flex: 1, justifyContent: "flex-end" },
   modalContainer: { width: "100%", height: "90%", borderTopLeftRadius: BorderRadius.lg, borderTopRightRadius: BorderRadius.lg },
   modalHeader: {
     flexDirection: "row",

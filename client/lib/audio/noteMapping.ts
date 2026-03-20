@@ -50,11 +50,3 @@ export function calculateCents(detectedFreq: number, targetFreq: number): number
   if (detectedFreq <= 0 || targetFreq <= 0) return 0;
   return 1200 * Math.log2(detectedFreq / targetFreq);
 }
-
-/**
- * Get the target frequency for a given key string (e.g., "C", "F#").
- * Defaults to octave 4.
- */
-export function keyToFrequency(key: string, octave = 4): number {
-  return noteToFrequency(key, octave);
-}

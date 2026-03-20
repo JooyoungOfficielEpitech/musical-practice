@@ -41,26 +41,26 @@ function App() {
   if (!fontsLoaded && !fontError) return null;
 
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <ThemeProvider>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <KeyboardProvider>
-                <SafeAreaProvider>
+    <SafeAreaProvider>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <ThemeProvider>
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <KeyboardProvider>
                   <PracticeProvider>
                     <NavigationContainer>
                       <RootStackNavigator />
                       <StatusBar style="auto" />
                     </NavigationContainer>
                   </PracticeProvider>
-                </SafeAreaProvider>
-              </KeyboardProvider>
-            </GestureHandlerRootView>
-          </ThemeProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+                </KeyboardProvider>
+              </GestureHandlerRootView>
+            </ThemeProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    </SafeAreaProvider>
   );
 }
 

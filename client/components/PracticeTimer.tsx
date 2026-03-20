@@ -1,62 +1,43 @@
-import React, { useState, useRef, useEffect } from "react";
+import React from "react";
 import { StyleSheet, Text, View, Pressable, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
+import { useTimer } from "@/hooks/useTimer";
 import { Spacing } from "@/constants/theme";
 
 interface PracticeTimerProps {
   onTimeUpdate?: (seconds: number) => void;
   onStop?: (totalSeconds: number) => void;
-  onStart?: () => void;
+  /** Return false to abort start (e.g. permission denied) */
+  onStart?: () => Promise<boolean> | boolean | void;
 }
 
 export function PracticeTimer({ onTimeUpdate, onStop, onStart }: PracticeTimerProps) {
   const { colors } = useTheme();
-  const [seconds, setSeconds] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { seconds, isRunning, start, pause, formatTime } = useTimer({ onTimeUpdate });
 
-  useEffect(() => {
-    if (isRunning) {
-      intervalRef.current = setInterval(() => {
-        setSeconds((prev) => {
-          const next = prev + 1;
-          onTimeUpdate?.(next);
-          return next;
-        });
-      }, 1000);
-      return () => {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-      };
-    } else {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    }
-  }, [isRunning, onTimeUpdate]);
-
-  const formatTime = (s: number) => {
-    const mins = Math.floor(s / 60);
-    const secs = s % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  const toggle = () => {
+  const toggle = async () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     if (!isRunning) {
-      onStart?.();
+      if (onStart) {
+        const result = await onStart();
+        if (result === false) return;
+      }
+      start();
+    } else {
+      pause();
     }
-    setIsRunning(!isRunning);
   };
 
   const handleStop = () => {
     if (Platform.OS !== "web") {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
-    setIsRunning(false);
+    pause();
     onStop?.(seconds);
-    setSeconds(0);
   };
 
   return (
@@ -65,6 +46,9 @@ export function PracticeTimer({ onTimeUpdate, onStop, onStart }: PracticeTimerPr
       <View style={styles.controls}>
         <Pressable
           onPress={toggle}
+          accessibilityLabel={isRunning ? "Pause practice" : "Start practice"}
+          accessibilityRole="button"
+          android_ripple={{ color: colors.rippleLight }}
           style={({ pressed }) => [
             styles.btn,
             {
@@ -78,6 +62,9 @@ export function PracticeTimer({ onTimeUpdate, onStop, onStart }: PracticeTimerPr
         {seconds > 0 && (
           <Pressable
             onPress={handleStop}
+            accessibilityLabel="Stop practice"
+            accessibilityRole="button"
+            android_ripple={{ color: colors.rippleLight }}
             style={({ pressed }) => [
               styles.btn,
               {

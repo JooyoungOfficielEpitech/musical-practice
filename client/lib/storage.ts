@@ -1,14 +1,14 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { migrateSheetMusic } from "./migration";
 
 export interface SheetMusic {
   id: string;
   title: string;
   artist: string;
-  imageUri: string;
+  imageUris: string[];
+  audioUri?: string;
   createdAt: number;
   folder: string;
-  bpm: number;
-  key: string;
   isFavorite: boolean;
 }
 
@@ -20,6 +20,7 @@ export interface PracticeSession {
   duration: number;
   accuracy: number;
   bpm: number;
+  recordingUri?: string;
   pitchData?: {
     totalReadings: number;
     correctReadings: number;
@@ -44,7 +45,9 @@ const KEYS = {
 export async function getSheets(): Promise<SheetMusic[]> {
   try {
     const data = await AsyncStorage.getItem(KEYS.SHEETS);
-    return data ? JSON.parse(data) : [];
+    if (!data) return [];
+    const raw: any[] = JSON.parse(data);
+    return raw.map(migrateSheetMusic);
   } catch {
     return [];
   }
