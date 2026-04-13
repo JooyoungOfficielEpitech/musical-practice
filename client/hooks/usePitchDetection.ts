@@ -82,7 +82,6 @@ export function usePitchDetection(options?: UsePitchDetectionOptions): UsePitchD
       console.error("[PitchDetection] startListening FAILED:", e);
       setError(msg);
       stopListening();
-      throw e;
     }
   }, [stopListening]);
 

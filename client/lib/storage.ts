@@ -10,6 +10,10 @@ export interface SheetMusic {
   createdAt: number;
   folder: string;
   isFavorite: boolean;
+  musicXmlUri?: string;
+  noteSequenceUri?: string;
+  omrStatus?: "none" | "processing" | "ready" | "failed";
+  selectedInstrument?: string;
 }
 
 export interface PracticeSession {
@@ -33,6 +37,15 @@ export interface UserStats {
   averageAccuracy: number;
   streak: number;
   lastPracticeDate: string;
+}
+
+/** Data shape submitted by SheetFormModal — lives here so hooks can import it without touching components/ */
+export interface SheetFormData {
+  title: string;
+  artist: string;
+  folder: string;
+  imageUris: string[];
+  audioUri?: string;
 }
 
 const KEYS = {

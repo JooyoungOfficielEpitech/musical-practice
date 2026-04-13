@@ -2,8 +2,12 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { StyleSheet, Text, View, Pressable, Platform, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { createAudioPlayer } from "expo-audio";
+import type { AudioPlayer } from "expo-audio";
+import * as FileSystem from "expo-file-system/legacy";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Typography, Shadows } from "@/constants/theme";
+import { encodeWav } from "@/lib/audio/wavEncoder";
 
 interface MetronomeProps {
   initialBpm?: number;
@@ -20,9 +24,57 @@ export function Metronome({ initialBpm = 120, onBpmChange, compact }: MetronomeP
   const [isEditingBpm, setIsEditingBpm] = useState(false);
   const [editBpmText, setEditBpmText] = useState("");
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const accentSoundRef = useRef<AudioPlayer | null>(null);
+  const regularSoundRef = useRef<AudioPlayer | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function initSounds() {
+      const sampleRate = 22050;
+      const numSamples = Math.floor(sampleRate * 0.08);
+      const configs = [
+        { freq: 880, path: `${FileSystem.cacheDirectory}metro_accent.wav`, ref: accentSoundRef },
+        { freq: 660, path: `${FileSystem.cacheDirectory}metro_regular.wav`, ref: regularSoundRef },
+      ];
+
+      for (const { freq, path, ref } of configs) {
+        const samples = new Float32Array(numSamples);
+        for (let i = 0; i < numSamples; i++) {
+          const envelope = 1 - i / numSamples;
+          samples[i] = Math.sin((2 * Math.PI * freq * i) / sampleRate) * envelope * 0.8;
+        }
+        const wavBuffer = encodeWav([samples], sampleRate);
+        const uint8 = new Uint8Array(wavBuffer);
+        let binary = "";
+        for (let i = 0; i < uint8.length; i++) {
+          binary += String.fromCharCode(uint8[i]);
+        }
+        const base64 = btoa(binary);
+        await FileSystem.writeAsStringAsync(path, base64, { encoding: FileSystem.EncodingType.Base64 });
+        if (cancelled) return;
+        const sound = createAudioPlayer({ uri: path });
+        if (cancelled) { sound.remove(); return; }
+        ref.current = sound;
+      }
+    }
+
+    initSounds();
+
+    return () => {
+      cancelled = true;
+      accentSoundRef.current?.remove();
+      regularSoundRef.current?.remove();
+    };
+  }, []);
 
   const tick = useCallback(() => {
-    setBeat((prev) => (prev + 1) % timeSignature);
+    setBeat((prev) => {
+      const next = (prev + 1) % timeSignature;
+      const sound = next === 0 ? accentSoundRef.current : regularSoundRef.current;
+      if (sound) { sound.seekTo(0); sound.play(); }
+      return next;
+    });
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -42,9 +94,11 @@ export function Metronome({ initialBpm = 120, onBpmChange, compact }: MetronomeP
   }, [isPlaying, bpm, tick]);
 
   const adjustBpm = (delta: number) => {
-    const newBpm = Math.max(30, Math.min(240, bpm + delta));
-    setBpm(newBpm);
-    onBpmChange?.(newBpm);
+    setBpm((prev) => {
+      const newBpm = Math.max(30, Math.min(240, prev + delta));
+      onBpmChange?.(newBpm);
+      return newBpm;
+    });
     if (Platform.OS !== "web") {
       Haptics.selectionAsync();
     }

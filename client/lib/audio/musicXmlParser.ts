@@ -1,0 +1,603 @@
+import type { NoteEvent, NoteSequence } from "../../types/music";
+import { noteToFrequency } from "./noteMapping";
+
+const DEFAULT_TEMPO = 120; // BPM
+const DEFAULT_DIVISIONS = 1;
+const DEFAULT_VELOCITY = 80;
+
+const ALTER_MAP: Record<number, string> = {
+  [-1]: "b",
+  [0]: "",
+  [1]: "#",
+};
+
+/** Maps dynamic marking names to MIDI velocity values */
+const DYNAMICS_VELOCITY: Record<string, number> = {
+  pp: 20,
+  p: 40,
+  mp: 55,
+  mf: 70,
+  f: 90,
+  ff: 110,
+  fff: 127,
+};
+
+/**
+ * Key signature: number of fifths to the sharps/flats they imply.
+ * Positive fifths = sharps in order: F C G D A E B
+ * Negative fifths = flats in order: B E A D G C F
+ */
+const SHARP_ORDER = ["F", "C", "G", "D", "A", "E", "B"];
+const FLAT_ORDER = ["B", "E", "A", "D", "G", "C", "F"];
+
+function getKeyAccidentals(fifths: number): Record<string, number> {
+  const accidentals: Record<string, number> = {};
+  if (fifths > 0) {
+    for (let i = 0; i < Math.min(fifths, 7); i++) {
+      accidentals[SHARP_ORDER[i]] = 1;
+    }
+  } else if (fifths < 0) {
+    for (let i = 0; i < Math.min(-fifths, 7); i++) {
+      accidentals[FLAT_ORDER[i]] = -1;
+    }
+  }
+  return accidentals;
+}
+
+function getTagContent(xml: string, tag: string): string | null {
+  const regex = new RegExp(`<${tag}[^>]*>([^<]*)</${tag}>`, "s");
+  const match = xml.match(regex);
+  return match ? match[1].trim() : null;
+}
+
+function getAllMatches(xml: string, tag: string): string[] {
+  const regex = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, "g");
+  const results: string[] = [];
+  let match;
+  while ((match = regex.exec(xml)) !== null) {
+    results.push(match[1]);
+  }
+  return results;
+}
+
+function getAllElements(xml: string, tag: string): string[] {
+  const regex = new RegExp(`<${tag}[^/>]*(?:/>|>[\\s\\S]*?</${tag}>)`, "g");
+  const results: string[] = [];
+  let match;
+  while ((match = regex.exec(xml)) !== null) {
+    results.push(match[0]);
+  }
+  return results;
+}
+
+function parseTempo(xml: string): number {
+  // Look for <sound tempo="120"/> or <per-minute>120</per-minute>
+  const soundMatch = xml.match(/<sound[^>]*tempo="(\d+(?:\.\d+)?)"[^>]*\/?>/);
+  if (soundMatch) return parseFloat(soundMatch[1]);
+
+  const perMinute = getTagContent(xml, "per-minute");
+  if (perMinute) return parseFloat(perMinute);
+
+  return DEFAULT_TEMPO;
+}
+
+/**
+ * Parse dynamics from a <direction> element.
+ * Returns the velocity if a recognized dynamic is found, null otherwise.
+ */
+function parseDynamicsFromDirection(directionXml: string): number | null {
+  for (const [name, velocity] of Object.entries(DYNAMICS_VELOCITY)) {
+    // Match <fff/>, <ff/>, <f/>, <mf/>, <mp/>, <p/>, <pp/>
+    // Check longest names first won't matter since we iterate all
+    const regex = new RegExp(`<${name}\\s*/>`);
+    if (regex.test(directionXml)) {
+      return velocity;
+    }
+  }
+  return null;
+}
+
+function pitchToNoteName(step: string, alter: number): string {
+  if (alter === 0) return step;
+  if (alter === 1) {
+    // Sharp: map to # notation
+    return step + "#";
+  }
+  if (alter === -1) {
+    // Flat: convert to equivalent sharp/natural for noteToFrequency compatibility
+    const flatToSharp: Record<string, string> = {
+      Db: "C#",
+      Eb: "D#",
+      Fb: "E",
+      Gb: "F#",
+      Ab: "G#",
+      Bb: "A#",
+      Cb: "B",
+    };
+    const flatName = step + "b";
+    return flatToSharp[flatName] ?? step;
+  }
+  // Double sharps/flats: approximate
+  if (alter > 0) return step + "#";
+  return step;
+}
+
+function noteNameToMidi(noteName: string, octave: number): number {
+  const NOTE_INDICES: Record<string, number> = {
+    C: 0,
+    "C#": 1,
+    D: 2,
+    "D#": 3,
+    E: 4,
+    F: 5,
+    "F#": 6,
+    G: 7,
+    "G#": 8,
+    A: 9,
+    "A#": 10,
+    B: 11,
+  };
+  const index = NOTE_INDICES[noteName];
+  if (index === undefined) return 60; // fallback to middle C
+  return (octave + 1) * 12 + index;
+}
+
+/**
+ * Find repeat structure in measures. Returns the ordered list of measure indices
+ * to process, expanding basic forward/backward repeats.
+ */
+function expandRepeats(measures: string[]): number[] {
+  const result: number[] = [];
+  let repeatStart = 0;
+
+  for (let i = 0; i < measures.length; i++) {
+    const measure = measures[i];
+    result.push(i);
+
+    // Check for forward repeat — marks the start of a repeated section
+    if (measure.includes('<repeat direction="forward"')) {
+      repeatStart = i;
+    }
+
+    // Check for backward repeat — go back to the forward repeat
+    if (measure.includes('<repeat direction="backward"')) {
+      // Add all measures from repeatStart to i again
+      for (let j = repeatStart; j <= i; j++) {
+        result.push(j);
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Parse ordered elements (notes and directions) from a measure, preserving
+ * their document order so dynamics apply correctly.
+ */
+interface MeasureElement {
+  type: "note" | "direction";
+  xml: string;
+}
+
+function getMeasureElements(measureXml: string): MeasureElement[] {
+  const regex = /<(note|direction)\b[^>]*(?:\/>|>[\s\S]*?<\/\1>)/g;
+  const elements: MeasureElement[] = [];
+  let match;
+  while ((match = regex.exec(measureXml)) !== null) {
+    elements.push({
+      type: match[1] as "note" | "direction",
+      xml: match[0],
+    });
+  }
+  return elements;
+}
+
+/**
+ * Parse a MusicXML string into a NoteSequence.
+ * Handles polyphonic music with chords, multiple voices, dynamics,
+ * key signatures, and basic repeats.
+ */
+export function parseMusicXml(xmlString: string): NoteSequence {
+  // Parse global attributes
+  const divisionsStr = getTagContent(xmlString, "divisions");
+  const divisions = divisionsStr ? parseInt(divisionsStr, 10) : DEFAULT_DIVISIONS;
+
+  const tempo = parseTempo(xmlString);
+  const secondsPerBeat = 60 / tempo;
+  const secondsPerDivision = secondsPerBeat / divisions;
+
+  // Parse key signature
+  const fifthsStr = getTagContent(xmlString, "fifths");
+  const fifths = fifthsStr ? parseInt(fifthsStr, 10) : 0;
+  const keyAccidentals = getKeyAccidentals(fifths);
+
+  // Use only the first <part> so multi-part scores (treble+bass) don't mix measures
+  const firstPartMatch = xmlString.match(/<part\b[^>]*>([\s\S]*?)<\/part>/);
+  const partXml = firstPartMatch ? firstPartMatch[1] : xmlString;
+  const measures = getAllMatches(partXml, "measure");
+
+  // Expand repeats to get the ordered list of measure indices
+  const measureOrder = expandRepeats(measures);
+
+  // Per-voice state
+  interface VoiceState {
+    currentDivision: number;
+    tiedPitch: string | null;
+    tiedStartDivision: number;
+    tiedDuration: number;
+    tiedMidi: number;
+    tiedFrequency: number;
+    tiedVelocity: number;
+  }
+
+  const voiceStates = new Map<string, VoiceState>();
+  let currentVelocity = DEFAULT_VELOCITY;
+
+  function getVoiceState(voice: string): VoiceState {
+    if (!voiceStates.has(voice)) {
+      voiceStates.set(voice, {
+        currentDivision: 0,
+        tiedPitch: null,
+        tiedStartDivision: 0,
+        tiedDuration: 0,
+        tiedMidi: 0,
+        tiedFrequency: 0,
+        tiedVelocity: DEFAULT_VELOCITY,
+      });
+    }
+    return voiceStates.get(voice)!;
+  }
+
+  const sequence: NoteSequence = [];
+
+  for (const measureIdx of measureOrder) {
+    const measure = measures[measureIdx];
+    const elements = getMeasureElements(measure);
+
+    // Track last non-chord note's startTime per voice for chord handling
+    const lastNoteStartDivision = new Map<string, number>();
+
+    for (const element of elements) {
+      if (element.type === "direction") {
+        const dynVelocity = parseDynamicsFromDirection(element.xml);
+        if (dynVelocity !== null) {
+          currentVelocity = dynVelocity;
+        }
+        continue;
+      }
+
+      // element.type === "note"
+      const noteXml = element.xml;
+      const isRest = noteXml.includes("<rest");
+      const isChord = noteXml.includes("<chord");
+
+      // Determine voice (default "1")
+      const voiceStr = getTagContent(noteXml, "voice") ?? "1";
+      const state = getVoiceState(voiceStr);
+
+      // Get duration in divisions
+      const durationStr = getTagContent(noteXml, "duration");
+      const durationDivisions = durationStr ? parseInt(durationStr, 10) : divisions;
+
+      // Check for tie
+      const hasTieStart = noteXml.includes('<tie type="start"');
+      const hasTieStop = noteXml.includes('<tie type="stop"');
+
+      if (isRest) {
+        // Flush any pending tied note for this voice
+        if (state.tiedPitch !== null) {
+          sequence.push({
+            pitch: state.tiedPitch,
+            midiNumber: state.tiedMidi,
+            frequency: state.tiedFrequency,
+            startTime: state.tiedStartDivision * secondsPerDivision,
+            duration: state.tiedDuration * secondsPerDivision,
+            velocity: state.tiedVelocity,
+          });
+          state.tiedPitch = null;
+        }
+        state.currentDivision += durationDivisions;
+        lastNoteStartDivision.set(voiceStr, state.currentDivision);
+        continue;
+      }
+
+      // For chord notes, use the same startTime as the previous note in this voice
+      // (don't advance currentDivision)
+      if (isChord) {
+        // Rewind to the last note's start position
+        const lastStart = lastNoteStartDivision.get(voiceStr) ?? state.currentDivision;
+        // Chord note occupies the same time slot; we'll set startDivision from lastStart
+        // but don't advance state.currentDivision
+      }
+
+      const startDivisionForNote = isChord
+        ? (lastNoteStartDivision.get(voiceStr) ?? state.currentDivision)
+        : state.currentDivision;
+
+      // Check for unpitched (x-noteheads / spoken rhythm) — treat as percussive hit
+      const isUnpitched = noteXml.includes("<unpitched");
+
+      // Parse pitch (or use default for unpitched)
+      let step: string | null;
+      let octaveStr: string | null;
+      let alterStr: string | null;
+
+      if (isUnpitched) {
+        // Use display-step/display-octave, or default to Bb4 for spoken rhythm
+        step = getTagContent(noteXml, "display-step") ?? "B";
+        octaveStr = getTagContent(noteXml, "display-octave") ?? "4";
+        alterStr = step === "B" ? "-1" : null; // Bb for spoken rhythm
+      } else {
+        step = getTagContent(noteXml, "step");
+        octaveStr = getTagContent(noteXml, "octave");
+        alterStr = getTagContent(noteXml, "alter");
+      }
+
+      if (!step || !octaveStr) {
+        if (!isChord) {
+          state.currentDivision += durationDivisions;
+          lastNoteStartDivision.set(voiceStr, startDivisionForNote);
+        }
+        continue;
+      }
+
+      const octave = parseInt(octaveStr, 10);
+      // Use explicit alter if present, otherwise apply key signature
+      let alter: number;
+      if (alterStr !== null) {
+        alter = parseInt(alterStr, 10);
+      } else {
+        alter = keyAccidentals[step] ?? 0;
+      }
+      const noteName = pitchToNoteName(step, alter);
+      const pitch = noteName + octave;
+      const midiNumber = noteNameToMidi(noteName, octave);
+      const frequency = noteToFrequency(noteName, octave);
+
+      if (hasTieStop && state.tiedPitch === pitch) {
+        // Continue the tied note
+        state.tiedDuration += durationDivisions;
+
+        if (!hasTieStart) {
+          // Tie ends here — flush
+          sequence.push({
+            pitch: state.tiedPitch,
+            midiNumber: state.tiedMidi,
+            frequency: state.tiedFrequency,
+            startTime: state.tiedStartDivision * secondsPerDivision,
+            duration: state.tiedDuration * secondsPerDivision,
+            velocity: state.tiedVelocity,
+          });
+          state.tiedPitch = null;
+        }
+      } else {
+        // Flush any previous tied note for this voice
+        if (state.tiedPitch !== null) {
+          sequence.push({
+            pitch: state.tiedPitch,
+            midiNumber: state.tiedMidi,
+            frequency: state.tiedFrequency,
+            startTime: state.tiedStartDivision * secondsPerDivision,
+            duration: state.tiedDuration * secondsPerDivision,
+            velocity: state.tiedVelocity,
+          });
+          state.tiedPitch = null;
+        }
+
+        if (hasTieStart) {
+          // Start a new tie
+          state.tiedPitch = pitch;
+          state.tiedStartDivision = startDivisionForNote;
+          state.tiedDuration = durationDivisions;
+          state.tiedMidi = midiNumber;
+          state.tiedFrequency = frequency;
+          state.tiedVelocity = currentVelocity;
+        } else {
+          // Normal note
+          sequence.push({
+            pitch,
+            midiNumber,
+            frequency,
+            startTime: startDivisionForNote * secondsPerDivision,
+            duration: durationDivisions * secondsPerDivision,
+            velocity: currentVelocity,
+          });
+        }
+      }
+
+      if (!isChord) {
+        lastNoteStartDivision.set(voiceStr, startDivisionForNote);
+        state.currentDivision += durationDivisions;
+      }
+    }
+  }
+
+  // Flush any remaining tied notes across all voices
+  for (const state of voiceStates.values()) {
+    if (state.tiedPitch !== null) {
+      sequence.push({
+        pitch: state.tiedPitch,
+        midiNumber: state.tiedMidi,
+        frequency: state.tiedFrequency,
+        startTime: state.tiedStartDivision * secondsPerDivision,
+        duration: state.tiedDuration * secondsPerDivision,
+        velocity: state.tiedVelocity,
+      });
+    }
+  }
+
+  // Sort by startTime for proper playback order (multiple voices may interleave)
+  sequence.sort((a, b) => a.startTime - b.startTime || a.midiNumber - b.midiNumber);
+
+  const totalDuration = sequence.length > 0
+    ? Math.max(...sequence.map((n) => n.startTime + n.duration))
+    : 0;
+  console.log(`[MusicXmlParser] parsed ${measures.length} measures → ${sequence.length} notes, tempo=${tempo}, divisions=${divisions}, totalDuration=${totalDuration.toFixed(2)}s`);
+  if (sequence.length > 0) {
+    console.log(`[MusicXmlParser] first note: ${sequence[0].pitch} at ${sequence[0].startTime.toFixed(3)}s dur=${sequence[0].duration.toFixed(3)}s`);
+    const last = sequence[sequence.length - 1];
+    console.log(`[MusicXmlParser] last note: ${last.pitch} at ${last.startTime.toFixed(3)}s dur=${last.duration.toFixed(3)}s`);
+  }
+
+  return sequence;
+}
+
+/** Sample MusicXML for testing — first 4 bars of "Twinkle Twinkle Little Star" in C major */
+export const SAMPLE_MUSICXML = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN"
+  "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="3.1">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Melody</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+      </attributes>
+      <direction>
+        <sound tempo="120"/>
+      </direction>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+    </measure>
+    <measure number="2">
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>2</duration><type>half</type></note>
+    </measure>
+    <measure number="3">
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+    </measure>
+    <measure number="4">
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>2</duration><type>half</type></note>
+    </measure>
+  </part>
+</score-partwise>`;
+
+/** Sample polyphonic MusicXML — C major chord (C4+E4+G4) followed by G4 */
+export const SAMPLE_POLYPHONIC_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="3.1">
+  <part-list>
+    <score-part id="P1"><part-name>Piano</part-name></score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+      </attributes>
+      <direction><sound tempo="120"/></direction>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><chord/><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><chord/><pitch><step>G</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+    </measure>
+  </part>
+</score-partwise>`;
+
+/** Sample MusicXML with dynamics markings */
+export const SAMPLE_DYNAMICS_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="3.1">
+  <part-list>
+    <score-part id="P1"><part-name>Piano</part-name></score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+      </attributes>
+      <direction><sound tempo="120"/></direction>
+      <direction><direction-type><dynamics><p/></dynamics></direction-type></direction>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <direction><direction-type><dynamics><ff/></dynamics></direction-type></direction>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+    </measure>
+  </part>
+</score-partwise>`;
+
+/** Sample MusicXML with forward/backward repeats */
+export const SAMPLE_REPEAT_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="3.1">
+  <part-list>
+    <score-part id="P1"><part-name>Piano</part-name></score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+      </attributes>
+      <direction><sound tempo="120"/></direction>
+      <barline location="left"><repeat direction="forward"/></barline>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <barline location="right"><repeat direction="backward"/></barline>
+    </measure>
+    <measure number="2">
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+    </measure>
+  </part>
+</score-partwise>`;
+
+/** Sample MusicXML with key signature (G major, fifths=1, F is automatically F#) */
+export const SAMPLE_KEY_SIGNATURE_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="3.1">
+  <part-list>
+    <score-part id="P1"><part-name>Piano</part-name></score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <key><fifths>1</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+      </attributes>
+      <direction><sound tempo="120"/></direction>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><pitch><step>F</step><alter>0</alter><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+    </measure>
+  </part>
+</score-partwise>`;
+
+/** Sample MusicXML with two voices */
+export const SAMPLE_TWO_VOICES_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="3.1">
+  <part-list>
+    <score-part id="P1"><part-name>Piano</part-name></score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+      </attributes>
+      <direction><sound tempo="120"/></direction>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>2</duration><voice>1</voice><type>half</type></note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>2</duration><voice>1</voice><type>half</type></note>
+      <note><pitch><step>F</step><octave>5</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type></note>
+    </measure>
+  </part>
+</score-partwise>`;

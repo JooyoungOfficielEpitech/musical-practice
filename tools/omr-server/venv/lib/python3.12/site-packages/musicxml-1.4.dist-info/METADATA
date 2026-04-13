@@ -1,0 +1,26 @@
+Metadata-Version: 2.1
+Name: musicxml
+Version: 1.4
+Summary: generating musicxml
+Home-page: https://github.com/alexgorji/musicxml.git
+Author: Alex Gorji
+Author-email: aligorji@hotmail.com
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+**musicxml** is a python library for reading and writing musicxml files.
+
+**musicxml** is also a part of library: **musicscore2**. Feel free to check out:
+
+[https://github.com/alexgorji/musicxml](https://github.com/alexgorji/musicscore2)
+
+[https://musicscore2.readthedocs.io](https://musicscore.readthedocs.io)
+
+INSTALLATION
+
+.. include:: usage.rst
+
+.. include:: intro_musicxml.rst
+

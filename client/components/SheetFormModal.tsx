@@ -20,15 +20,9 @@ import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
-import type { SheetMusic } from "@/lib/storage";
+import type { SheetMusic, SheetFormData } from "@/lib/storage";
 
-export interface SheetFormData {
-  title: string;
-  artist: string;
-  folder: string;
-  imageUris: string[];
-  audioUri?: string;
-}
+export type { SheetFormData };
 
 interface SheetFormModalProps {
   visible: boolean;

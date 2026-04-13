@@ -68,6 +68,10 @@ jest.mock("expo-haptics", () => ({
   NotificationFeedbackType: { Success: "success" },
 }));
 
+jest.mock("expo-av", () => ({
+  Audio: { setAudioModeAsync: jest.fn().mockResolvedValue(undefined) },
+}));
+
 // Mock reanimated
 jest.mock("react-native-reanimated", () => {
   const { View } = require("react-native");
@@ -229,6 +233,28 @@ jest.mock("../../client/components/AudioPlayer", () => ({
   AudioPlayer: () => null,
 }));
 
+// New mocks needed after usePracticeDetail extraction
+jest.mock("react-native-webview", () => ({ WebView: "WebView" }));
+
+jest.mock("../../client/hooks/useSynthPlayer", () => ({
+  useSynthPlayer: () => ({
+    isPlaying: false, play: jest.fn(), pause: jest.fn(), seekTo: jest.fn(),
+    currentNoteIndex: null, instrument: "piano", instrumentLoading: false,
+    setInstrument: jest.fn(), setTempo: jest.fn(), tempo: 1.0, positionMs: 0, durationMs: 0,
+  }),
+}));
+
+jest.mock("../../client/hooks/useOmr", () => ({
+  useOmr: () => ({ isProcessing: false, processImage: jest.fn(), error: null }),
+}));
+
+jest.mock("../../client/hooks/useNoteEditor", () => ({
+  useNoteEditor: () => ({
+    editedMusicXml: "", selectedIndex: null, selectedPitch: null,
+    hasEdits: false, selectNote: jest.fn(), applyPitch: jest.fn(), dismiss: jest.fn(),
+  }),
+}));
+
 describe("PracticeDetailScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -268,7 +294,7 @@ describe("PracticeDetailScreen", () => {
 
   it("shows play button in bottom bar", () => {
     const { getByLabelText } = render(<PracticeDetailScreen />);
-    expect(getByLabelText("Start practice")).toBeTruthy();
+    expect(getByLabelText("Start practice session")).toBeTruthy();
   });
 
   it("shows Recordings section in browse mode", () => {

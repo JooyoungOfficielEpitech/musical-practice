@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+homr
+ruff
+httpx
+pytest
+pymupdf
+supabase
+python-dotenv

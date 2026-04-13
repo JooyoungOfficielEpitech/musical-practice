@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, View, Pressable, Modal } from "react-native";
+import { StyleSheet, Text, View, Pressable, Modal, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
@@ -28,11 +28,13 @@ export function ConfirmModal({
   onCancel,
 }: ConfirmModalProps) {
   const { colors } = useTheme();
+  const { width } = useWindowDimensions();
+  const cardMaxWidth = width >= 768 ? 480 : 320;
 
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={[styles.overlay, { backgroundColor: colors.overlay }]}>
-        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+        <View style={[styles.card, { backgroundColor: colors.surface, maxWidth: cardMaxWidth }]}>
           {icon && (
             <View
               style={[
@@ -93,7 +95,6 @@ const styles = StyleSheet.create({
   },
   card: {
     width: "100%",
-    maxWidth: 320,
     borderRadius: BorderRadius.md,
     padding: Spacing.xl,
     alignItems: "center",

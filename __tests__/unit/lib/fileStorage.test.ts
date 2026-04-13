@@ -40,7 +40,7 @@ jest.mock("expo-file-system", () => {
     File: MockFile,
     Directory: MockDirectory,
     Paths: {
-      document: "/mock/documents",
+      document: { uri: "/mock/documents" },
       join: (...parts: string[]) => parts.join("/"),
     },
     __mockCopy: mockCopy,

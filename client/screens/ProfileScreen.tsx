@@ -7,6 +7,7 @@ import {
   Pressable,
   Alert,
   TextInput,
+  useWindowDimensions,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -44,13 +45,14 @@ const USERNAME_KEY = "@musicalpractice/username";
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
   const { stats, sessions, sheets, clearAllData } = usePractice();
   const weeklyData = getWeeklyData(sessions);
   const maxMins = Math.max(...weeklyData.map((d) => d.mins), 1);
   const [username, setUsername] = useState("Practice User");
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState("");
-
   useEffect(() => {
     AsyncStorage.getItem(USERNAME_KEY).then((name) => {
       if (name) setUsername(name);
@@ -87,10 +89,6 @@ export default function ProfileScreen() {
       ],
     );
   }, [clearAllData]);
-
-  const handleUpgrade = useCallback(() => {
-    Alert.alert("Upgrade to Pro", "In-app purchases are coming soon. Stay tuned!");
-  }, []);
 
   return (
     <ScrollView
@@ -151,7 +149,7 @@ export default function ProfileScreen() {
 
       <View style={[styles.weekCard, { backgroundColor: colors.surface }, Shadows.md]}>
         <Text style={[styles.weekTitle, { color: colors.text }]}>This Week</Text>
-        <View style={styles.chartRow}>
+        <View style={[styles.chartRow, { height: isTablet ? 180 : 120 }]}>
           {weeklyData.map((d) => (
             <View key={d.day} style={styles.chartCol} accessible accessibilityLabel={`${d.day}: ${d.mins} minute${d.mins !== 1 ? "s" : ""} practiced`}>
               <View style={styles.barWrap}>
@@ -227,26 +225,6 @@ export default function ProfileScreen() {
         </Pressable>
       </View>
 
-      <View style={[styles.subscriptionCard, { backgroundColor: colors.primaryLight, borderColor: colors.primarySubtle }]}>
-        <View style={styles.subHeader}>
-          <Ionicons name="diamond-outline" size={22} color={colors.primary} />
-          <Text style={[styles.subTitle, { color: colors.text }]}>Upgrade to Pro</Text>
-        </View>
-        <Text style={[styles.subDesc, { color: colors.textSecondary }]}>
-          Unlimited scores, cloud backup, and advanced analytics
-        </Text>
-        <Pressable
-          onPress={handleUpgrade}
-          accessibilityLabel="Upgrade to Pro for $9.99 per month"
-          accessibilityRole="button"
-          style={({ pressed }) => [
-            styles.subBtn,
-            { backgroundColor: colors.primaryDark, transform: [{ scale: pressed ? 0.98 : 1 }] },
-          ]}
-        >
-          <Text style={[styles.subBtnText, { color: colors.buttonText }]}>$9.99/month</Text>
-        </Pressable>
-      </View>
     </ScrollView>
   );
 }
@@ -276,10 +254,4 @@ const styles = StyleSheet.create({
   menuItem: { flexDirection: "row", alignItems: "center", padding: Spacing.sm + 6, borderRadius: BorderRadius.sm, marginBottom: Spacing.xs, gap: Spacing.md },
   menuIconWrap: { width: 32, height: 32, borderRadius: BorderRadius.xs, alignItems: "center", justifyContent: "center" },
   menuLabel: { flex: 1, ...Typography.body, fontFamily: "Nunito_500Medium", fontWeight: "500" },
-  subscriptionCard: { marginHorizontal: Spacing.xl, borderRadius: BorderRadius.md, padding: Spacing.xl, borderWidth: 1, marginBottom: Spacing.xl, gap: Spacing.sm + 2 },
-  subHeader: { flexDirection: "row", alignItems: "center", gap: Spacing.sm + 2 },
-  subTitle: { ...Typography.subtitle, fontSize: 17 },
-  subDesc: { ...Typography.small, lineHeight: 19 },
-  subBtn: { borderRadius: BorderRadius.sm, paddingVertical: Spacing.sm + 6, alignItems: "center", marginTop: Spacing.xs },
-  subBtnText: { ...Typography.body, fontFamily: "Nunito_600SemiBold", fontWeight: "600" },
 });

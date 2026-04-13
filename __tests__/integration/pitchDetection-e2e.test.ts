@@ -18,7 +18,7 @@ const SAMPLE_RATE = 44100;
 const DURATION = 0.15; // 6615 samples — well above INPUT_SIZE of 2048
 const AMPLITUDE = 0.8;
 
-const C_MAJOR_SCALE: Array<{ noteName: string; octave: number; label: string }> = [
+const C_MAJOR_SCALE: { noteName: string; octave: number; label: string }[] = [
   { noteName: "C", octave: 4, label: "도 (C4)" },
   { noteName: "D", octave: 4, label: "레 (D4)" },
   { noteName: "E", octave: 4, label: "미 (E4)" },

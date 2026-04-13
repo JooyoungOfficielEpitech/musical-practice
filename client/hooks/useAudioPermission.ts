@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { Platform, Alert, Linking } from "react-native";
-import { Audio } from "expo-av";
+import { getRecordingPermissionsAsync, requestRecordingPermissionsAsync } from "expo-audio";
 
 type PermissionStatus = "undetermined" | "granted" | "denied";
 
@@ -20,7 +20,7 @@ export function useAudioPermission() {
     }
 
     try {
-      const { status: currentStatus } = await Audio.getPermissionsAsync();
+      const { status: currentStatus } = await getRecordingPermissionsAsync();
       setStatus(currentStatus === "granted" ? "granted" : "undetermined");
     } catch {
       setStatus("undetermined");
@@ -35,7 +35,7 @@ export function useAudioPermission() {
     if (Platform.OS === "web") return false;
 
     try {
-      const { status: newStatus } = await Audio.requestPermissionsAsync();
+      const { status: newStatus } = await requestRecordingPermissionsAsync();
       const granted = newStatus === "granted";
       setStatus(granted ? "granted" : "denied");
 

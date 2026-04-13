@@ -34,7 +34,7 @@ jest.mock("expo-file-system", () => {
     File: MockFile,
     Directory: MockDirectory,
     Paths: {
-      document: "/permanent/documents",
+      document: { uri: "/permanent/documents" },
     },
   };
 });

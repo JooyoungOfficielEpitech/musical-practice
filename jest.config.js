@@ -7,6 +7,10 @@ module.exports = {
     "^@/(.*)$": "<rootDir>/client/$1",
     "^@react-native-async-storage/async-storage$":
       "<rootDir>/node_modules/@react-native-async-storage/async-storage/jest/async-storage-mock.js",
+    "^react-native-reanimated$":
+      "<rootDir>/__mocks__/react-native-reanimated.js",
+    "^react-native-gesture-handler$":
+      "<rootDir>/__mocks__/react-native-gesture-handler.js",
   },
   setupFiles: [
     "./node_modules/@react-native-async-storage/async-storage/jest/async-storage-mock.js",

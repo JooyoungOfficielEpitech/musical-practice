@@ -4,6 +4,12 @@
  */
 
 // Track copy calls to verify files are copied to permanent storage
+import {
+  copyImagesToStorage,
+  copyToLocalStorage,
+  isDocumentUri,
+} from "../../client/lib/fileStorage";
+
 const mockCopy = jest.fn();
 const mockDirCreate = jest.fn();
 
@@ -35,16 +41,10 @@ jest.mock("expo-file-system", () => {
     File: MockFile,
     Directory: MockDirectory,
     Paths: {
-      document: "/permanent/documents",
+      document: { uri: "/permanent/documents" },
     },
   };
 });
-
-import {
-  copyImagesToStorage,
-  copyToLocalStorage,
-  isDocumentUri,
-} from "../../client/lib/fileStorage";
 
 describe("File Persistence Integration", () => {
   beforeEach(() => {

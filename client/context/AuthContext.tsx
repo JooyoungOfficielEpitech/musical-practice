@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, type ReactNode } from "react";
+import { AppState, type AppStateStatus } from "react-native";
 import { supabase } from "@/lib/supabase";
 import type { Session, User } from "@supabase/supabase-js";
 
@@ -34,7 +35,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
     });
 
-    return () => subscription.unsubscribe();
+    // On React Native, Supabase's autoRefreshToken relies on timers that can be
+    // suspended when the app goes to background.  Explicitly pause/resume token
+    // refresh based on AppState so the session never expires while backgrounded
+    // and immediately re-checks validity when the user returns to the app.
+    const handleAppStateChange = (nextState: AppStateStatus) => {
+      if (nextState === "active") {
+        supabase!.auth.startAutoRefresh();
+      } else {
+        supabase!.auth.stopAutoRefresh();
+      }
+    };
+
+    const appStateSubscription = AppState.addEventListener("change", handleAppStateChange);
+
+    return () => {
+      subscription.unsubscribe();
+      appStateSubscription.remove();
+    };
   }, []);
 
   const signOut = async () => {

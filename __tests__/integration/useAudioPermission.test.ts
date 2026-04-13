@@ -2,17 +2,14 @@ import { renderHook, act } from "@testing-library/react-native";
 import { Alert, Platform } from "react-native";
 import { useAudioPermission } from "../../client/hooks/useAudioPermission";
 
-// Mock expo-av
+// Mock expo-audio (hook migrated from expo-av to expo-audio)
 const mockGetPermissions = jest.fn();
 const mockRequestPermissions = jest.fn();
-const mockSetAudioMode = jest.fn();
 
-jest.mock("expo-av", () => ({
-  Audio: {
-    getPermissionsAsync: (...args: unknown[]) => mockGetPermissions(...args),
-    requestPermissionsAsync: (...args: unknown[]) => mockRequestPermissions(...args),
-    setAudioModeAsync: (...args: unknown[]) => mockSetAudioMode(...args),
-  },
+jest.mock("expo-audio", () => ({
+  getRecordingPermissionsAsync: (...args: unknown[]) => mockGetPermissions(...args),
+  requestRecordingPermissionsAsync: (...args: unknown[]) => mockRequestPermissions(...args),
+  setAudioModeAsync: jest.fn().mockResolvedValue(undefined),
 }));
 
 // Spy on Alert
@@ -22,7 +19,6 @@ describe("useAudioPermission", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetPermissions.mockResolvedValue({ status: "undetermined" });
-    mockSetAudioMode.mockResolvedValue(undefined);
     // Ensure not web
     Object.defineProperty(Platform, "OS", { value: "ios", configurable: true });
   });
@@ -91,8 +87,8 @@ describe("useAudioPermission", () => {
     });
 
     // Audio session is managed by react-native-live-audio-stream natively.
-    // Calling expo-av's setAudioModeAsync conflicts with LiveAudioStream.
-    expect(mockSetAudioMode).not.toHaveBeenCalled();
+    const { setAudioModeAsync } = jest.requireMock("expo-audio");
+    expect(setAudioModeAsync).not.toHaveBeenCalled();
   });
 
   it("does NOT configure audio session when denied", async () => {
@@ -104,7 +100,8 @@ describe("useAudioPermission", () => {
       await result.current.requestPermission();
     });
 
-    expect(mockSetAudioMode).not.toHaveBeenCalled();
+    const { setAudioModeAsync } = jest.requireMock("expo-audio");
+    expect(setAudioModeAsync).not.toHaveBeenCalled();
   });
 
   it("returns false on web platform", async () => {

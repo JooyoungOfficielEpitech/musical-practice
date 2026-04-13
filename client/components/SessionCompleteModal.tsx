@@ -1,7 +1,10 @@
-import React from "react";
-import { StyleSheet, Text, View, Pressable, Modal } from "react-native";
+import React, { useRef, useCallback } from "react";
+import { StyleSheet, Text, View, Pressable, Modal, Alert, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
+import { ShareCard } from "@/components/ShareCard";
+import { generateShareText } from "@/lib/shareCard";
+import { shouldRequestReview, requestStoreReview } from "@/lib/reviewPrompt";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 
 interface SessionResult {
@@ -15,6 +18,8 @@ interface SessionCompleteModalProps {
   visible: boolean;
   result: SessionResult | null;
   onClose: () => void;
+  streak?: number;
+  totalSessions?: number;
 }
 
 function formatDuration(totalSeconds: number): string {
@@ -29,8 +34,43 @@ function getScoreColor(accuracy: number, colors: Record<string, string>): string
   return colors.error;
 }
 
-export function SessionCompleteModal({ visible, result, onClose }: SessionCompleteModalProps) {
+export function SessionCompleteModal({ visible, result, onClose, streak = 0, totalSessions = 0 }: SessionCompleteModalProps) {
   const { colors } = useTheme();
+  const { width } = useWindowDimensions();
+  const cardMaxWidth = width >= 768 ? 480 : 320;
+  const shareCardRef = useRef<View>(null);
+
+  const handleShare = useCallback(async () => {
+    if (!result) return;
+    try {
+      const { isAvailableAsync, shareAsync } = await import("expo-sharing");
+      const available = await isAvailableAsync();
+      if (!available) {
+        Alert.alert("Sharing is not available on this device");
+        return;
+      }
+      // Fallback: share text only (view-shot requires additional package)
+      const text = generateShareText({
+        accuracy: result.accuracy,
+        duration: result.duration,
+        streak,
+      });
+      await shareAsync("data:text/plain," + encodeURIComponent(text), {
+        dialogTitle: "Share your practice result",
+      });
+    } catch {
+      // Share cancelled or failed — silently ignore
+    }
+  }, [result, streak]);
+
+  // Trigger review request when modal becomes visible with a good result
+  React.useEffect(() => {
+    if (visible && result && result.accuracy >= 70) {
+      shouldRequestReview(totalSessions, result.accuracy).then((should) => {
+        if (should) requestStoreReview();
+      });
+    }
+  }, [visible, result, totalSessions]);
 
   if (!result) return null;
 
@@ -39,7 +79,7 @@ export function SessionCompleteModal({ visible, result, onClose }: SessionComple
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={[styles.overlay, { backgroundColor: colors.overlay }]}>
-        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+        <View style={[styles.card, { backgroundColor: colors.surface, maxWidth: cardMaxWidth }]}>
           <View style={[styles.iconWrap, { backgroundColor: colors.warningSubtle }]}>
             <Ionicons name="trophy" size={32} color={colors.warning} />
           </View>
@@ -80,6 +120,19 @@ export function SessionCompleteModal({ visible, result, onClose }: SessionComple
           )}
 
           <Pressable
+            onPress={handleShare}
+            accessibilityLabel="Share practice result"
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.shareBtn,
+              { backgroundColor: colors.backgroundTertiary, opacity: pressed ? 0.9 : 1 },
+            ]}
+          >
+            <Ionicons name="share-outline" size={18} color={colors.primary} />
+            <Text style={[styles.shareBtnText, { color: colors.primary }]}>Share Result</Text>
+          </Pressable>
+
+          <Pressable
             onPress={onClose}
             accessibilityLabel="Close session summary"
             accessibilityRole="button"
@@ -105,7 +158,6 @@ const styles = StyleSheet.create({
   },
   card: {
     width: "100%",
-    maxWidth: 320,
     borderRadius: BorderRadius.md,
     padding: Spacing.xl,
     alignItems: "center",
@@ -157,6 +209,20 @@ const styles = StyleSheet.create({
     ...Typography.small,
     fontFamily: "Nunito_500Medium",
     fontWeight: "500",
+  },
+  shareBtn: {
+    flexDirection: "row",
+    width: "100%",
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    minHeight: 48,
+    marginBottom: Spacing.sm,
+  },
+  shareBtnText: {
+    ...Typography.subtitle,
   },
   closeBtn: {
     width: "100%",

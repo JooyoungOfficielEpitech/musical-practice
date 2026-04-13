@@ -16,6 +16,7 @@ import {
 } from "@/lib/storage";
 import { copyImagesToStorage, copyToLocalStorage, isDocumentUri } from "@/lib/fileStorage";
 import { migrateFileUrisToDocument } from "@/lib/migration";
+import { processSheetMusicImage } from "@/lib/omr";
 import {
   getRecordings,
   deleteRecording as deleteRecordingStorage,
@@ -57,31 +58,36 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refreshData = useCallback(async () => {
-    const [sheetsData, sessionsData, statsData, recordingsData] = await Promise.all([
-      getSheets(),
-      getSessions(),
-      getStats(),
-      getRecordings(),
-    ]);
+    try {
+      const [sheetsData, sessionsData, statsData, recordingsData] = await Promise.all([
+        getSheets(),
+        getSessions(),
+        getStats(),
+        getRecordings(),
+      ]);
 
-    // Migrate any cache URIs to permanent document storage
-    const migratedSheets = await migrateFileUrisToDocument(sheetsData);
-    const sheetsChanged = migratedSheets.some(
-      (s, i) =>
-        s.imageUris !== sheetsData[i].imageUris ||
-        s.audioUri !== sheetsData[i].audioUri,
-    );
-    if (sheetsChanged) {
-      for (const sheet of migratedSheets) {
-        await updateSheet(sheet);
+      // Migrate any cache URIs to permanent document storage
+      const migratedSheets = await migrateFileUrisToDocument(sheetsData);
+      const sheetsChanged = migratedSheets.some(
+        (s, i) =>
+          s.imageUris !== sheetsData[i].imageUris ||
+          s.audioUri !== sheetsData[i].audioUri,
+      );
+      if (sheetsChanged) {
+        for (const sheet of migratedSheets) {
+          await updateSheet(sheet);
+        }
       }
-    }
 
-    setSheets(migratedSheets);
-    setSessions(sessionsData);
-    setStats(statsData);
-    setRecordings(recordingsData);
-    setLoading(false);
+      setSheets(migratedSheets);
+      setSessions(sessionsData);
+      setStats(statsData);
+      setRecordings(recordingsData);
+    } finally {
+      // Always clear the loading flag — even if an error is thrown — so the
+      // UI spinner never gets stuck in an infinite loading state.
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -106,6 +112,27 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
       };
       await saveSheet(sheet);
       setSheets((prev) => [sheet, ...prev]);
+
+      // Trigger OMR processing in background if sheet has images
+      if (sheet.imageUris.length > 0 && !sheet.musicXmlUri) {
+        processSheetMusicImage(sheet.imageUris[0], sheet.id)
+          .then(async (result) => {
+            const updated: SheetMusic = {
+              ...sheet,
+              musicXmlUri: result.musicXmlUri,
+              noteSequenceUri: result.noteSequenceUri,
+              omrStatus: "ready",
+            };
+            await updateSheet(updated);
+            setSheets((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+          })
+          .catch(async () => {
+            const failed: SheetMusic = { ...sheet, omrStatus: "failed" };
+            await updateSheet(failed);
+            setSheets((prev) => prev.map((s) => (s.id === failed.id ? failed : s)));
+          });
+      }
+
       return sheet;
     },
     [],
@@ -164,13 +191,18 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
                   (prevStats.averageAccuracy * prevStats.totalSessions + data.accuracy) /
                     (prevStats.totalSessions + 1),
                 ),
-          streak:
-            prevStats.lastPracticeDate === today
-              ? prevStats.streak
-              : prevStats.lastPracticeDate ===
-                  new Date(Date.now() - 86400000).toDateString()
-                ? prevStats.streak + 1
-                : 1,
+          streak: (() => {
+            if (prevStats.lastPracticeDate === today) return prevStats.streak;
+            // Compute "yesterday" in local time — do NOT subtract 86400000ms from
+            // Date.now(), because that arithmetic is timezone-unaware and produces
+            // the wrong local date for users east of UTC (e.g. UTC+9).
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toDateString();
+            return prevStats.lastPracticeDate === yesterdayStr
+              ? prevStats.streak + 1
+              : 1;
+          })(),
           lastPracticeDate: today,
         };
         updateStats(newStats);

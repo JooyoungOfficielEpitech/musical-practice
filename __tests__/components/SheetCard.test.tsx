@@ -31,6 +31,21 @@ jest.mock("expo-image", () => ({
   Image: "Image",
 }));
 
+// Mock practiceCardUtils
+jest.mock("../../client/lib/practiceCardUtils", () => ({
+  omrStatusLabel: (status: string) => {
+    if (status === "none") return null;
+    const map: Record<string, { label: string; variant: string }> = {
+      processing: { label: "Scanning\u2026", variant: "processing" },
+      ready: { label: "Ready", variant: "ready" },
+      failed: { label: "Failed", variant: "failed" },
+    };
+    return map[status] ?? null;
+  },
+  formatAccuracy: (acc: number | undefined) =>
+    acc === undefined ? null : `${Math.round(acc * 100)}%`,
+}));
+
 function makeSheet(overrides: Partial<SheetMusic> = {}): SheetMusic {
   return {
     id: "1",
@@ -81,5 +96,49 @@ describe("SheetCard", () => {
     const json = JSON.stringify(toJSON());
     // Should contain a music/audio icon indicator
     expect(json).toContain("musical-note");
+  });
+});
+
+describe("SheetCard — M5 badges", () => {
+  it('shows OMR badge with "Ready" for omrStatus "ready"', () => {
+    const sheet = makeSheet({ omrStatus: "ready" });
+    const { getByTestId, getByText } = render(<SheetCard sheet={sheet} onPress={jest.fn()} />);
+    expect(getByTestId("omr-badge")).toBeTruthy();
+    expect(getByText("Ready")).toBeTruthy();
+  });
+
+  it('shows OMR badge with "Scanning…" for omrStatus "processing"', () => {
+    const sheet = makeSheet({ omrStatus: "processing" });
+    const { getByTestId, getByText } = render(<SheetCard sheet={sheet} onPress={jest.fn()} />);
+    expect(getByTestId("omr-badge")).toBeTruthy();
+    expect(getByText("Scanning\u2026")).toBeTruthy();
+  });
+
+  it('shows OMR badge with "Failed" for omrStatus "failed"', () => {
+    const sheet = makeSheet({ omrStatus: "failed" });
+    const { getByTestId, getByText } = render(<SheetCard sheet={sheet} onPress={jest.fn()} />);
+    expect(getByTestId("omr-badge")).toBeTruthy();
+    expect(getByText("Failed")).toBeTruthy();
+  });
+
+  it("shows no OMR badge when omrStatus is 'none'", () => {
+    const sheet = makeSheet({ omrStatus: "none" });
+    const { queryByTestId } = render(<SheetCard sheet={sheet} onPress={jest.fn()} />);
+    expect(queryByTestId("omr-badge")).toBeNull();
+  });
+
+  it("shows accuracy chip when lastAccuracy prop is provided", () => {
+    const sheet = makeSheet();
+    const { getByTestId, getByText } = render(
+      <SheetCard sheet={sheet} onPress={jest.fn()} lastAccuracy={0.87} />
+    );
+    expect(getByTestId("accuracy-chip")).toBeTruthy();
+    expect(getByText("87%")).toBeTruthy();
+  });
+
+  it("shows no accuracy chip when lastAccuracy is not provided", () => {
+    const sheet = makeSheet();
+    const { queryByTestId } = render(<SheetCard sheet={sheet} onPress={jest.fn()} />);
+    expect(queryByTestId("accuracy-chip")).toBeNull();
   });
 });

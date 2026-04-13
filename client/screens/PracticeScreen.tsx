@@ -10,10 +10,6 @@ import {
   UIManager,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -31,11 +27,15 @@ import { ConfirmModal } from "@/components/ConfirmModal";
 import { SessionCompleteModal } from "@/components/SessionCompleteModal";
 import { Spacing, BorderRadius, Typography, Shadows } from "@/constants/theme";
 
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 export default function PracticeScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const navigation = useNavigation();
-  const { addSession } = usePractice();
+  const { addSession, stats } = usePractice();
   const [currentBpm, setCurrentBpm] = useState(120);
   const [lastScore, setLastScore] = useState<number | null>(null);
   const [showTips, setShowTips] = useState(true);
@@ -48,7 +48,6 @@ export default function PracticeScreen() {
     bpm: number;
     recordingSaved: boolean;
   } | null>(null);
-
   useEffect(() => {
     AsyncStorage.getItem("@musicalpractice/showTips").then((val) => {
       if (val !== null) setShowTips(val === "true");
@@ -161,7 +160,11 @@ export default function PracticeScreen() {
           </View>
         )}
         <View style={[styles.timerWrap, { borderTopColor: colors.separator }]}>
-          <PracticeTimer onTimeUpdate={() => {}} onStop={handleSessionStop} onStart={handleTimerStart} />
+          <PracticeTimer
+            onTimeUpdate={() => {}}
+            onStop={handleSessionStop}
+            onStart={handleTimerStart}
+          />
         </View>
       </View>
 
@@ -247,7 +250,10 @@ export default function PracticeScreen() {
         visible={!!sessionResult}
         result={sessionResult}
         onClose={() => setSessionResult(null)}
+        streak={stats.streak}
+        totalSessions={stats.totalSessions}
       />
+
     </ScrollView>
   );
 }

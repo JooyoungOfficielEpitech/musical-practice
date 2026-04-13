@@ -1,0 +1,31 @@
+appId: com.musicalpractice
+---
+# 1. Home Screen
+- takeScreenshot: /tmp/musical-screenshots/01_home
+
+# Library 탭
+- tapOn:
+    point: "37%,95%"
+- waitForAnimationToEnd
+- takeScreenshot: /tmp/musical-screenshots/02_library
+
+# Practice 탭
+- tapOn:
+    point: "63%,95%"
+- waitForAnimationToEnd
+- takeScreenshot: /tmp/musical-screenshots/03_practice
+
+# Profile 탭
+- tapOn:
+    point: "88%,95%"
+- waitForAnimationToEnd
+- takeScreenshot: /tmp/musical-screenshots/04_profile
+
+# Home 복귀 후 Quick Practice
+- tapOn:
+    point: "13%,95%"
+- waitForAnimationToEnd
+- tapOn:
+    point: "50%,38%"
+- waitForAnimationToEnd
+- takeScreenshot: /tmp/musical-screenshots/05_quick_practice

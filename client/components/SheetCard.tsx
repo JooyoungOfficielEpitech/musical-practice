@@ -1,20 +1,27 @@
 import React from "react";
-import { StyleSheet, Text, View, Pressable } from "react-native";
+import { StyleSheet, Text, View, Pressable, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Typography, Shadows } from "@/constants/theme";
 import type { SheetMusic } from "@/lib/storage";
+import { omrStatusLabel, formatAccuracy } from "@/lib/practiceCardUtils";
 
 interface SheetCardProps {
   sheet: SheetMusic;
   onPress: () => void;
   onFavorite?: () => void;
   compact?: boolean;
+  lastAccuracy?: number;
 }
 
-export function SheetCard({ sheet, onPress, onFavorite, compact }: SheetCardProps) {
+export function SheetCard({ sheet, onPress, onFavorite, compact, lastAccuracy }: SheetCardProps) {
   const { colors } = useTheme();
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
+  const imageHeight = isTablet ? 200 : 140;
+  const compactCardWidth = isTablet ? 180 : 140;
+  const compactImageHeight = isTablet ? 130 : 100;
 
   if (compact) {
     return (
@@ -24,14 +31,14 @@ export function SheetCard({ sheet, onPress, onFavorite, compact }: SheetCardProp
         accessibilityRole="button"
         style={({ pressed }) => [
           styles.compactCard,
-          { backgroundColor: colors.surface, opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
+          { backgroundColor: colors.surface, opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.97 : 1 }], width: compactCardWidth },
           Shadows.md,
         ]}
       >
         {sheet.imageUris[0] ? (
-          <Image source={{ uri: sheet.imageUris[0] }} style={[styles.compactImage, { backgroundColor: colors.backgroundSecondary }]} contentFit="cover" />
+          <Image source={{ uri: sheet.imageUris[0] }} style={[styles.compactImage, { backgroundColor: colors.backgroundSecondary, width: compactCardWidth, height: compactImageHeight }]} contentFit="cover" />
         ) : (
-          <View style={[styles.compactImage, styles.imagePlaceholder, { backgroundColor: colors.backgroundSecondary }]}>
+          <View style={[styles.compactImage, styles.imagePlaceholder, { backgroundColor: colors.backgroundSecondary, width: compactCardWidth, height: compactImageHeight }]}>
             <Ionicons name="musical-notes-outline" size={28} color={colors.textSecondary} />
           </View>
         )}
@@ -56,9 +63,9 @@ export function SheetCard({ sheet, onPress, onFavorite, compact }: SheetCardProp
     >
       <View>
         {sheet.imageUris[0] ? (
-          <Image source={{ uri: sheet.imageUris[0] }} style={[styles.image, { backgroundColor: colors.backgroundSecondary }]} contentFit="cover" />
+          <Image source={{ uri: sheet.imageUris[0] }} style={[styles.image, { backgroundColor: colors.backgroundSecondary, height: imageHeight }]} contentFit="cover" />
         ) : (
-          <View style={[styles.image, styles.imagePlaceholder, { backgroundColor: colors.backgroundSecondary }]}>
+          <View style={[styles.image, styles.imagePlaceholder, { backgroundColor: colors.backgroundSecondary, height: imageHeight }]}>
             <Ionicons name="musical-notes-outline" size={40} color={colors.textSecondary} />
           </View>
         )}
@@ -72,6 +79,21 @@ export function SheetCard({ sheet, onPress, onFavorite, compact }: SheetCardProp
             <Ionicons name="musical-note" size={10} color={colors.buttonText} />
           </View>
         )}
+        {(() => {
+          const omr = omrStatusLabel(sheet.omrStatus ?? "none");
+          if (!omr) return null;
+          const bgColor =
+            omr.variant === "ready"
+              ? colors.primary
+              : omr.variant === "processing"
+              ? colors.accent
+              : colors.error;
+          return (
+            <View testID="omr-badge" style={[styles.omrBadge, { backgroundColor: bgColor }]}>
+              <Text style={[styles.omrBadgeText, { color: colors.buttonText }]}>{omr.label}</Text>
+            </View>
+          );
+        })()}
       </View>
       <View style={styles.info}>
         <View style={styles.textRow}>
@@ -100,6 +122,14 @@ export function SheetCard({ sheet, onPress, onFavorite, compact }: SheetCardProp
             <Ionicons name="folder-outline" size={14} color={colors.textSecondary} />
             <Text style={[styles.metaText, { color: colors.textSecondary }]}>{sheet.folder}</Text>
           </View>
+          {formatAccuracy(lastAccuracy) !== null && (
+            <View style={styles.metaItem}>
+              <Ionicons name="checkmark-circle-outline" size={14} color={colors.textSecondary} />
+              <Text testID="accuracy-chip" style={[styles.metaText, { color: colors.textSecondary }]}>
+                {formatAccuracy(lastAccuracy)}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
     </Pressable>
@@ -145,4 +175,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  omrBadge: {
+    position: "absolute",
+    bottom: 8,
+    left: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  omrBadgeText: { ...Typography.label, fontSize: 10, fontFamily: "Nunito_700Bold", fontWeight: "700" },
 });

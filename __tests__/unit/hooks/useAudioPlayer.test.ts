@@ -1,44 +1,36 @@
 import { renderHook, act } from "@testing-library/react-native";
 import { useAudioPlayer } from "../../../client/hooks/useAudioPlayer";
 
-// Mock expo-av
-const mockLoadAsync = jest.fn();
-const mockPlayAsync = jest.fn();
-const mockPauseAsync = jest.fn();
-const mockSetPositionAsync = jest.fn();
-const mockUnloadAsync = jest.fn();
-const mockSetOnPlaybackStatusUpdate = jest.fn();
+// Mock expo-audio (hook migrated from expo-av to expo-audio)
+const mockPlay = jest.fn();
+const mockPause = jest.fn();
+const mockSeekTo = jest.fn().mockResolvedValue(undefined);
+const mockRemove = jest.fn();
+const mockAddListener = jest.fn(() => ({ remove: jest.fn() }));
 
-const mockSoundInstance = {
-  loadAsync: mockLoadAsync,
-  playAsync: mockPlayAsync,
-  pauseAsync: mockPauseAsync,
-  setPositionAsync: mockSetPositionAsync,
-  unloadAsync: mockUnloadAsync,
-  setOnPlaybackStatusUpdate: mockSetOnPlaybackStatusUpdate,
-};
+const createMockPlayer = (overrides: Partial<Record<string, unknown>> = {}) => ({
+  isLoaded: true,
+  duration: 225, // seconds
+  play: mockPlay,
+  pause: mockPause,
+  seekTo: mockSeekTo,
+  remove: mockRemove,
+  addListener: mockAddListener,
+  ...overrides,
+});
 
-jest.mock("expo-av", () => ({
-  Audio: {
-    Sound: {
-      createAsync: jest.fn(),
-    },
-  },
+jest.mock("expo-audio", () => ({
+  createAudioPlayer: jest.fn(),
 }));
 
-const { Audio } = jest.requireMock("expo-av");
+const { createAudioPlayer } = jest.requireMock("expo-audio") as {
+  createAudioPlayer: jest.Mock;
+};
 
 describe("useAudioPlayer", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    Audio.Sound.createAsync.mockResolvedValue({
-      sound: mockSoundInstance,
-      status: { isLoaded: true, durationMillis: 225000 },
-    });
-    mockPlayAsync.mockResolvedValue(undefined);
-    mockPauseAsync.mockResolvedValue(undefined);
-    mockSetPositionAsync.mockResolvedValue(undefined);
-    mockUnloadAsync.mockResolvedValue(undefined);
+    createAudioPlayer.mockReturnValue(createMockPlayer());
   });
 
   it("starts with initial state", () => {
@@ -51,20 +43,22 @@ describe("useAudioPlayer", () => {
     expect(result.current.error).toBeNull();
   });
 
-  it("loads sound and sets duration", async () => {
+  it("loads sound and sets duration via polling", async () => {
+    jest.useFakeTimers();
     const { result } = renderHook(() => useAudioPlayer());
 
     await act(async () => {
       await result.current.loadSound("test.mp3");
     });
 
-    expect(Audio.Sound.createAsync).toHaveBeenCalledWith(
-      { uri: "test.mp3" },
-      { shouldPlay: false },
-      expect.any(Function),
-    );
+    expect(createAudioPlayer).toHaveBeenCalledWith({ uri: "test.mp3" });
+
+    // Advance polling interval
+    act(() => { jest.advanceTimersByTime(200); });
+
     expect(result.current.isLoaded).toBe(true);
     expect(result.current.durationMs).toBe(225000);
+    jest.useRealTimers();
   });
 
   it("plays audio", async () => {
@@ -77,7 +71,7 @@ describe("useAudioPlayer", () => {
       await result.current.play();
     });
 
-    expect(mockSoundInstance.playAsync).toHaveBeenCalledTimes(1);
+    expect(mockPlay).toHaveBeenCalledTimes(1);
   });
 
   it("pauses audio", async () => {
@@ -90,7 +84,7 @@ describe("useAudioPlayer", () => {
       await result.current.pause();
     });
 
-    expect(mockSoundInstance.pauseAsync).toHaveBeenCalledTimes(1);
+    expect(mockPause).toHaveBeenCalledTimes(1);
   });
 
   it("seeks to position", async () => {
@@ -103,22 +97,27 @@ describe("useAudioPlayer", () => {
       await result.current.seekTo(60000);
     });
 
-    expect(mockSoundInstance.setPositionAsync).toHaveBeenCalledWith(60000);
+    // seekTo converts ms to seconds
+    expect(mockSeekTo).toHaveBeenCalledWith(60);
   });
 
   it("unloads sound", async () => {
+    jest.useFakeTimers();
     const { result } = renderHook(() => useAudioPlayer());
 
     await act(async () => {
       await result.current.loadSound("test.mp3");
     });
+    act(() => { jest.advanceTimersByTime(200); });
+
     await act(async () => {
       await result.current.unload();
     });
 
-    expect(mockSoundInstance.unloadAsync).toHaveBeenCalledTimes(1);
+    expect(mockRemove).toHaveBeenCalledTimes(1);
     expect(result.current.isLoaded).toBe(false);
     expect(result.current.isPlaying).toBe(false);
+    jest.useRealTimers();
   });
 
   it("does not load when URI is empty", async () => {
@@ -128,12 +127,14 @@ describe("useAudioPlayer", () => {
       await result.current.loadSound("");
     });
 
-    expect(Audio.Sound.createAsync).not.toHaveBeenCalled();
+    expect(createAudioPlayer).not.toHaveBeenCalled();
     expect(result.current.isLoaded).toBe(false);
   });
 
   it("sets error on load failure", async () => {
-    Audio.Sound.createAsync.mockRejectedValue(new Error("File not found"));
+    createAudioPlayer.mockImplementationOnce(() => {
+      throw new Error("File not found");
+    });
 
     const { result } = renderHook(() => useAudioPlayer());
 

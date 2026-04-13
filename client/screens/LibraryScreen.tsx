@@ -4,9 +4,9 @@ import {
   Text,
   View,
   FlatList,
+  Platform,
   Pressable,
   TextInput,
-  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,11 +16,11 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTheme } from "@/hooks/useTheme";
 import { usePractice } from "@/context/PracticeContext";
 import { SheetCard } from "@/components/SheetCard";
-import { SheetFormModal, type SheetFormData } from "@/components/SheetFormModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { EmptyState } from "@/components/EmptyState";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 import type { RootStackParamList } from "@/types/navigation";
+import { getLastSession } from "@/lib/practiceCardUtils";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -32,12 +32,10 @@ export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  const { sheets, addSheet, removeSheet, toggleFavorite } = usePractice();
+  const { sheets, sessions, removeSheet, toggleFavorite } = usePractice();
   const [search, setSearch] = useState("");
   const [activeFolder, setActiveFolder] = useState("All");
-  const [showAdd, setShowAdd] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
-
   const filtered = useMemo(() => sheets.filter((s) => {
     const matchFolder = activeFolder === "All" || s.folder === activeFolder;
     const matchSearch =
@@ -46,11 +44,6 @@ export default function LibraryScreen() {
       s.artist.toLowerCase().includes(search.toLowerCase());
     return matchFolder && matchSearch;
   }), [sheets, activeFolder, search]);
-
-  const handleAdd = useCallback(async (data: SheetFormData) => {
-    await addSheet(data);
-    setShowAdd(false);
-  }, [addSheet]);
 
   const handleDeletePress = useCallback((id: string, title: string) => {
     setDeleteTarget({ id, title });
@@ -68,8 +61,8 @@ export default function LibraryScreen() {
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Library</Text>
         <Pressable
-          onPress={() => setShowAdd(true)}
-          accessibilityLabel="Add new score"
+          onPress={() => navigation.navigate("PdfImport")}
+          accessibilityLabel="Import PDF"
           accessibilityRole="button"
           style={({ pressed }) => [styles.addBtn, { opacity: pressed ? 0.8 : 1 }]}
         >
@@ -146,9 +139,9 @@ export default function LibraryScreen() {
           <EmptyState
             icon="musical-notes-outline"
             title="No scores found"
-            message={search ? "Try a different search" : "Add your first sheet music"}
-            actionLabel={!search ? "Add Score" : undefined}
-            onAction={!search ? () => setShowAdd(true) : undefined}
+            message={search ? "Try a different search" : "Import a PDF to start practicing"}
+            actionLabel={!search ? "Import PDF" : undefined}
+            onAction={!search ? () => navigation.navigate("PdfImport") : undefined}
           />
         }
         renderItem={({ item }) => (
@@ -161,6 +154,7 @@ export default function LibraryScreen() {
               sheet={item}
               onPress={() => navigation.navigate("PracticeDetail", { sheetId: item.id })}
               onFavorite={() => toggleFavorite(item.id)}
+              lastAccuracy={getLastSession(sessions, item.id)?.accuracy}
             />
           </Pressable>
         )}
@@ -174,12 +168,6 @@ export default function LibraryScreen() {
         }
       />
 
-      <SheetFormModal
-        visible={showAdd}
-        onClose={() => setShowAdd(false)}
-        onSubmit={handleAdd}
-      />
-
       <ConfirmModal
         visible={!!deleteTarget}
         title="Delete Score"
@@ -191,6 +179,7 @@ export default function LibraryScreen() {
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteTarget(null)}
       />
+
     </View>
   );
 }

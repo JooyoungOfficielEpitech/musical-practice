@@ -35,6 +35,7 @@ const COLLAPSED_HEIGHT = 44;
 const EXPANDED_HEIGHT = 280;
 
 function getPanelWidth(screenWidth: number): number {
+  if (screenWidth >= 768) return 280;
   if (screenWidth >= 430) return 200;
   if (screenWidth >= 393) return 180;
   return 160;

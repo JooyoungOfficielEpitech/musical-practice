@@ -1,6 +1,28 @@
 import React from "react";
-import { render, fireEvent } from "@testing-library/react-native";
+import { render, fireEvent, act } from "@testing-library/react-native";
 import { Metronome } from "../../client/components/Metronome";
+
+const mockPlay = jest.fn();
+const mockSeekTo = jest.fn().mockResolvedValue(undefined);
+const mockRemove = jest.fn();
+const mockAddListener = jest.fn(() => ({ remove: jest.fn() }));
+
+jest.mock("expo-audio", () => ({
+  createAudioPlayer: jest.fn(() => ({
+    isLoaded: true,
+    duration: 0.08,
+    play: mockPlay,
+    seekTo: mockSeekTo,
+    remove: mockRemove,
+    addListener: mockAddListener,
+  })),
+}));
+
+jest.mock("expo-file-system/legacy", () => ({
+  cacheDirectory: "file:///cache/",
+  writeAsStringAsync: jest.fn().mockResolvedValue(undefined),
+  EncodingType: { Base64: "base64" },
+}));
 
 jest.mock("../../client/hooks/useTheme", () => ({
   useTheme: () => ({
@@ -29,7 +51,23 @@ jest.mock("expo-haptics", () => ({
   ImpactFeedbackStyle: { Medium: "medium", Light: "light" },
 }));
 
+const { createAudioPlayer } = jest.requireMock("expo-audio") as {
+  createAudioPlayer: jest.Mock;
+};
+
 describe("Metronome", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    createAudioPlayer.mockReturnValue({
+      isLoaded: true,
+      duration: 0.08,
+      play: mockPlay,
+      seekTo: mockSeekTo,
+      remove: mockRemove,
+      addListener: mockAddListener,
+    });
+  });
+
   it("renders with default BPM", () => {
     const { getByText } = render(<Metronome />);
     expect(getByText("120")).toBeTruthy();
@@ -68,6 +106,19 @@ describe("Metronome", () => {
     expect(onBpmChange).toHaveBeenCalledWith(30);
   });
 
+  it("increments BPM correctly on rapid successive taps", () => {
+    const onBpmChange = jest.fn();
+    const { getByLabelText, getByText } = render(
+      <Metronome initialBpm={120} onBpmChange={onBpmChange} />,
+    );
+    const incBtn = getByLabelText("Increase BPM by 1");
+    fireEvent.press(incBtn);
+    fireEvent.press(incBtn);
+    fireEvent.press(incBtn);
+    expect(getByText("123")).toBeTruthy();
+    expect(onBpmChange).toHaveBeenLastCalledWith(123);
+  });
+
   it("renders in compact mode without crashing", () => {
     const { getByText } = render(<Metronome compact />);
     expect(getByText("120")).toBeTruthy();
@@ -81,5 +132,30 @@ describe("Metronome", () => {
   it("renders start button", () => {
     const { getByLabelText } = render(<Metronome />);
     expect(getByLabelText("Start metronome")).toBeTruthy();
+  });
+
+  it("initializes two click sounds on mount", async () => {
+    render(<Metronome />);
+    await act(async () => {});
+    expect(createAudioPlayer).toHaveBeenCalledTimes(2);
+  });
+
+  it("plays click sound on each tick when started", async () => {
+    jest.useFakeTimers();
+    render(<Metronome initialBpm={120} />);
+    await act(async () => {});
+
+    const { getByLabelText } = render(<Metronome initialBpm={120} />);
+    await act(async () => {});
+
+    fireEvent.press(getByLabelText("Start metronome"));
+    await act(async () => {
+      jest.advanceTimersByTime(500);
+    });
+
+    // seekTo(0) + play() on each tick
+    expect(mockSeekTo).toHaveBeenCalled();
+    expect(mockPlay).toHaveBeenCalled();
+    jest.useRealTimers();
   });
 });

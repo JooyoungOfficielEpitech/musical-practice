@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { StyleSheet, Text, View, FlatList, Pressable, TextInput, Modal } from "react-native";
+import { StyleSheet, Text, View, FlatList, Pressable, TextInput, Modal, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { AudioPlayer } from "@/components/AudioPlayer";
@@ -28,6 +28,8 @@ function formatFileSize(bytes: number): string {
 
 export function RecordingsList({ recordings, onDelete, onRename }: RecordingsListProps) {
   const { colors } = useTheme();
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Recording | null>(null);
   const [renameTarget, setRenameTarget] = useState<Recording | null>(null);
@@ -142,7 +144,7 @@ export function RecordingsList({ recordings, onDelete, onRename }: RecordingsLis
       {/* Rename Modal */}
       <Modal visible={!!renameTarget} transparent animationType="fade">
         <View style={[styles.renameOverlay, { backgroundColor: colors.overlay }]}>
-          <View style={[styles.renameCard, { backgroundColor: colors.surface }]}>
+          <View style={[styles.renameCard, { backgroundColor: colors.surface, maxWidth: isTablet ? 500 : 320 }]}>
             <Text style={[styles.renameTitle, { color: colors.text }]}>Rename Recording</Text>
             <TextInput
               style={[

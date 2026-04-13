@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
+import { Audio } from "expo-av";
 import {
   Nunito_400Regular,
   Nunito_500Medium,
@@ -23,6 +24,7 @@ import { RootStackNavigator } from "@/navigation/RootStackNavigator";
 
 SplashScreen.preventAutoHideAsync();
 initSentry();
+Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
 
 function App() {
   const [fontsLoaded, fontError] = useFonts({

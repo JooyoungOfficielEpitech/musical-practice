@@ -121,8 +121,8 @@ export default function HomeScreen() {
             icon="document-text-outline"
             title="No scores yet"
             message="Upload your first sheet music to start practicing"
-            actionLabel="Add Score"
-            onAction={() => navigation.navigate("Library")}
+            actionLabel="Import PDF"
+            onAction={() => navigation.navigate("PdfImport")}
           />
         ) : (
           <FlatList
