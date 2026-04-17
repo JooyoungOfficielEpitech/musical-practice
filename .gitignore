@@ -42,3 +42,19 @@ yarn-error.*
 .vercel
 
 .env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+env/
+
+# OMR server output files
+tools/omr-server/output*.xml
+
+# Plans
+docs/plans/
