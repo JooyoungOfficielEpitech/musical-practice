@@ -320,6 +320,8 @@ def build_output(hermes_measures: list[ET.Element], target_count: int = 14) -> E
 
 def postprocess(raw_xml: str) -> str:
     """Main post-processing pipeline: strip repeats, inject tempo, fill empty measures."""
+    from pipeline.tie_reconstructor import reconstruct_ties  # local to avoid circular import
+
     try:
         root = ET.fromstring(raw_xml)
     except ET.ParseError as e:
@@ -328,4 +330,5 @@ def postprocess(raw_xml: str) -> str:
     strip_repeats(root)
     inject_tempo(root, tempo=94, sound_tempo=188)
     fill_empty_measures(root)
-    return ET.tostring(root, encoding="unicode", xml_declaration=True)
+    xml_str = ET.tostring(root, encoding="unicode", xml_declaration=True)
+    return reconstruct_ties(xml_str)

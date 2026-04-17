@@ -12,7 +12,7 @@ import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 
 interface InteractiveScoreProps {
   musicXml: string;
-  currentNoteIndex?: number;
+  positionMs?: number;   // original score time (ms) — cursor seeks by time, not note index
   onNotePress?: (noteIndex: number) => void;
   onReady?: () => void;
 }
@@ -23,8 +23,6 @@ type WebViewIncoming =
   | { type: "error"; message: string };
 
 function buildHtml(isDark: boolean): string {
-  const bg = "#FFFFFF";
-  const fg = "#1F2937";
   const cursorColor = isDark ? "#3B82F6" : "#2563EB";
 
   return `<!DOCTYPE html>
@@ -34,7 +32,7 @@ function buildHtml(isDark: boolean): string {
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    html, body { width:100%; height:100%; overflow-x:hidden; background:${bg}; color:${fg}; }
+    html, body { width:100%; height:100%; overflow-x:hidden; background:#FFFFFF !important; color:#1F2937; margin:0; padding:16px; }
     #score { width:100%; min-height:100%; }
     #error { display:none; padding:16px; color:#DC2626; font-family:sans-serif; font-size:14px; }
   </style>
@@ -42,144 +40,25 @@ function buildHtml(isDark: boolean): string {
 <body>
   <div id="score"></div>
   <div id="error"></div>
-  <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.8.6/build/opensheetmusicdisplay.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.8.6/build/opensheetmusicdisplay.min.js"><\/script>
   <script>
-    (function() {
-      var osmd = null;
-      var cursorNotes = [];
-
-      function sendMessage(msg) {
-        window.ReactNativeWebView.postMessage(JSON.stringify(msg));
-      }
-
-      function showError(message) {
-        document.getElementById('error').style.display = 'block';
-        document.getElementById('error').textContent = message;
-        sendMessage({ type: 'error', message: message });
-      }
-
-      function collectCursorNotes() {
-        cursorNotes = [];
-        if (!osmd || !osmd.cursor) return;
-        osmd.cursor.reset();
-        var idx = 0;
-        while (!osmd.cursor.Iterator.EndReached) {
-          cursorNotes.push(idx);
-          osmd.cursor.next();
-          idx++;
-        }
-        osmd.cursor.reset();
-      }
-
-      function setCursorPosition(noteIndex) {
-        if (!osmd || !osmd.cursor) return;
-        osmd.cursor.reset();
-        osmd.cursor.show();
-        for (var i = 0; i < noteIndex && !osmd.cursor.Iterator.EndReached; i++) {
-          osmd.cursor.next();
-        }
-        var el = osmd.cursor.cursorElement;
-        if (el) {
-          el.style.background = '${cursorColor}';
-          el.style.opacity = '0.4';
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }
-
-      function setupNoteClickHandlers() {
-        var svgContainer = document.getElementById('score');
-        if (!svgContainer) return;
-        svgContainer.addEventListener('click', function(e) {
-          if (!osmd || !osmd.cursor) return;
-          var clickX = e.pageX;
-          var clickY = e.pageY;
-          var bestIdx = -1;
-          var bestDist = Infinity;
-
-          osmd.cursor.reset();
-          var idx = 0;
-          while (!osmd.cursor.Iterator.EndReached) {
-            var el = osmd.cursor.cursorElement;
-            if (el) {
-              var rect = el.getBoundingClientRect();
-              var cx = rect.left + rect.width / 2 + window.scrollX;
-              var cy = rect.top + rect.height / 2 + window.scrollY;
-              var dist = Math.sqrt(Math.pow(clickX - cx, 2) + Math.pow(clickY - cy, 2));
-              if (dist < bestDist) {
-                bestDist = dist;
-                bestIdx = idx;
-              }
-            }
-            osmd.cursor.next();
-            idx++;
-          }
-
-          if (bestIdx >= 0 && bestDist < 80) {
-            setCursorPosition(bestIdx);
-            sendMessage({ type: 'notePress', noteIndex: bestIdx });
-          }
-        });
-      }
-
-      function loadXml(xml) {
-        try {
-          if (!osmd) {
-            osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay('score', {
-              autoResize: true,
-              backend: 'svg',
-              drawTitle: false,
-              drawComposer: false,
-              drawCredits: false,
-              drawPartNames: false,
-              drawPartAbbreviations: false,
-            });
-          }
-          osmd.load(xml).then(function() {
-            osmd.render();
-            osmd.cursor.show();
-            osmd.cursor.cursorElement.style.background = '${cursorColor}';
-            osmd.cursor.cursorElement.style.opacity = '0.4';
-            collectCursorNotes();
-            setupNoteClickHandlers();
-            sendMessage({ type: 'ready' });
-          }).catch(function(err) {
-            showError('Failed to render score: ' + err.message);
-          });
-        } catch(err) {
-          showError('Failed to load score: ' + err.message);
-        }
-      }
-
-      window.addEventListener('message', function(e) {
-        try {
-          var msg = JSON.parse(e.data);
-          if (msg.type === 'loadXml') {
-            loadXml(msg.xml);
-          } else if (msg.type === 'setCursor') {
-            setCursorPosition(msg.noteIndex);
-          }
-        } catch(err) {}
-      });
-
-      document.addEventListener('message', function(e) {
-        try {
-          var msg = JSON.parse(e.data);
-          if (msg.type === 'loadXml') {
-            loadXml(msg.xml);
-          } else if (msg.type === 'setCursor') {
-            setCursorPosition(msg.noteIndex);
-          }
-        } catch(err) {}
-      });
-    })();
-  </script>
+    var osmd=null,timeTable=[];function sendMsg(m){window.ReactNativeWebView.postMessage(JSON.stringify(m));}
+    function showErr(e){document.getElementById('error').style.display='block';document.getElementById('error').textContent=e;sendMsg({type:'error',message:e});}
+    function buildTimeTable(){timeTable=[];if(!osmd||!osmd.cursor)return;var bpm=(osmd.Sheet&&osmd.Sheet.DefaultStartTempoInBpm)||120;var secPerWholeNote=4*60/bpm;osmd.cursor.reset();while(!osmd.cursor.Iterator.EndReached){var ts=osmd.cursor.Iterator.currentTimeStamp;timeTable.push(ts.realValue*secPerWholeNote*1000);osmd.cursor.next();}osmd.cursor.reset();}
+    function stepCursor(step){if(!osmd||!osmd.cursor)return;osmd.cursor.reset();osmd.cursor.show();for(var i=0;i<step&&!osmd.cursor.Iterator.EndReached;i++)osmd.cursor.next();var el=osmd.cursor.cursorElement;if(el){el.style.backgroundColor='rgba(37,99,235,0.12)';el.style.borderLeft='3px solid ${cursorColor}';el.style.width='100%';el.style.opacity='1';el.scrollIntoView({behavior:'smooth',block:'center'});}}
+    function seekToMs(ms){if(!osmd||!osmd.cursor||timeTable.length===0)return;var step=0;for(var i=timeTable.length-1;i>=0;i--){if(ms>=timeTable[i]){step=i;break;}}stepCursor(step);}
+    function clickInit(){var sc=document.getElementById('score');if(!sc)return;sc.addEventListener('click',function(e){if(!osmd||!osmd.cursor)return;var cx=e.pageX,cy=e.pageY,best=-1,dist=Infinity;osmd.cursor.reset();var i=0;while(!osmd.cursor.Iterator.EndReached){var el=osmd.cursor.cursorElement;if(el){var r=el.getBoundingClientRect(),cX=r.left+r.width/2+window.scrollX,cY=r.top+r.height/2+window.scrollY,d=Math.sqrt(Math.pow(cx-cX,2)+Math.pow(cy-cY,2));if(d<dist){dist=d;best=i;}}osmd.cursor.next();i++;}if(best>=0&&dist<80){stepCursor(best);sendMsg({type:'notePress',noteIndex:best});}});}
+    function loadXml(xml){try{if(!osmd)osmd=new opensheetmusicdisplay.OpenSheetMusicDisplay('score',{autoResize:true,backend:'svg',drawTitle:false,drawComposer:false,drawCredits:false,drawPartNames:false,drawPartAbbreviations:false});osmd.load(xml).then(function(){osmd.render();osmd.cursor.show();stepCursor(0);buildTimeTable();clickInit();sendMsg({type:'ready'});}).catch(function(e){showErr('Render failed: '+e.message);});}catch(e){showErr('Load failed: '+e.message);}}
+    window.addEventListener('message',function(e){try{var m=JSON.parse(e.data);if(m.type==='loadXml')loadXml(m.xml);else if(m.type==='setPositionMs')seekToMs(m.positionMs);}catch(e){}});
+    document.addEventListener('message',function(e){try{var m=JSON.parse(e.data);if(m.type==='loadXml')loadXml(m.xml);else if(m.type==='setPositionMs')seekToMs(m.positionMs);}catch(e){}});
+  <\/script>
 </body>
 </html>`;
 }
 
 export const InteractiveScore = memo(function InteractiveScore({
   musicXml,
-  currentNoteIndex,
+  positionMs,
   onNotePress,
   onReady,
 }: InteractiveScoreProps) {
@@ -231,28 +110,19 @@ export const InteractiveScore = memo(function InteractiveScore({
     [onReady, onNotePress],
   );
 
-  // Update cursor position when currentNoteIndex changes
-  const prevNoteIndexRef = useRef<number | undefined>(undefined);
-  if (
-    currentNoteIndex !== undefined &&
-    currentNoteIndex !== prevNoteIndexRef.current &&
-    readyRef.current
-  ) {
-    prevNoteIndexRef.current = currentNoteIndex;
-    sendToWebView({ type: "setCursor", noteIndex: currentNoteIndex });
+  // Update cursor when playback position changes
+  const prevPositionRef = useRef<number | undefined>(undefined);
+  if (positionMs !== undefined && positionMs !== prevPositionRef.current && readyRef.current) {
+    prevPositionRef.current = positionMs;
+    sendToWebView({ type: "setPositionMs", positionMs });
   }
 
   return (
-    <View
-      style={[
-        styles.container,
-        { backgroundColor: colors.backgroundSecondary },
-      ]}
-    >
+    <View style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
       <WebView
         ref={webViewRef}
         source={{ html }}
-        style={[styles.webView, { width: width - Spacing.xl * 2 }]}
+        style={styles.webView}
         originWhitelist={["*"]}
         javaScriptEnabled
         domStorageEnabled
@@ -271,9 +141,7 @@ export const InteractiveScore = memo(function InteractiveScore({
       )}
       {error && (
         <View style={styles.errorOverlay}>
-          <Text style={[styles.errorText, { color: colors.error }]}>
-            {error}
-          </Text>
+          <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
         </View>
       )}
     </View>
@@ -281,15 +149,8 @@ export const InteractiveScore = memo(function InteractiveScore({
 });
 
 const styles = StyleSheet.create({
-  container: {
-    borderRadius: BorderRadius.sm,
-    overflow: "hidden",
-    minHeight: 300,
-  },
-  webView: {
-    minHeight: 300,
-    backgroundColor: "transparent",
-  },
+  container: { borderRadius: BorderRadius.sm, overflow: "hidden", flex: 1 },
+  webView: { flex: 1, backgroundColor: "transparent" },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
@@ -301,8 +162,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: Spacing.lg,
   },
-  errorText: {
-    ...Typography.body,
-    textAlign: "center",
-  },
+  errorText: { ...Typography.body, textAlign: "center" },
 });

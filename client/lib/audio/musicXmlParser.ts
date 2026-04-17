@@ -199,7 +199,7 @@ function getMeasureElements(measureXml: string): MeasureElement[] {
  * key signatures, and basic repeats.
  */
 export function parseMusicXml(xmlString: string): NoteSequence {
-  // Parse global attributes
+  // Parse global attributes (use first occurrence — applies to all parts)
   const divisionsStr = getTagContent(xmlString, "divisions");
   const divisions = divisionsStr ? parseInt(divisionsStr, 10) : DEFAULT_DIVISIONS;
 
@@ -212,15 +212,10 @@ export function parseMusicXml(xmlString: string): NoteSequence {
   const fifths = fifthsStr ? parseInt(fifthsStr, 10) : 0;
   const keyAccidentals = getKeyAccidentals(fifths);
 
-  // Use only the first <part> so multi-part scores (treble+bass) don't mix measures
-  const firstPartMatch = xmlString.match(/<part\b[^>]*>([\s\S]*?)<\/part>/);
-  const partXml = firstPartMatch ? firstPartMatch[1] : xmlString;
-  const measures = getAllMatches(partXml, "measure");
+  // Collect ALL <part> elements — parse each independently, then merge
+  const partMatches = [...xmlString.matchAll(/<part\b[^>]*>([\s\S]*?)<\/part>/g)];
+  const allPartXmls = partMatches.length > 0 ? partMatches.map((m) => m[1]) : [xmlString];
 
-  // Expand repeats to get the ordered list of measure indices
-  const measureOrder = expandRepeats(measures);
-
-  // Per-voice state
   interface VoiceState {
     currentDivision: number;
     tiedPitch: string | null;
@@ -231,41 +226,46 @@ export function parseMusicXml(xmlString: string): NoteSequence {
     tiedVelocity: number;
   }
 
-  const voiceStates = new Map<string, VoiceState>();
-  let currentVelocity = DEFAULT_VELOCITY;
-
-  function getVoiceState(voice: string): VoiceState {
-    if (!voiceStates.has(voice)) {
-      voiceStates.set(voice, {
-        currentDivision: 0,
-        tiedPitch: null,
-        tiedStartDivision: 0,
-        tiedDuration: 0,
-        tiedMidi: 0,
-        tiedFrequency: 0,
-        tiedVelocity: DEFAULT_VELOCITY,
-      });
-    }
-    return voiceStates.get(voice)!;
-  }
-
   const sequence: NoteSequence = [];
 
-  for (const measureIdx of measureOrder) {
-    const measure = measures[measureIdx];
-    const elements = getMeasureElements(measure);
+  for (const partXml of allPartXmls) {
+    const measures = getAllMatches(partXml, "measure");
+    const measureOrder = expandRepeats(measures);
 
-    // Track last non-chord note's startTime per voice for chord handling
-    const lastNoteStartDivision = new Map<string, number>();
+    // Fresh voice state per part
+    const voiceStates = new Map<string, VoiceState>();
+    let currentVelocity = DEFAULT_VELOCITY;
 
-    for (const element of elements) {
-      if (element.type === "direction") {
-        const dynVelocity = parseDynamicsFromDirection(element.xml);
-        if (dynVelocity !== null) {
-          currentVelocity = dynVelocity;
-        }
-        continue;
+    function getVoiceState(voice: string): VoiceState {
+      if (!voiceStates.has(voice)) {
+        voiceStates.set(voice, {
+          currentDivision: 0,
+          tiedPitch: null,
+          tiedStartDivision: 0,
+          tiedDuration: 0,
+          tiedMidi: 0,
+          tiedFrequency: 0,
+          tiedVelocity: DEFAULT_VELOCITY,
+        });
       }
+      return voiceStates.get(voice)!;
+    }
+
+    for (const measureIdx of measureOrder) {
+      const measure = measures[measureIdx];
+      const elements = getMeasureElements(measure);
+
+      // Track last non-chord note's startTime per voice for chord handling
+      const lastNoteStartDivision = new Map<string, number>();
+
+      for (const element of elements) {
+        if (element.type === "direction") {
+          const dynVelocity = parseDynamicsFromDirection(element.xml);
+          if (dynVelocity !== null) {
+            currentVelocity = dynVelocity;
+          }
+          continue;
+        }
 
       // element.type === "note"
       const noteXml = element.xml;
@@ -413,27 +413,28 @@ export function parseMusicXml(xmlString: string): NoteSequence {
     }
   }
 
-  // Flush any remaining tied notes across all voices
-  for (const state of voiceStates.values()) {
-    if (state.tiedPitch !== null) {
-      sequence.push({
-        pitch: state.tiedPitch,
-        midiNumber: state.tiedMidi,
-        frequency: state.tiedFrequency,
-        startTime: state.tiedStartDivision * secondsPerDivision,
-        duration: state.tiedDuration * secondsPerDivision,
-        velocity: state.tiedVelocity,
-      });
+    // Flush any remaining tied notes across all voices in this part
+    for (const state of voiceStates.values()) {
+      if (state.tiedPitch !== null) {
+        sequence.push({
+          pitch: state.tiedPitch,
+          midiNumber: state.tiedMidi,
+          frequency: state.tiedFrequency,
+          startTime: state.tiedStartDivision * secondsPerDivision,
+          duration: state.tiedDuration * secondsPerDivision,
+          velocity: state.tiedVelocity,
+        });
+      }
     }
-  }
+  } // end of parts loop
 
-  // Sort by startTime for proper playback order (multiple voices may interleave)
+  // Sort merged notes from all parts by startTime
   sequence.sort((a, b) => a.startTime - b.startTime || a.midiNumber - b.midiNumber);
 
   const totalDuration = sequence.length > 0
     ? Math.max(...sequence.map((n) => n.startTime + n.duration))
     : 0;
-  console.log(`[MusicXmlParser] parsed ${measures.length} measures → ${sequence.length} notes, tempo=${tempo}, divisions=${divisions}, totalDuration=${totalDuration.toFixed(2)}s`);
+  console.log(`[MusicXmlParser] parsed ${allPartXmls.length} parts → ${sequence.length} notes, tempo=${tempo}, divisions=${divisions}, totalDuration=${totalDuration.toFixed(2)}s`);
   if (sequence.length > 0) {
     console.log(`[MusicXmlParser] first note: ${sequence[0].pitch} at ${sequence[0].startTime.toFixed(3)}s dur=${sequence[0].duration.toFixed(3)}s`);
     const last = sequence[sequence.length - 1];

@@ -163,6 +163,46 @@ export const Typography = {
   },
 } as const;
 
+export const Fonts = {
+  heading: "Righteous_400Regular",
+  body: "Poppins_400Regular",
+  bodyMedium: "Poppins_500Medium",
+  bodySemiBold: "Poppins_600SemiBold",
+  bodyBold: "Poppins_700Bold",
+} as const;
+
+export const ClayShadow = Platform.select({
+  ios: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 32,
+  },
+  android: { elevation: 12 },
+  default: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 32,
+  },
+})!;
+
+export const ClayShadowSmall = Platform.select({
+  ios: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+  },
+  android: { elevation: 4 },
+  default: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+  },
+})!;
+
 export const Shadows = {
   sm: Platform.select({
     ios: {

@@ -30,7 +30,7 @@ export default function PracticeDetailScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const route = useRoute<PracticeDetailRouteProp>();
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const { width: screenWidth } = useWindowDimensions();
   const { sheetId } = route.params;
   const navigation = useNavigation();
   const { sheets, removeRecording, renameRecording, refreshData, loading } = usePractice();
@@ -43,9 +43,6 @@ export default function PracticeDetailScreen() {
     handleDeleteConfirm, handleEdit, audioMode, musicXmlContent,
     isListening, currentPitch, pitchError, sessionAccuracy, isRecording, currentBpm, setCurrentBpm,
   } = state;
-
-  const topBarHeight = 56;
-  const practiceContentHeight = screenHeight - insets.top;
 
   if (loading) {
     return (
@@ -78,25 +75,16 @@ export default function PracticeDetailScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.backgroundDefault, paddingTop: insets.top }]}>
-      {isPracticing ? (
+      {isPracticing && musicXmlContent ? (
         <PracticeActiveView
-          sheet={sheet}
-          audioMode={audioMode}
-          musicXmlContent={musicXmlContent}
+          title={sheet.title}
+          musicXml={musicXmlContent}
           synthPlayer={synthPlayer}
           noteEditor={noteEditor}
-          editMode={editMode}
-          handleNotePress={handleNotePress}
           isListening={isListening}
           currentPitch={currentPitch}
-          pitchError={pitchError}
-          sessionAccuracy={sessionAccuracy}
-          isRecording={isRecording}
           currentBpm={currentBpm}
-          setCurrentBpm={setCurrentBpm}
-          topBarHeight={topBarHeight}
-          practiceContentHeight={practiceContentHeight}
-          screenWidth={screenWidth}
+          audioUrl={sheet.audioUri}
           onGoBack={() => navigation.goBack()}
         />
       ) : (

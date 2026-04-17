@@ -1,7 +1,7 @@
 /**
  * useMultiOmrJobs — orchestrates N parallel OMR jobs for a multi-section PDF import.
  *
- * Flow: upload PDF once → submit N jobs (one per section) → track via Realtime
+ * Flow: upload PDF once → submit N jobs (one per section) → track via Supabase Realtime
  *       → call onJobDone(index, musicXmlUri) as each job completes.
  */
 import { useCallback, useRef, useState } from "react";
@@ -12,7 +12,7 @@ import type { PageRange } from "@/lib/pdfImport";
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface SectionInput {
-  pageRange: PageRange;
+  pageRange?: PageRange; // undefined = whole document (server processes all pages)
   title: string;
 }
 
@@ -21,8 +21,9 @@ export type MultiJobStatus = "idle" | "uploading" | "running" | "done" | "failed
 export interface SectionJobState {
   title: string;
   status: "pending" | "queued" | "processing" | "done" | "failed";
-  pageRange: [number, number];
-  startedAt?: number; // epoch ms when job entered "processing"
+  pageRange: [number, number] | null; // null = whole document
+  progressPercent: number; // 0–100, written by server via Supabase Realtime
+  startedAt?: number;      // epoch ms when job first entered "processing"
   musicXmlUri?: string;
   error?: string;
 }
@@ -48,10 +49,13 @@ export function useMultiOmrJobs(): UseMultiOmrJobsResult {
 
   type Channel = ReturnType<NonNullable<typeof supabase>["channel"]>;
   const channelsRef = useRef<Channel[]>([]);
+  const pollsRef = useRef<ReturnType<typeof setInterval>[]>([]);
 
   const _unsubscribeAll = useCallback(() => {
     channelsRef.current.forEach((ch) => ch.unsubscribe());
     channelsRef.current = [];
+    pollsRef.current.forEach((id) => clearInterval(id));
+    pollsRef.current = [];
   }, []);
 
   const _updateJob = useCallback(
@@ -67,63 +71,52 @@ export function useMultiOmrJobs(): UseMultiOmrJobsResult {
         (j) => j.status === "done" || j.status === "failed",
       );
       if (!allSettled) return;
-      const anyFailed = updatedJobs.some((j) => j.status === "failed");
-      setOverallStatus(anyFailed ? "failed" : "done");
+      setOverallStatus(updatedJobs.some((j) => j.status === "failed") ? "failed" : "done");
     },
     [],
   );
 
-  const _pollJob = useCallback(
+  const _subscribeJob = useCallback(
     (
       jobId: string,
       index: number,
       sheetId: string,
       onJobDone: (index: number, musicXmlUri: string) => Promise<void>,
     ) => {
-      if (!supabase) return;
+      const sb = supabase;
+      if (!sb) return;
 
-      const intervalId = setInterval(async () => {
-        try {
-          const { data } = await supabase
-            .from("omr_jobs")
-            .select("status, result_storage_path, error")
-            .eq("id", jobId)
-            .single();
+      type JobRow = { status: string; progress_percent: number; result_storage_path: string | null; error: string | null };
 
-          if (!data) return;
-          const status = data.status as string;
-          console.log(`[useMultiOmrJobs] job ${index} polled status: ${status}`);
+      let settled = false;
+      let pollInterval: ReturnType<typeof setInterval> | null = null;
+      // channel declared early so handleRow closure can reference it
+      let channel: ReturnType<NonNullable<typeof supabase>["channel"]>;
 
-          if (status === "processing") {
-            _updateJob(index, { status: "processing" });
-          } else if (status === "done") {
-            clearInterval(intervalId);
-            const resultPath = data.result_storage_path as string;
-            try {
-              const uri = await downloadResult(resultPath, sheetId);
-              _updateJob(index, { status: "done", musicXmlUri: uri });
-              await onJobDone(index, uri);
-              setJobs((current) => {
-                _checkAllSettled(current.map((j, i) =>
-                  i === index ? { ...j, status: "done" as const, musicXmlUri: uri } : j,
-                ));
-                return current;
-              });
-            } catch (err) {
-              clearInterval(intervalId);
-              const error = err instanceof Error ? err.message : "Download failed";
-              console.error(`[useMultiOmrJobs] job ${index} download failed:`, err);
-              _updateJob(index, { status: "failed", error });
-              setJobs((current) => {
-                _checkAllSettled(current.map((j, i) =>
-                  i === index ? { ...j, status: "failed" as const, error } : j,
-                ));
-                return current;
-              });
-            }
-          } else if (status === "failed") {
-            clearInterval(intervalId);
-            const error = (data.error as string | null) ?? "OMR processing failed";
+      const clearPoll = () => {
+        if (pollInterval !== null) { clearInterval(pollInterval); pollInterval = null; }
+      };
+
+      const handleRow = async (row: JobRow) => {
+        if (settled) return;
+        if (row.status === "processing") {
+          _updateJob(index, { status: "processing", progressPercent: row.progress_percent ?? 0, startedAt: Date.now() });
+        } else if (row.status === "done") {
+          settled = true;
+          clearPoll();
+          channel.unsubscribe();
+          try {
+            const uri = await downloadResult(row.result_storage_path as string, sheetId);
+            _updateJob(index, { status: "done", progressPercent: 100, musicXmlUri: uri });
+            await onJobDone(index, uri);
+            setJobs((current) => {
+              _checkAllSettled(current.map((j, i) =>
+                i === index ? { ...j, status: "done" as const, progressPercent: 100, musicXmlUri: uri } : j,
+              ));
+              return current;
+            });
+          } catch (err) {
+            const error = err instanceof Error ? err.message : "Download failed";
             _updateJob(index, { status: "failed", error });
             setJobs((current) => {
               _checkAllSettled(current.map((j, i) =>
@@ -132,12 +125,49 @@ export function useMultiOmrJobs(): UseMultiOmrJobsResult {
               return current;
             });
           }
-        } catch (err) {
-          console.error(`[useMultiOmrJobs] job ${index} poll error:`, err);
+        } else if (row.status === "failed") {
+          settled = true;
+          clearPoll();
+          channel.unsubscribe();
+          const error = row.error ?? "OMR processing failed";
+          _updateJob(index, { status: "failed", error });
+          setJobs((current) => {
+            _checkAllSettled(current.map((j, i) =>
+              i === index ? { ...j, status: "failed" as const, error } : j,
+            ));
+            return current;
+          });
         }
-      }, 3000);
+      };
 
-      channelsRef.current.push({ unsubscribe: () => clearInterval(intervalId) } as unknown as Channel);
+      const pollJobState = async () => {
+        if (settled) { clearPoll(); return; }
+        const { data } = await sb.from("omr_jobs").select("status, progress_percent, result_storage_path, error").eq("id", jobId).single();
+        if (data) await handleRow(data as JobRow);
+      };
+
+      channel = sb
+        .channel(`omr_job_${jobId}_${index}`)
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "omr_jobs", filter: `id=eq.${jobId}` },
+          async (payload) => {
+            console.log(`[Realtime] job ${jobId} UPDATE:`, payload.new);
+            await handleRow(payload.new as JobRow);
+          },
+        )
+        .subscribe(async (status, err) => {
+          console.log(`[Realtime] job ${jobId} status:`, status, err ?? "");
+          if (status !== "SUBSCRIBED") return;
+          // Immediate catchup + polling fallback (guards against Realtime delivery gaps)
+          await pollJobState();
+          if (!settled) {
+            pollInterval = setInterval(pollJobState, 3000);
+            pollsRef.current.push(pollInterval);
+          }
+        });
+
+      channelsRef.current.push(channel);
     },
     [_updateJob, _checkAllSettled],
   );
@@ -149,7 +179,9 @@ export function useMultiOmrJobs(): UseMultiOmrJobsResult {
       onJobDone: (index: number, musicXmlUri: string) => Promise<void>,
     ) => {
       setOverallStatus("uploading");
-      setJobs(sections.map((s) => ({ title: s.title, status: "pending" })));
+      setJobs(sections.map((s) => ({
+        title: s.title, status: "pending", pageRange: s.pageRange ?? null, progressPercent: 0,
+      })));
 
       (async () => {
         try {
@@ -159,9 +191,9 @@ export function useMultiOmrJobs(): UseMultiOmrJobsResult {
           for (let i = 0; i < sections.length; i++) {
             const section = sections[i];
             const sheetId = `section-${Date.now()}-${i}`;
-            const jobId = await submitOmrJob(storagePath, [section.pageRange]);
+            const jobId = await submitOmrJob(storagePath, section.pageRange ? [section.pageRange] : []);
             _updateJob(i, { status: "queued" });
-            _pollJob(jobId, i, sheetId, onJobDone);
+            _subscribeJob(jobId, i, sheetId, onJobDone);
           }
 
           setOverallStatus("running");
@@ -174,7 +206,7 @@ export function useMultiOmrJobs(): UseMultiOmrJobsResult {
         }
       })();
     },
-    [_updateJob, _pollJob],
+    [_updateJob, _subscribeJob],
   );
 
   const reset = useCallback(() => {

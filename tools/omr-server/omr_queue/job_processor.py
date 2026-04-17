@@ -23,6 +23,21 @@ RESULT_BUCKET = "omr-results"
 _MULTI_CHAR_TYPES = {"vocal_score", "choral_satb"}
 
 
+def _make_progress_reporter(client: Client, job_id: str):
+    """Returns callable (pct: int) -> None that writes progress_percent to omr_jobs.
+
+    Failures are logged but non-fatal — job processing continues regardless.
+    """
+    def report(pct: int) -> None:
+        try:
+            client.table("omr_jobs").update(
+                {"progress_percent": pct}
+            ).eq("id", job_id).execute()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Progress update failed (non-fatal): %s", exc)
+    return report
+
+
 def process_job(job: dict, client: Client) -> str:
     """Download PDF, run OMR on each page range, upload combined MusicXML.
 
@@ -49,11 +64,12 @@ def process_job(job: dict, client: Client) -> str:
             fh.write(pdf_bytes)
 
         chunks = pdf_to_png(local_pdf, page_ranges, tmp_dir)
+        report_progress = _make_progress_reporter(client, job_id)
 
         if score_type in _MULTI_CHAR_TYPES:
-            result_xml = _run_vocal_score_pipeline(chunks, tmp_dir, title)
+            result_xml = _run_vocal_score_pipeline(chunks, tmp_dir, title, report_progress)
         else:
-            result_xml = _run_simple_pipeline(chunks, tmp_dir, title)
+            result_xml = _run_simple_pipeline(chunks, tmp_dir, title, report_progress)
 
         result_path = f"{job_id}.musicxml"
         _upload_result(client, result_path, result_xml)
@@ -121,6 +137,7 @@ def _run_vocal_score_pipeline(
     chunks: list[list[str]],
     tmp_dir: str,
     title: str,
+    report_progress=None,
 ) -> str:
     """Full multi-character pipeline: OCR label detection + system-level alignment.
 
@@ -135,9 +152,12 @@ def _run_vocal_score_pipeline(
 
     # Process pages sequentially to maintain deterministic sys_offset ordering
     # (character-level parallelism is inside _process_vocal_page)
+    total_pages = len(all_pages)
     sys_offset = 0
-    for png_path in all_pages:
+    for page_idx, png_path in enumerate(all_pages):
         char_sys, g_indices = _process_vocal_page(png_path, tmp_dir, sys_offset)
+        if report_progress and total_pages > 0:
+            report_progress(round((page_idx + 1) / total_pages * 90))
         if g_indices:
             sys_offset = max(g_indices) + 1
         for char, sys_map in char_sys.items():
@@ -147,6 +167,9 @@ def _run_vocal_score_pipeline(
             for sub in _expand_compound(char):
                 all_known_chars.add(sub)
         all_sys_indices.extend(g_indices)
+
+    if report_progress:
+        report_progress(95)
 
     if not all_known_chars:
         raise OmrQueueError("No characters detected across all pages")
@@ -193,6 +216,7 @@ def _run_simple_pipeline(
     chunks: list[list[str]],
     tmp_dir: str,
     title: str,
+    report_progress=None,
 ) -> str:
     """Single-staff pipeline for piano_vocal / lead_sheet score types.
 
@@ -200,17 +224,25 @@ def _run_simple_pipeline(
     and merges all pages into a single-part MusicXML.
     """
     all_pages = [path for chunk in chunks for path in chunk]
-    max_workers = min(len(all_pages), os.cpu_count() or 4)
+    total_pages = len(all_pages)
+    max_workers = min(total_pages, os.cpu_count() or 4)
     page_measure_lists = []
+    completed_count = 0
     with ThreadPoolExecutor(max_workers=max(1, max_workers)) as ex:
         futures = {ex.submit(_process_simple_page, p, tmp_dir): p for p in all_pages}
         for future in as_completed(futures):
+            completed_count += 1
+            if report_progress and total_pages > 0:
+                report_progress(round(completed_count / total_pages * 90))
             try:
                 measures = future.result()
                 if measures:
                     page_measure_lists.append(measures)
             except Exception as exc:
                 logger.warning("Page processing failed: %s — skipping", exc)
+
+    if report_progress:
+        report_progress(95)
 
     if not page_measure_lists:
         raise OmrQueueError("OMR produced no output — all pages failed or were unreadable")

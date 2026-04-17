@@ -312,13 +312,12 @@ def process_single_staff(
     if output_dir:
         cv2.imwrite(os.path.join(output_dir, f"{tag}_cropped.png"), staff_image)
 
-    # x-notehead replacement then multi-strategy OMR for best quality
+    # x-notehead replacement then direct OMR on clean image
     processed = replace_x_noteheads(staff_image)
-    try:
-        raw_xml, score, strategy = run_best_strategy(processed)
-        log.info(f"  [{tag}] best_strategy={strategy} score={score:.1f}")
-    except RuntimeError:
-        raw_xml = None
+    with tempfile.TemporaryDirectory() as _omr_dir:
+        _img_path = os.path.join(_omr_dir, f"{tag}.png")
+        cv2.imwrite(_img_path, processed)
+        raw_xml = run_homr(_img_path, _omr_dir)
 
     if raw_xml is None:
         if character in COMPOUND_VOICES:

@@ -11,6 +11,7 @@ from pipeline.postprocessor import (
     pitch_to_midi,
     note_to_midi,
 )
+from pipeline.tie_reconstructor import reconstruct_ties
 
 # ── Fixtures ────────────────────────────────────────────────────────────
 
@@ -168,3 +169,115 @@ class TestPostprocess:
         root = ET.fromstring(result)
         assert len(root.findall(".//repeat")) == 0
         assert root.find(".//sound[@tempo]") is not None
+
+    def test_postprocess_calls_reconstruct_ties(self):
+        """postprocess() output should have tie markings when same pitch crosses barline."""
+        result = postprocess(XML_UNTIED_CROSS_BARLINE)
+        root = ET.fromstring(result)
+        ties = root.findall(".//tie")
+        assert len(ties) >= 2, "Expected at least start+stop tie after postprocess"
+
+
+# ── Tie Reconstruction fixtures ──────────────────────────────────────────
+
+# Two C4 whole notes across a barline — no ties yet (divisions=1 so whole=1 beat
+# for simplicity; time sig 1/1 so each measure is exactly filled by one whole note).
+XML_UNTIED_CROSS_BARLINE = """\
+<?xml version='1.0' encoding='utf-8'?>
+<score-partwise version="3.1">
+  <part-list><score-part id="P1"><part-name>Test</part-name></score-part></part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <time><beats>1</beats><beat-type>1</beat-type></time>
+      </attributes>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>whole</type></note>
+    </measure>
+    <measure number="2">
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>whole</type></note>
+    </measure>
+  </part>
+</score-partwise>"""
+
+# Two different pitches — should NOT gain ties.
+XML_DIFFERENT_PITCHES = """\
+<?xml version='1.0' encoding='utf-8'?>
+<score-partwise version="3.1">
+  <part-list><score-part id="P1"><part-name>Test</part-name></score-part></part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <time><beats>1</beats><beat-type>1</beat-type></time>
+      </attributes>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>whole</type></note>
+    </measure>
+    <measure number="2">
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>1</duration><type>whole</type></note>
+    </measure>
+  </part>
+</score-partwise>"""
+
+
+class TestReconstructTies:
+    def test_adds_tie_start_on_last_note_of_measure(self):
+        result = reconstruct_ties(XML_UNTIED_CROSS_BARLINE)
+        root = ET.fromstring(result)
+        measures = root.findall(".//measure")
+        last_note_m1 = measures[0].findall("note")[-1]
+        ties = last_note_m1.findall("tie")
+        assert any(t.get("type") == "start" for t in ties), \
+            "Expected tie type='start' on last note of measure 1"
+
+    def test_adds_tie_stop_on_first_note_of_next_measure(self):
+        result = reconstruct_ties(XML_UNTIED_CROSS_BARLINE)
+        root = ET.fromstring(result)
+        measures = root.findall(".//measure")
+        first_note_m2 = measures[1].findall("note")[0]
+        ties = first_note_m2.findall("tie")
+        assert any(t.get("type") == "stop" for t in ties), \
+            "Expected tie type='stop' on first note of measure 2"
+
+    def test_adds_tied_notation_on_start_note(self):
+        result = reconstruct_ties(XML_UNTIED_CROSS_BARLINE)
+        root = ET.fromstring(result)
+        measures = root.findall(".//measure")
+        last_note_m1 = measures[0].findall("note")[-1]
+        tied_els = last_note_m1.findall(".//notations/tied")
+        assert any(t.get("type") == "start" for t in tied_els), \
+            "Expected <tied type='start'/> in <notations> of first note"
+
+    def test_adds_tied_notation_on_stop_note(self):
+        result = reconstruct_ties(XML_UNTIED_CROSS_BARLINE)
+        root = ET.fromstring(result)
+        measures = root.findall(".//measure")
+        first_note_m2 = measures[1].findall("note")[0]
+        tied_els = first_note_m2.findall(".//notations/tied")
+        assert any(t.get("type") == "stop" for t in tied_els), \
+            "Expected <tied type='stop'/> in <notations> of second note"
+
+    def test_no_tie_added_for_different_pitches(self):
+        result = reconstruct_ties(XML_DIFFERENT_PITCHES)
+        root = ET.fromstring(result)
+        ties = root.findall(".//tie")
+        assert len(ties) == 0, "No ties expected when pitches differ"
+
+    def test_returns_string(self):
+        result = reconstruct_ties(XML_UNTIED_CROSS_BARLINE)
+        assert isinstance(result, str)
+
+    def test_invalid_xml_returns_input_unchanged(self):
+        bad = "not xml"
+        result = reconstruct_ties(bad)
+        assert result == bad
+
+    def test_idempotent_does_not_double_tie(self):
+        once = reconstruct_ties(XML_UNTIED_CROSS_BARLINE)
+        twice = reconstruct_ties(once)
+        root = ET.fromstring(twice)
+        # Exactly one start tie on the last note of measure 1
+        measures = root.findall(".//measure")
+        last_note_m1 = measures[0].findall("note")[-1]
+        start_ties = [t for t in last_note_m1.findall("tie") if t.get("type") == "start"]
+        assert len(start_ties) == 1, "Idempotent: should not add duplicate tie"

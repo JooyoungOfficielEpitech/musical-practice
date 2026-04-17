@@ -1,5 +1,5 @@
 import React from "react";
-import { render, fireEvent } from "@testing-library/react-native";
+import { render, within } from "@testing-library/react-native";
 
 // ── Navigation ───────────────────────────────────────────────────────────────
 jest.mock("@react-navigation/native", () => ({
@@ -45,10 +45,26 @@ jest.mock("../../client/hooks/useMultiOmrJobs", () => ({
   useMultiOmrJobs: jest.fn(),
 }));
 
-// ── PageThumbnailGrid ─────────────────────────────────────────────────────────
-jest.mock("../../client/components/PageThumbnailGrid", () => ({
-  PageThumbnailGrid: () => null,
-}));
+// ── LoadingOverlay ────────────────────────────────────────────────────────────
+jest.mock("../../client/components/LoadingOverlay", () => {
+  const { View, Text } = require("react-native");
+  return {
+    LoadingOverlay: ({ message, subMessage }: any) => (
+      <View testID="loading-overlay">
+        <Text>{message}</Text>
+        {subMessage && <Text>{subMessage}</Text>}
+      </View>
+    ),
+  };
+});
+
+// ── ProgressTrack ────────────────────────────────────────────────────────────
+jest.mock("../../client/components/ProgressTrack", () => {
+  const { View } = require("react-native");
+  return {
+    ProgressTrack: ({ percent }: any) => <View testID="progress-track" style={{ width: `${percent}%` }} />,
+  };
+});
 
 // ── Import after mocks ────────────────────────────────────────────────────────
 import PdfImportScreen from "../../client/screens/PdfImportScreen";
@@ -67,17 +83,16 @@ const idlePdfHook = {
   pageRanges: [],
   sectionTitles: [],
   pdfB64: null,
+  fileName: null,
   error: null,
   startImport: jest.fn(),
-  setPageRanges: jest.fn(),
-  setSectionTitle: jest.fn(),
-  proceedToNaming: jest.fn(),
   reset: jest.fn(),
 };
 
 const idleMultiJobsHook = {
   overallStatus: "idle" as const,
   jobs: [],
+  error: null,
   submitAll: jest.fn(),
   reset: jest.fn(),
 };
@@ -91,58 +106,110 @@ beforeEach(() => {
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe("PdfImportScreen", () => {
-  it("1. idle state renders Import PDF button", () => {
-    const { getByText } = render(<PdfImportScreen />);
-    expect(getByText("Import PDF")).toBeTruthy();
+describe("PdfImportScreen — Phase 2: 1-tap PDF import", () => {
+  it("1. auto-starts import on mount", () => {
+    const startImport = jest.fn();
+    mockUsePdfImport.mockReturnValue({ ...idlePdfHook, startImport });
+    render(<PdfImportScreen />);
+    expect(startImport).toHaveBeenCalledTimes(1);
   });
 
-  it("2. naming state renders text inputs for each section title", () => {
+  it("2. uploading state renders LoadingOverlay", () => {
     mockUsePdfImport.mockReturnValue({
       ...idlePdfHook,
-      state: "naming",
-      pageRanges: [[1, 3], [4, 6]],
-      sectionTitles: ["Section 1", "Section 2"],
+      state: "uploading",
+      fileName: "test.pdf",
+    });
+    mockUseMultiOmrJobs.mockReturnValue({
+      ...idleMultiJobsHook,
+      overallStatus: "uploading",
     });
 
-    const { getAllByDisplayValue } = render(<PdfImportScreen />);
-    expect(getAllByDisplayValue(/Section/)).toHaveLength(2);
+    const { getByTestId } = render(<PdfImportScreen />);
+    expect(getByTestId("loading-overlay")).toBeTruthy();
   });
 
-  it("3. running state renders progress rows for each job", () => {
-    mockUsePdfImport.mockReturnValue({ ...idlePdfHook, state: "naming" });
+  it("3. running state renders LoadingOverlay with progress", () => {
+    mockUsePdfImport.mockReturnValue({
+      ...idlePdfHook,
+      state: "idle",
+      sectionTitles: ["Score"],
+    });
     mockUseMultiOmrJobs.mockReturnValue({
       ...idleMultiJobsHook,
       overallStatus: "running",
       jobs: [
-        { title: "Act 1", status: "processing" },
-        { title: "Act 2", status: "queued" },
+        {
+          title: "Score",
+          status: "processing" as const,
+          pageRange: [1, 12] as [number, number],
+          progressPercent: 45,
+        },
       ],
     });
 
-    const { getByText } = render(<PdfImportScreen />);
-    expect(getByText("Act 1")).toBeTruthy();
-    expect(getByText("Act 2")).toBeTruthy();
+    const { getByTestId } = render(<PdfImportScreen />);
+    expect(getByTestId("loading-overlay")).toBeTruthy();
   });
 
   it("4. done state renders View Library button", () => {
-    mockUsePdfImport.mockReturnValue({ ...idlePdfHook, state: "naming" });
+    mockUsePdfImport.mockReturnValue({
+      ...idlePdfHook,
+      state: "idle",
+    });
     mockUseMultiOmrJobs.mockReturnValue({
       ...idleMultiJobsHook,
       overallStatus: "done",
-      jobs: [{ title: "Act 1", status: "done", musicXmlUri: "file:///x.xml" }],
+      jobs: [
+        {
+          title: "Score",
+          status: "done" as const,
+          pageRange: [1, 12] as [number, number],
+          progressPercent: 100,
+          musicXmlUri: "file:///x.xml",
+        },
+      ],
     });
 
     const { getByText } = render(<PdfImportScreen />);
     expect(getByText(/View Library/i)).toBeTruthy();
   });
 
-  it("5. pressing Import PDF calls startImport", () => {
-    const startImport = jest.fn();
-    mockUsePdfImport.mockReturnValue({ ...idlePdfHook, startImport });
+  it("5. error state renders Try Again button", () => {
+    mockUsePdfImport.mockReturnValue({
+      ...idlePdfHook,
+      state: "error",
+      error: "Network error",
+    });
+    mockUseMultiOmrJobs.mockReturnValue({
+      ...idleMultiJobsHook,
+      overallStatus: "idle",
+    });
 
     const { getByText } = render(<PdfImportScreen />);
-    fireEvent.press(getByText("Import PDF"));
-    expect(startImport).toHaveBeenCalledTimes(1);
+    expect(getByText(/Try Again/i)).toBeTruthy();
+  });
+
+  it("6. does NOT render TextInput for naming", () => {
+    mockUsePdfImport.mockReturnValue({
+      ...idlePdfHook,
+      state: "uploading",
+      sectionTitles: ["Score"],
+    });
+
+    const { UNSAFE_queryAllByType } = render(<PdfImportScreen />);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { TextInput } = require("react-native");
+    expect(UNSAFE_queryAllByType(TextInput)).toHaveLength(0);
+  });
+
+  it("7. does NOT render PageThumbnailGrid", () => {
+    mockUsePdfImport.mockReturnValue({
+      ...idlePdfHook,
+      state: "uploading",
+    });
+
+    const { queryByTestId } = render(<PdfImportScreen />);
+    expect(queryByTestId("page-thumbnail")).toBeNull();
   });
 });

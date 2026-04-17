@@ -1,5 +1,5 @@
 import React from "react";
-import { render } from "@testing-library/react-native";
+import { render, fireEvent } from "@testing-library/react-native";
 import { PracticeActiveView } from "../../client/components/PracticeActiveView";
 
 jest.mock("../../client/hooks/useTheme", () => ({
@@ -18,43 +18,7 @@ jest.mock("react-native-safe-area-context", () => ({
 
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }));
 
-jest.mock("react-native-reanimated", () => {
-  const { View } = require("react-native");
-  return {
-    __esModule: true,
-    default: { View, createAnimatedComponent: (c: unknown) => c },
-    useSharedValue: (v: unknown) => ({ value: v }),
-    useAnimatedStyle: () => ({}),
-    withSpring: (v: unknown) => v,
-    runOnJS: (fn: unknown) => fn,
-  };
-});
-
-jest.mock("react-native-gesture-handler", () => {
-  const { View } = require("react-native");
-  return {
-    GestureDetector: ({ children }: { children: React.ReactNode }) => children,
-    GestureHandlerRootView: View,
-    Gesture: {
-      Pan: () => ({ onStart: function() { return this; }, onUpdate: function() { return this; }, onEnd: function() { return this; } }),
-      Pinch: () => ({ onStart: function() { return this; }, onUpdate: function() { return this; }, onEnd: function() { return this; } }),
-      Tap: () => ({ numberOfTaps: function() { return this; }, onEnd: function() { return this; } }),
-      Simultaneous: (...args: unknown[]) => args[0],
-      Exclusive: (...args: unknown[]) => args[0],
-    },
-  };
-});
-
-jest.mock("react-native-svg", () => {
-  const { View, Text } = require("react-native");
-  return { __esModule: true, default: View, Svg: View, Line: View, Ellipse: (props: { testID?: string }) => <View testID={props.testID} />, Text, G: View };
-});
-
 jest.mock("react-native-webview", () => ({ WebView: "WebView" }));
-
-jest.mock("../../client/components/FloatingPitchPanel", () => ({
-  FloatingPitchPanel: () => null,
-}));
 
 jest.mock("../../client/components/InteractiveScore", () => ({
   InteractiveScore: (props: { testID?: string }) => {
@@ -63,15 +27,26 @@ jest.mock("../../client/components/InteractiveScore", () => ({
   },
 }));
 
-jest.mock("../../client/components/SheetMusicViewer", () => ({
-  SheetMusicViewer: () => null,
+jest.mock("../../client/components/PitchStrip", () => ({
+  PitchStrip: () => {
+    const { View } = require("react-native");
+    return <View testID="pitch-strip" />;
+  },
 }));
 
-const baseSheet = {
-  id: "sheet-1", title: "La Traviata", artist: "Verdi",
-  imageUris: ["img1.jpg"], createdAt: Date.now(),
-  folder: "Musical", isFavorite: false,
-};
+jest.mock("../../client/components/MetronomeBottomSheet", () => ({
+  MetronomeBottomSheet: ({ visible }: { visible: boolean }) => {
+    const { View } = require("react-native");
+    return visible ? <View testID="metronome-bottom-sheet" /> : null;
+  },
+}));
+
+jest.mock("../../client/components/AudioBottomSheet", () => ({
+  AudioBottomSheet: ({ visible }: { visible: boolean }) => {
+    const { View } = require("react-native");
+    return visible ? <View testID="audio-bottom-sheet" /> : null;
+  },
+}));
 
 const baseSynthPlayer = {
   isPlaying: false, play: jest.fn(), pause: jest.fn(), stop: jest.fn(), seekTo: jest.fn(),
@@ -86,47 +61,85 @@ const baseNoteEditor = {
 };
 
 const baseProps = {
-  sheet: baseSheet,
-  audioMode: "reference" as const,
-  musicXmlContent: null,
+  title: "La Traviata",
+  musicXml: "<score/>",
   synthPlayer: baseSynthPlayer,
   noteEditor: baseNoteEditor,
-  editMode: false,
-  handleNotePress: jest.fn(),
   isListening: false,
   currentPitch: null,
-  pitchError: null,
-  sessionAccuracy: 0,
-  isRecording: false,
   currentBpm: 120,
-  setCurrentBpm: jest.fn(),
-  topBarHeight: 56,
-  practiceContentHeight: 800,
-  screenWidth: 390,
+  audioUrl: "https://example.com/track.mp3",
   onGoBack: jest.fn(),
 };
 
 describe("PracticeActiveView", () => {
-  it("2.1 — renders sheet title in top bar", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("renders title in header", () => {
     const { getByText } = render(<PracticeActiveView {...baseProps} />);
     expect(getByText("La Traviata")).toBeTruthy();
   });
 
-  it("2.2 — shows InteractiveScore when audioMode=autoplay and musicXmlContent non-null", () => {
-    const { getByTestId } = render(
-      <PracticeActiveView
-        {...baseProps}
-        audioMode="autoplay"
-        musicXmlContent="<score/>"
-      />
-    );
+  it("renders InteractiveScore", () => {
+    const { getByTestId } = render(<PracticeActiveView {...baseProps} />);
     expect(getByTestId("interactive-score")).toBeTruthy();
   });
 
-  it("2.3 — shows SheetMusicViewer (not InteractiveScore) when audioMode=reference", () => {
-    const { queryByTestId } = render(
-      <PracticeActiveView {...baseProps} audioMode="reference" musicXmlContent="<score/>" />
+  it("renders PitchStrip", () => {
+    const { getByTestId } = render(<PracticeActiveView {...baseProps} />);
+    expect(getByTestId("pitch-strip")).toBeTruthy();
+  });
+
+  it("renders bottom toolbar", () => {
+    const { getByTestId } = render(<PracticeActiveView {...baseProps} />);
+    expect(getByTestId("practice-toolbar")).toBeTruthy();
+  });
+
+  it("calls play when play button pressed", () => {
+    const play = jest.fn();
+    const { getByLabelText } = render(
+      <PracticeActiveView {...baseProps} synthPlayer={{ ...baseSynthPlayer, play }} />
     );
-    expect(queryByTestId("interactive-score")).toBeNull();
+    fireEvent.press(getByLabelText("Play"));
+    expect(play).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls pause when pause button pressed during playback", () => {
+    const pause = jest.fn();
+    const { getByLabelText } = render(
+      <PracticeActiveView
+        {...baseProps}
+        synthPlayer={{ ...baseSynthPlayer, isPlaying: true, pause }}
+      />
+    );
+    fireEvent.press(getByLabelText("Pause"));
+    expect(pause).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens metronome bottom sheet when metronome button pressed", () => {
+    const { getByLabelText, getByTestId, queryByTestId } = render(
+      <PracticeActiveView {...baseProps} />
+    );
+    expect(queryByTestId("metronome-bottom-sheet")).toBeNull();
+    fireEvent.press(getByLabelText("Open metronome"));
+    expect(getByTestId("metronome-bottom-sheet")).toBeTruthy();
+  });
+
+  it("opens audio bottom sheet when audio button pressed", () => {
+    const { getByLabelText, getByTestId, queryByTestId } = render(
+      <PracticeActiveView {...baseProps} />
+    );
+    expect(queryByTestId("audio-bottom-sheet")).toBeNull();
+    fireEvent.press(getByLabelText("Open audio player"));
+    expect(getByTestId("audio-bottom-sheet")).toBeTruthy();
+  });
+
+  it("calls onGoBack when back button pressed", () => {
+    const onGoBack = jest.fn();
+    const { getByLabelText } = render(
+      <PracticeActiveView {...baseProps} onGoBack={onGoBack} />
+    );
+    fireEvent.press(getByLabelText("Go back"));
+    expect(onGoBack).toHaveBeenCalledTimes(1);
   });
 });

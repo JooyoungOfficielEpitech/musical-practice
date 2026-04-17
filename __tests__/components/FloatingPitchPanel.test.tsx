@@ -16,6 +16,7 @@ jest.mock("../../client/hooks/useTheme", () => ({
       successLight: "rgba(22,163,74,0.09)",
       warning: "#F59E0B",
       warningSubtle: "rgba(245,158,11,0.09)",
+      warningLight: "rgba(245,158,11,0.09)",
       error: "#DC2626",
       errorLight: "rgba(220,38,38,0.09)",
       backgroundSecondary: "#F8F9FA",
@@ -30,11 +31,6 @@ jest.mock("../../client/hooks/useTheme", () => ({
   }),
 }));
 
-// Mock expo-blur
-jest.mock("expo-blur", () => ({
-  BlurView: "BlurView",
-}));
-
 // Mock reanimated
 jest.mock("react-native-reanimated", () => {
   const { View } = require("react-native");
@@ -42,12 +38,12 @@ jest.mock("react-native-reanimated", () => {
     __esModule: true,
     default: {
       View: View,
-      createAnimatedComponent: (c: any) => c,
+      createAnimatedComponent: (c: unknown) => c,
     },
-    useSharedValue: (v: any) => ({ value: v }),
+    useSharedValue: (v: number) => ({ value: v }),
     useAnimatedStyle: () => ({}),
-    withSpring: (v: any) => v,
-    runOnJS: (fn: any) => fn,
+    withSpring: (v: number) => v,
+    runOnJS: (fn: (...args: unknown[]) => unknown) => fn,
   };
 });
 
@@ -55,13 +51,13 @@ jest.mock("react-native-reanimated", () => {
 jest.mock("react-native-gesture-handler", () => {
   const { View } = require("react-native");
   return {
-    GestureDetector: ({ children }: any) => children,
+    GestureDetector: ({ children }: { children: React.ReactNode }) => children,
     GestureHandlerRootView: View,
     Gesture: {
       Pan: () => ({
-        onStart: function () { return this; },
-        onUpdate: function () { return this; },
-        onEnd: function () { return this; },
+        onStart: function (this: unknown) { return this; },
+        onUpdate: function (this: unknown) { return this; },
+        onEnd: function (this: unknown) { return this; },
       }),
     },
   };
@@ -87,7 +83,7 @@ jest.mock("react-native-svg", () => {
     default: View,
     Svg: View,
     Line: View,
-    Ellipse: (props: any) => <View testID={props.testID} />,
+    Ellipse: (props: { testID?: string }) => <View testID={props.testID} />,
     Text: Text,
     G: View,
   };
@@ -108,8 +104,6 @@ describe("FloatingPitchPanel", () => {
     currentPitch: null,
     accuracy: 0,
     isRecording: false,
-    currentBpm: 120,
-    onBpmChange: jest.fn(),
   };
 
   it("renders without crashing", () => {
@@ -117,17 +111,21 @@ describe("FloatingPitchPanel", () => {
     expect(toJSON()).toBeTruthy();
   });
 
-  it("shows Pitch and Met tab labels when expanded", () => {
+  it("shows Pitch header when expanded", () => {
     const { getByText } = render(<FloatingPitchPanel {...defaultProps} />);
     expect(getByText("Pitch")).toBeTruthy();
-    expect(getByText("Met")).toBeTruthy();
+  });
+
+  it("does not render metronome tab", () => {
+    const { queryByText } = render(<FloatingPitchPanel {...defaultProps} />);
+    expect(queryByText("Met")).toBeNull();
   });
 
   it("shows note name when listening with pitch", () => {
     const { getAllByText } = render(
       <FloatingPitchPanel
         {...defaultProps}
-        isListening={true}
+        isListening
         currentPitch={makePitch({ note: "C", octave: 4 })}
       />,
     );
@@ -138,7 +136,7 @@ describe("FloatingPitchPanel", () => {
     const { getAllByText } = render(
       <FloatingPitchPanel
         {...defaultProps}
-        isListening={true}
+        isListening
         currentPitch={makePitch({ cents: 5 })}
       />,
     );
@@ -149,7 +147,7 @@ describe("FloatingPitchPanel", () => {
     const { getAllByText } = render(
       <FloatingPitchPanel
         {...defaultProps}
-        isListening={true}
+        isListening
         currentPitch={makePitch({ cents: 30 })}
       />,
     );
@@ -160,9 +158,9 @@ describe("FloatingPitchPanel", () => {
     const { getByText } = render(
       <FloatingPitchPanel
         {...defaultProps}
-        isListening={true}
+        isListening
         currentPitch={makePitch()}
-        isRecording={true}
+        isRecording
       />,
     );
     expect(getByText("REC")).toBeTruthy();
@@ -172,7 +170,7 @@ describe("FloatingPitchPanel", () => {
     const { queryByText } = render(
       <FloatingPitchPanel
         {...defaultProps}
-        isListening={true}
+        isListening
         currentPitch={makePitch()}
         isRecording={false}
       />,

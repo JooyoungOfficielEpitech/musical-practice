@@ -287,9 +287,9 @@ describe("PracticeDetailScreen", () => {
     expect(getByLabelText("Delete score")).toBeTruthy();
   });
 
-  it("shows metronome toggle in browse mode", () => {
+  it("shows metronome button in browse mode", () => {
     const { getByLabelText } = render(<PracticeDetailScreen />);
-    expect(getByLabelText("Show metronome")).toBeTruthy();
+    expect(getByLabelText("Open metronome")).toBeTruthy();
   });
 
   it("shows play button in bottom bar", () => {

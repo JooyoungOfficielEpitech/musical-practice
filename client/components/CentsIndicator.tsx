@@ -2,7 +2,7 @@ import React, { memo, useEffect } from "react";
 import { StyleSheet, View, Text } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, Typography } from "@/constants/theme";
+import { Spacing, BorderRadius, Typography, Fonts } from "@/constants/theme";
 
 interface CentsIndicatorProps {
   cents: number;
@@ -96,8 +96,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  label: { ...Typography.label },
-  centsValue: { ...Typography.small, fontFamily: "Nunito_600SemiBold", fontWeight: "600" },
+  label: { ...Typography.label, fontFamily: Fonts.body },
+  centsValue: { ...Typography.small, fontFamily: Fonts.bodySemiBold, fontWeight: "600" },
   trackContainer: {
     height: 24,
     alignItems: "center",

@@ -194,3 +194,86 @@ class TestOmrRunnerWorkerCap:
 
             # With cpu_count=8: max_workers = max(1, min(4, 8//2)) = 4
             assert any(w == 4 for w in captured), f"expected 4 in {captured}"
+
+
+class TestProgressReporting:
+    """Phase 2A: progress_percent updates wired through both pipelines."""
+
+    def test_process_job_reports_progress_during_processing(self, tmp_path):
+        """P1: process_job calls progress update (progress_percent) at least once."""
+        client = _make_mock_client()
+
+        with (
+            patch("omr_queue.job_processor.pdf_to_png", return_value=[[str(tmp_path / "p1.png")]]),
+            patch("omr_queue.job_processor._process_simple_page", return_value=_make_measure_list()),
+        ):
+            from omr_queue.job_processor import process_job
+            process_job(SAMPLE_JOB, client)
+
+        update_calls = client.table.return_value.update.call_args_list
+        progress_calls = [c for c in update_calls if "progress_percent" in c.args[0]]
+        assert len(progress_calls) >= 1
+
+    def test_simple_pipeline_reports_progress_per_page(self, tmp_path):
+        """P2: simple pipeline reports increasing progress_percent for each page completed."""
+        client = _make_mock_client()
+        job = {**SAMPLE_JOB, "page_ranges": [[1, 1], [2, 2], [3, 3]], "score_type": "piano_vocal"}
+
+        with (
+            patch("omr_queue.job_processor.pdf_to_png", return_value=[
+                [str(tmp_path / "p1.png")],
+                [str(tmp_path / "p2.png")],
+                [str(tmp_path / "p3.png")],
+            ]),
+            patch("omr_queue.job_processor._process_simple_page", return_value=_make_measure_list()),
+        ):
+            from omr_queue.job_processor import process_job
+            process_job(job, client)
+
+        update_calls = client.table.return_value.update.call_args_list
+        pct_values = [c.args[0]["progress_percent"] for c in update_calls if "progress_percent" in c.args[0]]
+        # At least 3 progress updates for 3 pages (one per page + final 95)
+        assert len(pct_values) >= 3
+        # All values must be positive integers in range 1–100
+        assert all(1 <= v <= 100 for v in pct_values)
+
+    def test_vocal_pipeline_reports_progress_per_page(self, tmp_path):
+        """P3: vocal pipeline reports progress updates for each page sequentially."""
+        client = _make_mock_client()
+        job = {**SAMPLE_JOB, "score_type": "vocal_score", "page_ranges": [[1, 2]]}
+
+        # Minimal char_sys / g_indices result from _process_vocal_page
+        fake_char_sys = {"Soprano": {0: _make_measure_list()}}
+        fake_g_indices = [0]
+
+        with (
+            patch("omr_queue.job_processor.pdf_to_png", return_value=[
+                [str(tmp_path / "p1.png"), str(tmp_path / "p2.png")],
+            ]),
+            patch("omr_queue.job_processor._process_vocal_page", return_value=(fake_char_sys, fake_g_indices)),
+            patch("omr_queue.job_processor.align_and_flatten", return_value={"Soprano": _make_measure_list()}),
+            patch("omr_queue.job_processor.combine_chars_to_xml_string", return_value=SAMPLE_XML),
+        ):
+            from omr_queue.job_processor import process_job
+            process_job(job, client)
+
+        update_calls = client.table.return_value.update.call_args_list
+        pct_values = [c.args[0]["progress_percent"] for c in update_calls if "progress_percent" in c.args[0]]
+        # 2 pages → at least 2 per-page updates + 1 final (95) = 3 total
+        assert len(pct_values) >= 3
+        assert all(1 <= v <= 100 for v in pct_values)
+
+    def test_reporter_failure_is_non_fatal(self, tmp_path):
+        """P4: if progress update raises, process_job still completes successfully."""
+        client = _make_mock_client()
+        # Make the table().update().eq().execute() chain raise
+        client.table.return_value.update.return_value.eq.return_value.execute.side_effect = Exception("DB down")
+
+        with (
+            patch("omr_queue.job_processor.pdf_to_png", return_value=[[str(tmp_path / "p1.png")]]),
+            patch("omr_queue.job_processor._process_simple_page", return_value=_make_measure_list()),
+        ):
+            from omr_queue.job_processor import process_job
+            result = process_job(SAMPLE_JOB, client)  # must NOT raise
+
+        assert result == "job-123.musicxml"
