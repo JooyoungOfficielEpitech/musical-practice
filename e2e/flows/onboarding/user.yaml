@@ -1,0 +1,6 @@
+appId: "com.musicalpractice"
+---
+- launchApp
+# Onboarding shows for fresh installs — just assert app launched
+- waitForAnimationToEnd
+- takeScreenshot: "onboarding-user"

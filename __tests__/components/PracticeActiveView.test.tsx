@@ -48,9 +48,21 @@ jest.mock("../../client/components/AudioBottomSheet", () => ({
   },
 }));
 
+jest.mock("../../client/components/PartSelectorBottomSheet", () => ({
+  PartSelectorBottomSheet: ({ visible }: { visible: boolean }) => {
+    const { View } = require("react-native");
+    return visible ? <View testID="part-selector-bottom-sheet" /> : null;
+  },
+}));
+
+jest.mock("expo-screen-orientation", () => ({
+  lockAsync: jest.fn().mockResolvedValue(undefined),
+  OrientationLock: { LANDSCAPE: "LANDSCAPE", PORTRAIT_UP: "PORTRAIT_UP" },
+}));
+
 const baseSynthPlayer = {
   isPlaying: false, play: jest.fn(), pause: jest.fn(), stop: jest.fn(), seekTo: jest.fn(),
-  currentNoteIndex: 0, instrument: "piano", instrumentLoading: false, error: null,
+  instrument: "piano", instrumentLoading: false, error: null,
   setInstrument: jest.fn(), setTempo: jest.fn(), tempo: 1.0, positionMs: 0, durationMs: 0,
   loopRange: null, setLoopRange: jest.fn(), clearLoopRange: jest.fn(),
 };
@@ -70,6 +82,12 @@ const baseProps = {
   currentBpm: 120,
   audioUrl: "https://example.com/track.mp3",
   onGoBack: jest.fn(),
+  // Phase 5: new props
+  editMode: true,
+  onToggleEditMode: jest.fn(),
+  parts: [],
+  visiblePartIds: new Set<string>(),
+  onTogglePart: jest.fn(),
 };
 
 describe("PracticeActiveView", () => {
@@ -141,5 +159,93 @@ describe("PracticeActiveView", () => {
     );
     fireEvent.press(getByLabelText("Go back"));
     expect(onGoBack).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ─── Phase 5 tests (RED) ──────────────────────────────────────────────────────
+describe("PracticeActiveView — edit mode + parts (Phase 5)", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("5.1 — edit button is present when editMode=true", () => {
+    const { getByLabelText } = render(<PracticeActiveView {...baseProps} editMode={true} />);
+    expect(getByLabelText("Edit notes")).toBeTruthy();
+  });
+
+  it("5.2 — edit hint visible when editMode=true and no note selected", () => {
+    const { getByText } = render(
+      <PracticeActiveView
+        {...baseProps}
+        editMode={true}
+        noteEditor={{ ...baseNoteEditor, selectedIndex: null }}
+      />
+    );
+    expect(getByText("Tap a note to edit pitch")).toBeTruthy();
+  });
+
+  it("5.3 — edit hint hidden when a note is selected", () => {
+    const { queryByText } = render(
+      <PracticeActiveView
+        {...baseProps}
+        editMode={true}
+        noteEditor={{ ...baseNoteEditor, selectedIndex: 0 }}
+      />
+    );
+    expect(queryByText("Tap a note to edit pitch")).toBeNull();
+  });
+
+  it("5.4 — parts button hidden when parts.length <= 1", () => {
+    const { queryByLabelText } = render(
+      <PracticeActiveView {...baseProps} parts={[]} />
+    );
+    expect(queryByLabelText("Select parts")).toBeNull();
+  });
+
+  it("5.5 — parts button visible when parts.length > 1", () => {
+    const TWO_PARTS = [
+      { id: "P1", name: "Violin", partIndex: 0 },
+      { id: "P2", name: "Piano", partIndex: 1 },
+    ];
+    const { getByLabelText } = render(
+      <PracticeActiveView {...baseProps} parts={TWO_PARTS} />
+    );
+    expect(getByLabelText("Select parts")).toBeTruthy();
+  });
+});
+
+// ─── Phase 2: Landscape Fullscreen Toggle (RED) ───────────────────────────────
+describe("PracticeActiveView — landscape fullscreen (Phase 2)", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("2.1 — fullscreen toggle button renders in toolbar", () => {
+    const { getByLabelText } = render(<PracticeActiveView {...baseProps} />);
+    expect(getByLabelText("Fullscreen")).toBeTruthy();
+  });
+
+  it("2.2 — pressing fullscreen button calls lockAsync with LANDSCAPE", async () => {
+    const ScreenOrientation = require("expo-screen-orientation");
+    const { getByLabelText } = render(<PracticeActiveView {...baseProps} />);
+    fireEvent.press(getByLabelText("Fullscreen"));
+    await Promise.resolve();
+    expect(ScreenOrientation.lockAsync).toHaveBeenCalledWith("LANDSCAPE");
+  });
+
+  it("2.3 — header title is hidden when fullscreen is active", async () => {
+    const { getByLabelText, queryByText } = render(<PracticeActiveView {...baseProps} />);
+    fireEvent.press(getByLabelText("Fullscreen"));
+    await Promise.resolve();
+    expect(queryByText("La Traviata")).toBeNull();
+  });
+
+  it("2.4 — exit fullscreen button visible in landscape; pressing it calls lockAsync with PORTRAIT_UP and restores header", async () => {
+    const ScreenOrientation = require("expo-screen-orientation");
+    const { getByLabelText, getByText } = render(<PracticeActiveView {...baseProps} />);
+    fireEvent.press(getByLabelText("Fullscreen"));
+    await Promise.resolve();
+    const exitBtn = getByLabelText("Exit fullscreen");
+    expect(exitBtn).toBeTruthy();
+    fireEvent.press(exitBtn);
+    await Promise.resolve();
+    expect(ScreenOrientation.lockAsync).toHaveBeenCalledWith("PORTRAIT_UP");
+    expect(getByText("La Traviata")).toBeTruthy();
   });
 });

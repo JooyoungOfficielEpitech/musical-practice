@@ -58,3 +58,8 @@ tools/omr-server/output*.xml
 
 # Plans
 docs/plans/
+
+# E2E test artifacts
+e2e/results/
+e2e/.env.test
+e2e/accounts.json

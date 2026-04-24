@@ -1,4 +1,4 @@
-import type { NoteEvent, NoteSequence } from "../../types/music";
+import type { NoteEvent, NoteSequence, PartInfo, ParsedMusicXml } from "../../types/music";
 import { noteToFrequency } from "./noteMapping";
 
 const DEFAULT_TEMPO = 120; // BPM
@@ -193,12 +193,32 @@ function getMeasureElements(measureXml: string): MeasureElement[] {
   return elements;
 }
 
+function parsePartList(xmlString: string, allPartXmls: string[]): PartInfo[] {
+  const partListMatch = xmlString.match(/<part-list>([\s\S]*?)<\/part-list>/);
+  const partListXml = partListMatch ? partListMatch[1] : "";
+  const parts: PartInfo[] = [];
+  const scorePartRegex = /<score-part\s+id="([^"]+)"[^>]*>([\s\S]*?)<\/score-part>/g;
+  let m: RegExpExecArray | null;
+  while ((m = scorePartRegex.exec(partListXml)) !== null) {
+    const id = m[1];
+    const nameMatch = m[2].match(/<part-name[^>]*>([^<]*)<\/part-name>/);
+    const name = nameMatch ? nameMatch[1].trim() : id;
+    parts.push({ id, name, partIndex: parts.length });
+  }
+  if (parts.length === 0) {
+    allPartXmls.forEach((_, i) =>
+      parts.push({ id: `P${i + 1}`, name: `Part ${i + 1}`, partIndex: i })
+    );
+  }
+  return parts;
+}
+
 /**
- * Parse a MusicXML string into a NoteSequence.
+ * Parse a MusicXML string into notes with part metadata.
  * Handles polyphonic music with chords, multiple voices, dynamics,
  * key signatures, and basic repeats.
  */
-export function parseMusicXml(xmlString: string): NoteSequence {
+export function parseMusicXml(xmlString: string): ParsedMusicXml {
   // Parse global attributes (use first occurrence — applies to all parts)
   const divisionsStr = getTagContent(xmlString, "divisions");
   const divisions = divisionsStr ? parseInt(divisionsStr, 10) : DEFAULT_DIVISIONS;
@@ -216,6 +236,9 @@ export function parseMusicXml(xmlString: string): NoteSequence {
   const partMatches = [...xmlString.matchAll(/<part\b[^>]*>([\s\S]*?)<\/part>/g)];
   const allPartXmls = partMatches.length > 0 ? partMatches.map((m) => m[1]) : [xmlString];
 
+  const parts = parsePartList(xmlString, allPartXmls);
+  const notePartIndices: number[] = [];
+
   interface VoiceState {
     currentDivision: number;
     tiedPitch: string | null;
@@ -228,18 +251,27 @@ export function parseMusicXml(xmlString: string): NoteSequence {
 
   const sequence: NoteSequence = [];
 
-  for (const partXml of allPartXmls) {
+  for (let partIdx = 0; partIdx < allPartXmls.length; partIdx++) {
+    const partXml = allPartXmls[partIdx];
+    const pushNote = (note: NoteEvent): void => {
+      sequence.push(note);
+      notePartIndices.push(partIdx);
+    };
     const measures = getAllMatches(partXml, "measure");
     const measureOrder = expandRepeats(measures);
 
     // Fresh voice state per part
     const voiceStates = new Map<string, VoiceState>();
     let currentVelocity = DEFAULT_VELOCITY;
+    // Tracks the division position at the start of the current measure.
+    // New voices that first appear mid-song inherit this so they don't
+    // incorrectly place their notes back at t=0.
+    let measureStartDiv = 0;
 
     function getVoiceState(voice: string): VoiceState {
       if (!voiceStates.has(voice)) {
         voiceStates.set(voice, {
-          currentDivision: 0,
+          currentDivision: measureStartDiv,
           tiedPitch: null,
           tiedStartDivision: 0,
           tiedDuration: 0,
@@ -254,6 +286,13 @@ export function parseMusicXml(xmlString: string): NoteSequence {
     for (const measureIdx of measureOrder) {
       const measure = measures[measureIdx];
       const elements = getMeasureElements(measure);
+
+      // Compute where this measure starts: the max cursor across all voices.
+      // Voices absent in prior measures would otherwise start at 0.
+      measureStartDiv = 0;
+      for (const state of voiceStates.values()) {
+        measureStartDiv = Math.max(measureStartDiv, state.currentDivision);
+      }
 
       // Track last non-chord note's startTime per voice for chord handling
       const lastNoteStartDivision = new Map<string, number>();
@@ -287,7 +326,7 @@ export function parseMusicXml(xmlString: string): NoteSequence {
       if (isRest) {
         // Flush any pending tied note for this voice
         if (state.tiedPitch !== null) {
-          sequence.push({
+          pushNote({
             pitch: state.tiedPitch,
             midiNumber: state.tiedMidi,
             frequency: state.tiedFrequency,
@@ -361,7 +400,7 @@ export function parseMusicXml(xmlString: string): NoteSequence {
 
         if (!hasTieStart) {
           // Tie ends here — flush
-          sequence.push({
+          pushNote({
             pitch: state.tiedPitch,
             midiNumber: state.tiedMidi,
             frequency: state.tiedFrequency,
@@ -374,7 +413,7 @@ export function parseMusicXml(xmlString: string): NoteSequence {
       } else {
         // Flush any previous tied note for this voice
         if (state.tiedPitch !== null) {
-          sequence.push({
+          pushNote({
             pitch: state.tiedPitch,
             midiNumber: state.tiedMidi,
             frequency: state.tiedFrequency,
@@ -395,7 +434,7 @@ export function parseMusicXml(xmlString: string): NoteSequence {
           state.tiedVelocity = currentVelocity;
         } else {
           // Normal note
-          sequence.push({
+          pushNote({
             pitch,
             midiNumber,
             frequency,
@@ -410,13 +449,23 @@ export function parseMusicXml(xmlString: string): NoteSequence {
         lastNoteStartDivision.set(voiceStr, startDivisionForNote);
         state.currentDivision += durationDivisions;
       }
+      }
+
+      // End-of-measure sync: any voice that had no notes this measure gets
+      // advanced to the measure end so it starts the next measure correctly.
+      let measureEnd = measureStartDiv;
+      for (const state of voiceStates.values()) {
+        measureEnd = Math.max(measureEnd, state.currentDivision);
+      }
+      for (const state of voiceStates.values()) {
+        state.currentDivision = measureEnd;
+      }
     }
-  }
 
     // Flush any remaining tied notes across all voices in this part
     for (const state of voiceStates.values()) {
       if (state.tiedPitch !== null) {
-        sequence.push({
+        pushNote({
           pitch: state.tiedPitch,
           midiNumber: state.tiedMidi,
           frequency: state.tiedFrequency,
@@ -428,20 +477,23 @@ export function parseMusicXml(xmlString: string): NoteSequence {
     }
   } // end of parts loop
 
-  // Sort merged notes from all parts by startTime
-  sequence.sort((a, b) => a.startTime - b.startTime || a.midiNumber - b.midiNumber);
+  // Sort merged notes from all parts by startTime, keeping notePartIndices in lockstep
+  const zipped = sequence.map((note, i) => ({ note, partIdx: notePartIndices[i] }));
+  zipped.sort((a, b) => a.note.startTime - b.note.startTime || a.note.midiNumber - b.note.midiNumber);
+  const sortedNotes = zipped.map((z) => z.note);
+  const sortedIndices = zipped.map((z) => z.partIdx);
 
-  const totalDuration = sequence.length > 0
-    ? Math.max(...sequence.map((n) => n.startTime + n.duration))
+  const totalDuration = sortedNotes.length > 0
+    ? Math.max(...sortedNotes.map((n) => n.startTime + n.duration))
     : 0;
-  console.log(`[MusicXmlParser] parsed ${allPartXmls.length} parts → ${sequence.length} notes, tempo=${tempo}, divisions=${divisions}, totalDuration=${totalDuration.toFixed(2)}s`);
-  if (sequence.length > 0) {
-    console.log(`[MusicXmlParser] first note: ${sequence[0].pitch} at ${sequence[0].startTime.toFixed(3)}s dur=${sequence[0].duration.toFixed(3)}s`);
-    const last = sequence[sequence.length - 1];
+  console.log(`[MusicXmlParser] parsed ${allPartXmls.length} parts → ${sortedNotes.length} notes, tempo=${tempo}, divisions=${divisions}, totalDuration=${totalDuration.toFixed(2)}s`);
+  if (sortedNotes.length > 0) {
+    console.log(`[MusicXmlParser] first note: ${sortedNotes[0].pitch} at ${sortedNotes[0].startTime.toFixed(3)}s dur=${sortedNotes[0].duration.toFixed(3)}s`);
+    const last = sortedNotes[sortedNotes.length - 1];
     console.log(`[MusicXmlParser] last note: ${last.pitch} at ${last.startTime.toFixed(3)}s dur=${last.duration.toFixed(3)}s`);
   }
 
-  return sequence;
+  return { notes: sortedNotes, parts, notePartIndices: sortedIndices };
 }
 
 /** Sample MusicXML for testing — first 4 bars of "Twinkle Twinkle Little Star" in C major */

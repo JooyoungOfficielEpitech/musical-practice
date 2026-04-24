@@ -14,7 +14,12 @@
     "format": "prettier --write \"**/*.{js,ts,tsx,json}\"",
     "deploy:ios": "eas build --platform ios --profile production --local --output build/app.ipa --non-interactive && eas submit --platform ios --path build/app.ipa --non-interactive",
     "deploy:android": "eas build --platform android --profile production --local --output build/app.aab --non-interactive && eas submit --platform android --path build/app.aab --non-interactive",
-    "deploy:all": "npm run deploy:ios && npm run deploy:android"
+    "deploy:all": "npm run deploy:ios && npm run deploy:android",
+    "test": "npx jest --passWithNoTests",
+    "test:e2e": "bash e2e/orchestrator.sh",
+    "test:e2e:seed": "npx tsx e2e/helpers/seed.ts",
+    "test:e2e:cleanup": "npx tsx e2e/helpers/cleanup.ts",
+    "test:all": "npm test && npm run test:e2e"
   },
   "dependencies": {
     "@expo-google-fonts/nunito": "^0.4.2",
@@ -41,6 +46,7 @@
     "expo-image": "~3.0.11",
     "expo-image-picker": "~17.0.10",
     "expo-linking": "~8.0.8",
+    "expo-screen-orientation": "~9.0.8",
     "expo-sharing": "~14.0.8",
     "expo-splash-screen": "~31.0.13",
     "expo-status-bar": "~3.0.9",

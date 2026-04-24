@@ -93,6 +93,7 @@ const baseState = {
   musicXmlContent: null, musicXmlLoading: false, hasMusicXml: false,
   showInstrumentPicker: false, setShowInstrumentPicker: jest.fn(),
   editMode: false, setEditMode: jest.fn(),
+  partInfos: [], visiblePartIds: new Set<string>(), togglePartVisibility: jest.fn(),
   noteSequence: [], sheetSessions: [], bestScore: null, sheetRecordings: [],
   synthPlayer: baseSynthPlayer,
   audioPlayer: baseAudioPlayer,
@@ -141,5 +142,19 @@ describe("PracticeBrowseView", () => {
   it("3.4 — shows Start Practice CTA", () => {
     const { getByLabelText } = render(<PracticeBrowseView {...baseProps} />);
     expect(getByLabelText("Start practice session")).toBeTruthy();
+  });
+});
+
+// ─── Phase 5: Rename Auto-Play → Score Preview (RED) ─────────────────────────
+describe("PracticeBrowseView — Score Preview label (Phase 5)", () => {
+  it("5.6 — shows 'Score Preview' section label (not 'Auto-Play')", () => {
+    const { getByText, queryByText } = render(
+      <PracticeBrowseView
+        {...baseProps}
+        state={{ ...baseProps.state, hasMusicXml: true, musicXmlContent: "<score/>" }}
+      />
+    );
+    expect(getByText("Score Preview")).toBeTruthy();
+    expect(queryByText("Auto-Play")).toBeNull();
   });
 });

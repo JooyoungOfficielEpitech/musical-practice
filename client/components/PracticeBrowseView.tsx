@@ -119,10 +119,10 @@ export function PracticeBrowseView({
           )}
         </View>
 
-        {/* Auto-Play section */}
+        {/* Score Preview section */}
         {hasMusicXml && (
           <View style={styles.browseSection}>
-            <View style={styles.sectionLabel}><Ionicons name="play-circle-outline" size={14} color={colors.primary} /><Text style={[styles.sectionLabelText, { color: colors.primary }]}>Auto-Play</Text></View>
+            <View style={styles.sectionLabel}><Ionicons name="play-circle-outline" size={14} color={colors.primary} /><Text style={[styles.sectionLabelText, { color: colors.primary }]}>Score Preview</Text></View>
             {musicXmlLoading ? (
               <View style={[styles.autoplayLoading, { backgroundColor: colors.surface }]}><ActivityIndicator size="small" color={colors.primary} /><Text style={[styles.autoplayLoadingText, { color: colors.textSecondary }]}>Loading score...</Text></View>
             ) : musicXmlContent ? (

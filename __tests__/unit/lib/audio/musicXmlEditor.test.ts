@@ -98,11 +98,11 @@ describe("findNoteRange", () => {
 });
 
 describe("replaceNotePitch", () => {
-  const noteSequence = parseMusicXml(SAMPLE_MUSICXML);
+  const { notes: noteSequence } = parseMusicXml(SAMPLE_MUSICXML);
 
   it("replaces the first note (C4 at t≈0s) with G4 — re-parsed first note is G4", () => {
     const updated = replaceNotePitch(SAMPLE_MUSICXML, noteSequence, 0, "G", 0, 4);
-    const reparsed = parseMusicXml(updated);
+    const { notes: reparsed } = parseMusicXml(updated);
     // The note that was at t≈0 should now be G4
     const atZero = reparsed.find((n) => Math.abs(n.startTime) < 0.05);
     expect(atZero).toBeDefined();
@@ -119,7 +119,7 @@ describe("replaceNotePitch", () => {
       0,
       4,
     );
-    const reparsed = parseMusicXml(updated);
+    const { notes: reparsed } = parseMusicXml(updated);
     const nearOriginalTime = reparsed.find(
       (n) => Math.abs(n.startTime - originalNote.startTime) < 0.05,
     );

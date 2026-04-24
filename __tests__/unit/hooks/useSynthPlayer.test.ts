@@ -19,6 +19,7 @@ jest.mock("../../../client/lib/audio/synthEngine", () => ({
   resumeAudioContext: () => mockResumeAudioContext(),
   playNote: (...args: any[]) => mockPlayNote(...args),
   stopAll: () => mockStopAll(),
+  destroyAudioContext: jest.fn(),
   getCurrentTime: () => mockGetCurrentTime(),
   setInstrumentMode: (...args: any[]) => mockSetInstrumentMode(...args),
   setInstrumentSamples: (...args: any[]) => mockSetInstrumentSamples(...args),
@@ -90,10 +91,6 @@ describe("useSynthPlayer", () => {
       expect(result.current.positionMs).toBe(0);
     });
 
-    it("starts with currentNoteIndex -1", () => {
-      const { result } = renderHook(() => useSynthPlayer(SAMPLE_NOTES));
-      expect(result.current.currentNoteIndex).toBe(-1);
-    });
 
     it("starts with no error", () => {
       const { result } = renderHook(() => useSynthPlayer(SAMPLE_NOTES));
@@ -232,8 +229,11 @@ describe("useSynthPlayer", () => {
         await result.current.play();
       });
 
-      // Simulate time passing: currentTime advanced by 0.5s
-      mockCurrentTime = 0.5;
+      // Advance wall clock by 80ms (audio delay) + 500ms (playback) = 580ms
+      // pause() reads Date.now() directly, so elapsed = (580-80)/1000 = 0.5s
+      await act(async () => {
+        jest.advanceTimersByTime(580);
+      });
 
       await act(async () => {
         await result.current.pause();
@@ -256,7 +256,6 @@ describe("useSynthPlayer", () => {
 
       expect(result.current.isPlaying).toBe(false);
       expect(result.current.positionMs).toBe(0);
-      expect(result.current.currentNoteIndex).toBe(-1);
     });
 
     it("calls stopAll", async () => {
@@ -283,17 +282,6 @@ describe("useSynthPlayer", () => {
       });
 
       expect(result.current.positionMs).toBe(750);
-    });
-
-    it("updates currentNoteIndex when seeking", async () => {
-      const { result } = renderHook(() => useSynthPlayer(SAMPLE_NOTES));
-
-      // Seek to 0.75s — should be on D4 (index 1, starts at 0.5s)
-      await act(async () => {
-        await result.current.seekTo(750);
-      });
-
-      expect(result.current.currentNoteIndex).toBe(1);
     });
 
     it("clamps to 0 when seeking negative", async () => {
@@ -346,31 +334,13 @@ describe("useSynthPlayer", () => {
         await result.current.play();
       });
 
-      // Simulate 0.3s elapsed
-      mockCurrentTime = 0.3;
-
+      // Advance wall clock by 500ms total; audio delay is 80ms, so 420ms of playback.
+      // Last timer tick at 500ms: elapsed = (500-80)/1000 = 0.42s → positionMs = 420ms
       await act(async () => {
-        jest.advanceTimersByTime(50); // trigger one interval tick
+        jest.advanceTimersByTime(500);
       });
 
-      expect(result.current.positionMs).toBeCloseTo(300, -1);
-    });
-
-    it("updates currentNoteIndex as time progresses", async () => {
-      const { result } = renderHook(() => useSynthPlayer(SAMPLE_NOTES));
-
-      await act(async () => {
-        await result.current.play();
-      });
-
-      // At 0.6s, we should be on D4 (index 1)
-      mockCurrentTime = 0.6;
-
-      await act(async () => {
-        jest.advanceTimersByTime(50);
-      });
-
-      expect(result.current.currentNoteIndex).toBe(1);
+      expect(result.current.positionMs).toBeCloseTo(420, 0);
     });
 
     it("stops playback when reaching end of sequence", async () => {
@@ -380,11 +350,10 @@ describe("useSynthPlayer", () => {
         await result.current.play();
       });
 
-      // Simulate reaching past the end (1.5s duration)
-      mockCurrentTime = 1.6;
-
+      // Advance wall clock past end: 80ms delay + 1600ms > 1500ms duration
+      // Timer at 1600ms: elapsed = (1600-80)/1000 = 1.52s → 1520ms >= 1500ms → stop
       await act(async () => {
-        jest.advanceTimersByTime(50);
+        jest.advanceTimersByTime(1680);
       });
 
       expect(result.current.isPlaying).toBe(false);
@@ -468,13 +437,26 @@ describe("useSynthPlayer", () => {
   });
 
   describe("cleanup", () => {
-    it("stops audio on unmount", () => {
+    it("destroys audio context on unmount", () => {
+      const { destroyAudioContext: mockDestroy } = jest.requireMock(
+        "../../../client/lib/audio/synthEngine",
+      );
       const { unmount } = renderHook(() => useSynthPlayer(SAMPLE_NOTES));
 
-      mockStopAll.mockClear();
+      mockDestroy.mockClear();
       unmount();
 
-      expect(mockStopAll).toHaveBeenCalled();
+      expect(mockDestroy).toHaveBeenCalled();
     });
+  });
+});
+
+// ─── Phase 2: Remove dead currentNoteIndex (RED) ─────────────────────────────
+// This test FAILS against the current implementation (currentNoteIndex exists).
+
+describe("useSynthPlayer — currentNoteIndex removal (Phase 2)", () => {
+  it("2.7 — currentNoteIndex is NOT in the return value (dead state removed)", () => {
+    const { result } = renderHook(() => useSynthPlayer([]));
+    expect((result.current as unknown as Record<string, unknown>).currentNoteIndex).toBeUndefined();
   });
 });

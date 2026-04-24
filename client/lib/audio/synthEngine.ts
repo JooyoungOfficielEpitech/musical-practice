@@ -1,6 +1,6 @@
 import { AudioBuffer } from "react-native-audio-api";
 import type { NoteEvent } from "../../types/music";
-import { getAudioContext, resumeAudioContext, closeAudioContext } from "./audioContext";
+import { getAudioContext, resumeAudioContext, suspendAudioContext, closeAudioContext } from "./audioContext";
 import { createPianoNote } from "./pianoSamples";
 import { findClosestSample, playSample } from "./samplePlayer";
 
@@ -28,7 +28,7 @@ const DEFAULT_ENVELOPE: Envelope = {
 let currentMode: InstrumentMode = "piano";
 let instrumentSamples: Map<number, AudioBuffer> | null = null;
 
-export { getAudioContext, resumeAudioContext };
+export { getAudioContext, resumeAudioContext, suspendAudioContext };
 
 /** Set the instrument playback mode. */
 export function setInstrumentMode(mode: InstrumentMode): void {
@@ -217,11 +217,15 @@ export function scheduleNoteEvents(
   return endTime;
 }
 
-/** Stop all audio and close the context. */
+/** Stop all audio by suspending the context (keeps currentTime monotonic). */
 export async function stopAll(): Promise<void> {
   const ctx = getAudioContext();
-  const stack = new Error().stack?.split("\n").slice(1, 4).join(" <- ") ?? "";
-  console.log(`[SynthEngine] stopAll() — state=${ctx?.state ?? "null"} | caller: ${stack}`);
+  console.log(`[SynthEngine] stopAll() — state=${ctx?.state ?? "null"}`);
+  await suspendAudioContext();
+}
+
+/** Close and destroy the AudioContext (only call on unmount). */
+export async function destroyAudioContext(): Promise<void> {
   await closeAudioContext();
 }
 

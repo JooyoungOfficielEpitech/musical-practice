@@ -1,0 +1,36 @@
+appId: "com.musicalpractice"
+env:
+  EMAIL: ${EMAIL}
+  PASSWORD: ${PASSWORD}
+---
+- launchApp
+- runFlow: ../helpers/login.yaml
+# HOME
+- assertVisible: "Musical Practice"
+- assertVisible: "Start quick practice"
+- assertVisible: "Recent Scores"
+- takeScreenshot: "home-user"
+# LIBRARY — dismiss toast before navigating (it covers tab bar)
+- tapOn:
+    id: "!, Open debugger to view warnings."
+    optional: true
+- waitForAnimationToEnd
+- tapOn:
+    point: "38%,95%"
+- waitForAnimationToEnd
+- assertVisible: "Import PDF"
+- takeScreenshot: "library-user"
+# PRACTICE
+- tapOn:
+    point: "63%,95%"
+- waitForAnimationToEnd
+- assertVisible: "Pitch Check"
+- assertVisible: "Start practice"
+- takeScreenshot: "practice-user"
+# PROFILE
+- tapOn:
+    point: "88%,95%"
+- waitForAnimationToEnd
+- assertVisible: "This Week"
+- assertVisible: "SETTINGS"
+- takeScreenshot: "profile-user"

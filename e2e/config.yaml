@@ -1,0 +1,7 @@
+# Maestro config for Musical Practice
+# iOS bundle ID: com.musicalpractice
+# Android package: com.musicalpractice
+appId: "com.musicalpractice"
+flowTimeout: 60
+screenshotOnFailure: true
+screenshotsDir: "e2e/results/screenshots"

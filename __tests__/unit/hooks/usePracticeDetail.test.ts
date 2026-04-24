@@ -163,19 +163,19 @@ jest.mock("react-native", () => {
 describe("usePracticeDetail — initial state", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("1.1 — boolean flags default to false, currentBpm=120, audioMode=reference", () => {
+  it("1.1 — boolean flags default correctly, currentBpm=120, audioMode=reference", () => {
     const { result } = renderHook(() => usePracticeDetail("sheet-1"));
     expect(result.current.isPracticing).toBe(false);
     expect(result.current.showMetronome).toBe(false);
     expect(result.current.showEdit).toBe(false);
-    expect(result.current.editMode).toBe(false);
+    expect(result.current.editMode).toBe(true); // Phase 2: editMode defaults to true
     expect(result.current.currentBpm).toBe(120);
     expect(result.current.audioMode).toBe("reference");
   });
 
-  it("1.2 — audioMode auto-selects to autoplay when sheet has musicXmlUri but no audioUri", () => {
+  it("1.2 — audioMode stays reference when sheet has musicXmlUri but no audioUri (no autoplay)", () => {
     const { result } = renderHook(() => usePracticeDetail("sheet-xml"));
-    expect(result.current.audioMode).toBe("autoplay");
+    expect(result.current.audioMode).toBe("reference"); // Phase 2: no autoplay auto-trigger
   });
 
   it("1.3 — toggleMetronome flips showMetronome true then false", () => {
@@ -197,5 +197,55 @@ describe("usePracticeDetail — initial state", () => {
   it("1.5 — bestScore is null when no sessions exist", () => {
     const { result } = renderHook(() => usePracticeDetail("sheet-1"));
     expect(result.current.bestScore).toBeNull();
+  });
+});
+
+// ─── Phase 2: Part Selection + EditMode + Autoplay (RED) ─────────────────────
+// These tests FAIL against the current implementation.
+
+describe("usePracticeDetail — part selection (Phase 2)", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("2.1 — editMode defaults to true", () => {
+    const { result } = renderHook(() => usePracticeDetail("sheet-1"));
+    expect(result.current.editMode).toBe(true);
+  });
+
+  it("2.2 — audioMode never auto-switches to autoplay on XML load", () => {
+    const { result } = renderHook(() => usePracticeDetail("sheet-xml"));
+    expect(result.current.audioMode).toBe("reference");
+  });
+
+  it("2.3 — partInfos is an array in hook return", () => {
+    const { result } = renderHook(() => usePracticeDetail("sheet-xml"));
+    expect(Array.isArray(result.current.partInfos)).toBe(true);
+  });
+
+  it("2.4 — visiblePartIds is a Set in hook return", () => {
+    const { result } = renderHook(() => usePracticeDetail("sheet-xml"));
+    expect(result.current.visiblePartIds).toBeInstanceOf(Set);
+  });
+
+  it("2.5 — all parts visible by default (visiblePartIds.size === partInfos.length)", () => {
+    const { result } = renderHook(() => usePracticeDetail("sheet-xml"));
+    expect(result.current.visiblePartIds.size).toBe(result.current.partInfos.length);
+  });
+
+  it("2.6 — togglePartVisibility removes then restores a part id", () => {
+    const { result } = renderHook(() => usePracticeDetail("sheet-xml"));
+    const initialIds = Array.from(result.current.visiblePartIds);
+    if (initialIds.length === 0) return; // no parts to toggle
+    const firstId = initialIds[0];
+
+    act(() => { result.current.togglePartVisibility(firstId); });
+    expect(result.current.visiblePartIds.has(firstId)).toBe(false);
+
+    act(() => { result.current.togglePartVisibility(firstId); });
+    expect(result.current.visiblePartIds.has(firstId)).toBe(true);
+  });
+
+  it("2.7 — togglePartVisibility is a function in hook return", () => {
+    const { result } = renderHook(() => usePracticeDetail("sheet-1"));
+    expect(typeof result.current.togglePartVisibility).toBe("function");
   });
 });

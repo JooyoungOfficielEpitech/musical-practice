@@ -158,10 +158,17 @@ export function useMultiOmrJobs(): UseMultiOmrJobsResult {
         )
         .subscribe(async (status, err) => {
           console.log(`[Realtime] job ${jobId} status:`, status, err ?? "");
-          if (status !== "SUBSCRIBED") return;
-          // Immediate catchup + polling fallback (guards against Realtime delivery gaps)
-          await pollJobState();
-          if (!settled) {
+          if (status === "SUBSCRIBED") {
+            // Immediate catchup + polling fallback (guards against Realtime delivery gaps)
+            await pollJobState();
+          } else if (status === "TIMED_OUT" || status === "CLOSED" || status === "CHANNEL_ERROR") {
+            // Realtime unavailable — fall through to polling-only mode
+            console.log(`[Realtime] job ${jobId} falling back to poll-only`);
+            await pollJobState();
+          } else {
+            return;
+          }
+          if (!settled && pollInterval === null) {
             pollInterval = setInterval(pollJobState, 3000);
             pollsRef.current.push(pollInterval);
           }

@@ -56,7 +56,7 @@ export function usePitchDetection(options?: UsePitchDetectionOptions): UsePitchD
       let dataCount = 0;
       const unsubscribe = startAudioStream((audioData) => {
         dataCount++;
-        if (dataCount <= 3 || dataCount % 200 === 0) {
+        if (dataCount <= 3 || dataCount % 1000 === 0) {
           console.log(`[PitchDetection] audio data #${dataCount}, samples: ${audioData.length}, hasOnAudioData: ${!!optionsRef.current?.onAudioData}`);
         }
 

@@ -4,10 +4,10 @@
 Mobile musical practice app built with Expo/React Native for musical actors and students. Allows users to upload sheet music images, practice with metronome, track practice sessions, and view progress statistics.
 
 ## Architecture
-- **Frontend**: Expo Router (file-based routing) with React Native
-- **Backend**: Express.js (serving landing page and API endpoints)
-- **State**: React Context (`PracticeProvider`) + AsyncStorage for local persistence
-- **Networking**: React Query with `@/lib/query-client`
+- **Frontend**: React Navigation (native-stack + bottom-tabs) with React Native / Expo
+- **Backend**: Supabase (PostgreSQL + Auth + Storage) — no custom Express server
+- **State**: React Context (`PracticeProvider`, `AuthProvider`, `ThemeProvider`) + TanStack Query
+- **Networking**: React Query (`@tanstack/react-query`) with `@/lib/query-client`
 
 ## Color Palette (Accessibility AA/AAA)
 - Primary accent: `#49B6FF` (used for icons, highlights, non-text elements)
@@ -21,12 +21,12 @@ Mobile musical practice app built with Expo/React Native for musical actors and 
 - All colors defined in `constants/colors.ts`
 
 ## Key Files
-- `app/(tabs)/` - 4 tab screens: Home, Library, Practice, Profile
-- `app/practice-detail.tsx` - Individual score practice screen
-- `lib/practice-context.tsx` - Global state provider
-- `lib/storage.ts` - AsyncStorage persistence layer
-- `components/` - Reusable components (SheetCard, StatCard, Metronome, PracticeTimer, EmptyState)
-- `constants/colors.ts` - Theme colors
+- `client/screens/` - Screen components (HomeScreen, LibraryScreen, PracticeDetailScreen, etc.)
+- `client/navigation/` - RootStackNavigator, tab navigator
+- `client/context/PracticeContext.tsx` - Global practice state (OMR, file migration, streak)
+- `client/lib/` - Supabase client, query client, audio engine, OMR pipeline
+- `client/components/` - Shared UI (InteractiveScore, PracticeActiveView, PracticeToolbar, etc.)
+- `client/constants/theme.ts` - Colors, Spacing, Typography, Fonts (Poppins + Righteous)
 
 ## Navigation Structure
 - Bottom tab bar with 4 tabs (Home, Library, Practice, Profile)

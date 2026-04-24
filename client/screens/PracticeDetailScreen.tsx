@@ -39,9 +39,10 @@ export default function PracticeDetailScreen() {
   const {
     isPracticing, showEdit, setShowEdit, showDeleteConfirm, setShowDeleteConfirm,
     sessionResult, setSessionResult, showInstrumentPicker, setShowInstrumentPicker,
-    editMode, synthPlayer, noteEditor, handleNotePress, handleSessionStop, handleRunningChange,
+    editMode, setEditMode, synthPlayer, noteEditor, handleNotePress, handleSessionStop, handleRunningChange,
     handleDeleteConfirm, handleEdit, audioMode, musicXmlContent,
     isListening, currentPitch, pitchError, sessionAccuracy, isRecording, currentBpm, setCurrentBpm,
+    partInfos, visiblePartIds, togglePartVisibility,
   } = state;
 
   if (loading) {
@@ -86,6 +87,11 @@ export default function PracticeDetailScreen() {
           currentBpm={currentBpm}
           audioUrl={sheet.audioUri}
           onGoBack={() => navigation.goBack()}
+          editMode={editMode}
+          onToggleEditMode={() => setEditMode((v) => !v)}
+          parts={partInfos}
+          visiblePartIds={visiblePartIds}
+          onTogglePart={togglePartVisibility}
         />
       ) : (
         <PracticeBrowseView

@@ -1,0 +1,25 @@
+# Login / onboarding-skip + debugger toast dismissal
+# Runs before each authenticated flow.
+# 1. Waits for app to fully load (session + network)
+# 2. Skips onboarding if visible (fresh install)
+# 3. Dismisses the "Open debugger" toast that intermittently covers the tab bar
+appId: "com.musicalpractice"
+---
+# Give app time to load session and show the debugger toast
+- waitForAnimationToEnd
+# Skip onboarding if present
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd
+# Dismiss debugger toast — tap its X button at the right side (point: 375, 811)
+# Toast bounds: [10,787][392,835], X button is at the far right
+- tapOn:
+    point: "93%,97%"
+    optional: true
+- waitForAnimationToEnd
+# Dismiss again if it reappeared
+- tapOn:
+    point: "93%,97%"
+    optional: true
+- waitForAnimationToEnd

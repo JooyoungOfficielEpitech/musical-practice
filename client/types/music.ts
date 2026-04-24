@@ -8,3 +8,15 @@ export interface NoteEvent {
 }
 
 export type NoteSequence = NoteEvent[];
+
+export interface PartInfo {
+  id: string; // "P1" from <part id="P1">
+  name: string; // "Piano RH" from <part-name>
+  partIndex: number; // 0-based
+}
+
+export interface ParsedMusicXml {
+  notes: NoteSequence;
+  parts: PartInfo[];
+  notePartIndices: number[]; // notePartIndices[i] = partIndex of notes[i]
+}

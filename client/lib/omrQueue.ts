@@ -31,15 +31,22 @@ function requireSupabase() {
 
 /**
  * Upload a base64-encoded PDF to Supabase Storage.
+ * Path is prefixed with the authenticated user's ID to satisfy storage RLS.
  *
- * @returns The storage path (e.g. "job-abc.pdf") within the omr-pdfs bucket.
+ * @returns The storage path (e.g. "{userId}/job-abc.pdf") within the omr-pdfs bucket.
  */
 export async function uploadPdfToStorage(
   pdfB64: string,
   jobId: string,
 ): Promise<string> {
   const client = requireSupabase();
-  const storagePath = `${jobId}.pdf`;
+
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) {
+    throw new OmrQueueError("Cannot upload PDF: user is not authenticated.");
+  }
+
+  const storagePath = `${user.id}/${jobId}.pdf`;
   const binary = atob(pdfB64);
   const pdfBytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
@@ -68,9 +75,14 @@ export async function submitOmrJob(
 ): Promise<string> {
   const client = requireSupabase();
 
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) {
+    throw new OmrQueueError("Cannot submit OMR job: user is not authenticated.");
+  }
+
   const { data, error } = await client
     .from(JOBS_TABLE)
-    .insert({ pdf_storage_path: pdfStoragePath, page_ranges: pageRanges })
+    .insert({ pdf_storage_path: pdfStoragePath, page_ranges: pageRanges, user_id: user.id })
     .select()
     .single();
 

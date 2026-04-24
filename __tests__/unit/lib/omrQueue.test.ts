@@ -7,9 +7,14 @@
 const mockUpload = jest.fn();
 const mockDownload = jest.fn();
 const mockInsert = jest.fn();
+const MOCK_USER_ID = "user-uuid-123";
 
 jest.mock("../../../client/lib/supabase", () => ({
   supabase: {
+    auth: {
+      // Hardcoded — jest.mock is hoisted before const declarations
+      getUser: jest.fn().mockResolvedValue({ data: { user: { id: "user-uuid-123" } }, error: null }),
+    },
     storage: {
       from: jest.fn((bucket: string) => ({
         upload: mockUpload,
@@ -25,6 +30,19 @@ jest.mock("../../../client/lib/supabase", () => ({
     })),
   },
 }));
+
+// FileReader polyfill for Node.js test environment
+global.FileReader = class {
+  result: string | null = null;
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  readAsText(blob: Blob) {
+    blob.text().then((text) => {
+      this.result = text;
+      this.onload?.();
+    }).catch(() => this.onerror?.());
+  }
+} as unknown as typeof FileReader;
 
 jest.mock("expo-file-system", () => ({
   File: jest.fn().mockImplementation(() => ({
@@ -51,19 +69,20 @@ beforeEach(() => {
 
 describe("uploadPdfToStorage", () => {
   it("calls storage.from(omr-pdfs).upload with correct path and data", async () => {
-    mockUpload.mockResolvedValue({ data: { path: "omr-pdfs/job-abc.pdf" }, error: null });
-    const result = await uploadPdfToStorage("base64pdfdata==", "job-abc");
+    mockUpload.mockResolvedValue({ data: { path: `omr-pdfs/${MOCK_USER_ID}/job-abc.pdf` }, error: null });
+    // btoa("pdf") = "cGRm" — valid base64
+    const result = await uploadPdfToStorage("cGRm", "job-abc");
     expect(mockUpload).toHaveBeenCalledWith(
-      "job-abc.pdf",
-      expect.any(Buffer),
+      `${MOCK_USER_ID}/job-abc.pdf`,
+      expect.any(Uint8Array),
       expect.objectContaining({ contentType: "application/pdf" }),
     );
-    expect(result).toBe("job-abc.pdf");
+    expect(result).toBe(`${MOCK_USER_ID}/job-abc.pdf`);
   });
 
   it("throws OmrQueueError when upload fails", async () => {
     mockUpload.mockResolvedValue({ data: null, error: { message: "upload failed" } });
-    await expect(uploadPdfToStorage("b64==", "job-x")).rejects.toBeInstanceOf(OmrQueueError);
+    await expect(uploadPdfToStorage("cGRm", "job-x")).rejects.toBeInstanceOf(OmrQueueError);
   });
 });
 

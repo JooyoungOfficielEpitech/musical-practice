@@ -83,7 +83,7 @@ export async function processSheetMusicImage(
   const musicXmlUri = xmlFile.uri;
 
   // Step 5: Parse MusicXML to NoteSequence
-  const noteSequence = parseMusicXml(musicXml);
+  const { notes: noteSequence } = parseMusicXml(musicXml);
 
   // Step 6: Save NoteSequence to local file
   const jsonFile = new File(dir, `${sheetId}.json`);

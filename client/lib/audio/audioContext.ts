@@ -27,7 +27,14 @@ export async function resumeAudioContext(): Promise<void> {
   }
 }
 
-/** Close and clear the shared AudioContext. */
+/** Suspend the shared AudioContext (keeps currentTime monotonic). */
+export async function suspendAudioContext(): Promise<void> {
+  if (audioContext && audioContext.state === "running") {
+    await audioContext.suspend();
+  }
+}
+
+/** Close and clear the shared AudioContext (only call on unmount). */
 export function closeAudioContext(): Promise<void> | void {
   if (audioContext && audioContext.state !== "closed") {
     const p = audioContext.close();

@@ -62,6 +62,10 @@ export class AudioContext {
     return new AudioBuffer();
   });
 
+  suspend = jest.fn(async () => {
+    this.state = "suspended";
+  });
+
   resume = jest.fn(async () => {
     this.state = "running";
   });

@@ -6,6 +6,7 @@ import {
   resumeAudioContext,
   playNote,
   stopAll,
+  destroyAudioContext,
   getCurrentTime,
   setInstrumentMode,
   setInstrumentSamples,
@@ -31,7 +32,6 @@ export interface UseSynthPlayerReturn {
   isPlaying: boolean;
   positionMs: number;
   durationMs: number;
-  currentNoteIndex: number;
   error: string | null;
   instrument: string;
   instrumentLoading: boolean;
@@ -60,14 +60,13 @@ export function useSynthPlayer(
 ): UseSynthPlayerReturn {
   const [isPlaying, setIsPlaying] = useState(false);
   const [positionMs, setPositionMs] = useState(0);
-  const [currentNoteIndex, setCurrentNoteIndex] = useState(-1);
   const [error, setError] = useState<string | null>(null);
   const [instrument, setInstrumentState] = useState(initialInstrument);
   const [instrumentLoading, setInstrumentLoading] = useState(false);
   const [tempo, setTempoState] = useState(initialTempo);
   const [loopRange, setLoopRangeState] = useState<LoopRange | null>(null);
 
-  const playbackStartCtxTime = useRef(0);
+  const playbackStartWallMs = useRef(0);  // wall-clock ms when audio actually starts
   const playbackOffsetSec = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isPlayingRef = useRef(false);
@@ -90,29 +89,6 @@ export function useSynthPlayer(
       ? Math.max(...notes.map((n) => (n.startTime + n.duration) * 1000))
       : 0;
   const durationMs = rawDurationMs / tempo;
-
-  /**
-   * Find the note index active at a given time (seconds, in tempo-scaled space).
-   * For chords (multiple notes at the same startTime), returns the first note in the group.
-   */
-  const findNoteIndexAtTime = useCallback(
-    (timeSec: number): number => {
-      // Convert tempo-scaled time back to original note time
-      const originalTimeSec = timeSec * tempoRef.current;
-
-      for (let i = notes.length - 1; i >= 0; i--) {
-        if (originalTimeSec >= notes[i].startTime) {
-          // Scan backwards to find the first note in this chord group
-          while (i > 0 && notes[i - 1].startTime === notes[i].startTime) {
-            i--;
-          }
-          return i;
-        }
-      }
-      return -1;
-    },
-    [notes],
-  );
 
   /** Resolve instrument string to InstrumentMode. */
   const resolveMode = useCallback((inst: string): InstrumentMode => {
@@ -163,6 +139,7 @@ export function useSynthPlayer(
 
   // Rolling scheduler: only schedule notes within a time window to avoid overloading AudioContext
   const SCHEDULE_AHEAD_SEC = 4;
+  const PLAY_START_DELAY_SEC = 0.08; // 80ms head-start so cursor visually settles before first note plays
   const lastScheduledIndexRef = useRef(0);
 
   /** Schedule notes from a given offset (in tempo-scaled seconds). Uses rolling window. */
@@ -202,7 +179,8 @@ export function useSynthPlayer(
           break;
         }
 
-        const scheduledStart = now + Math.max(relativeStart, 0);
+        const startDelay = isResume ? 0 : PLAY_START_DELAY_SEC;
+        const scheduledStart = now + startDelay + Math.max(relativeStart, 0);
         const actualDuration =
           relativeStart < 0 ? scaledDuration + relativeStart : scaledDuration;
 
@@ -219,7 +197,8 @@ export function useSynthPlayer(
 
       console.log(`[SynthPlayer] scheduleFromOffset(${offsetSec.toFixed(2)}s) window=${windowEnd.toFixed(1)}s — scheduled=${scheduledCount}, skipped=${skippedCount}, nextIdx=${lastScheduledIndexRef.current}, ctxTime=${now.toFixed(3)}`);
       if (!isResume) {
-        playbackStartCtxTime.current = now;
+        // Wall-clock time when audio actually starts (now + delay). Used by position timer.
+        playbackStartWallMs.current = Date.now() + PLAY_START_DELAY_SEC * 1000;
         playbackOffsetSec.current = offsetSec;
       }
     },
@@ -229,7 +208,7 @@ export function useSynthPlayer(
   /** Top up the rolling schedule with upcoming notes. */
   const topUpSchedule = useCallback(() => {
     if (!isPlayingRef.current || lastScheduledIndexRef.current >= notes.length) return;
-    const elapsed = getCurrentTime() - playbackStartCtxTime.current;
+    const elapsed = (Date.now() - playbackStartWallMs.current) / 1000;
     const currentSec = playbackOffsetSec.current + elapsed;
     scheduleFromOffset(currentSec, true);
   }, [notes, scheduleFromOffset]);
@@ -248,9 +227,10 @@ export function useSynthPlayer(
     timerRef.current = setInterval(() => {
       if (!isPlayingRef.current) return;
 
-      const elapsed = getCurrentTime() - playbackStartCtxTime.current;
+      const elapsed = (Date.now() - playbackStartWallMs.current) / 1000;
       const currentSec = playbackOffsetSec.current + elapsed;
-      const currentMs = currentSec * 1000;
+      // Clamp: don't go backward past the start offset (elapsed is negative during 80ms audio delay)
+      const currentMs = Math.max(currentSec * 1000, playbackOffsetSec.current * 1000);
       const currentTempo = tempoRef.current;
       const currentDurationMs = rawDurationMs / currentTempo;
       const loop = loopRangeRef.current;
@@ -263,7 +243,6 @@ export function useSynthPlayer(
           resumeAudioContext().then(() => {
             scheduleFromOffset(loopStartSec);
             setPositionMs(loop.startMs);
-            setCurrentNoteIndex(findNoteIndexAtTime(loopStartSec));
           });
         });
         return;
@@ -272,7 +251,6 @@ export function useSynthPlayer(
       if (currentMs >= currentDurationMs) {
         console.log(`[SynthPlayer] playback ended — currentMs=${currentMs.toFixed(0)}, durationMs=${currentDurationMs.toFixed(0)}`);
         setPositionMs(currentDurationMs);
-        setCurrentNoteIndex(notes.length > 0 ? findNoteIndexAtTime(currentDurationMs / 1000) : -1);
         setIsPlaying(false);
         isPlayingRef.current = false;
         if (timerRef.current) {
@@ -287,16 +265,15 @@ export function useSynthPlayer(
         topUpSchedule();
       }
 
-      // Log every ~2 seconds
-      if (Math.floor(currentMs / 2000) !== Math.floor((currentMs - POSITION_UPDATE_INTERVAL) / 2000)) {
+      // Log every second
+      if (Math.floor(currentMs / 1000) !== Math.floor((currentMs - POSITION_UPDATE_INTERVAL) / 1000)) {
         const ctxState = getAudioContext().state;
-        console.log(`[SynthPlayer] tick — pos=${(currentMs / 1000).toFixed(1)}s / ${(currentDurationMs / 1000).toFixed(1)}s, ctxState=${ctxState}`);
+        console.log(`[SynthPlayer] pos=${(currentMs / 1000).toFixed(2)}s / ${(currentDurationMs / 1000).toFixed(2)}s | elapsed=${((Date.now() - playbackStartWallMs.current) / 1000).toFixed(3)}s ctxState=${ctxState}`);
       }
 
       setPositionMs(currentMs);
-      setCurrentNoteIndex(findNoteIndexAtTime(currentSec));
     }, POSITION_UPDATE_INTERVAL);
-  }, [rawDurationMs, notes.length, findNoteIndexAtTime, scheduleFromOffset, topUpSchedule]);
+  }, [rawDurationMs, notes.length, scheduleFromOffset, topUpSchedule]);
 
   const play = useCallback(async () => {
     if (notes.length === 0) {
@@ -322,7 +299,6 @@ export function useSynthPlayer(
         const restartMs = loop ? loop.startMs : firstNoteTimeSec * 1000;
         startOffset = restartMs / 1000;
         setPositionMs(restartMs);
-        setCurrentNoteIndex(restartMs > 0 ? findNoteIndexAtTime(startOffset) : -1);
       } else if (positionMs === 0 && firstNoteTimeSec > 0) {
         // Skip initial silence on first play
         startOffset = firstNoteTimeSec;
@@ -334,6 +310,9 @@ export function useSynthPlayer(
 
       console.log(`[SynthPlayer] scheduling from offset=${startOffset}s, durationMs=${rawDurationMs / tempoRef.current}`);
       scheduleFromOffset(startOffset);
+      // Send initial position immediately — don't wait 50ms for first timer tick
+      setPositionMs(startOffset * 1000 * tempoRef.current);
+      console.log(`[SynthPlayer] play() — initial positionMs=${(startOffset * 1000 * tempoRef.current).toFixed(0)}ms, ctxTime=${getAudioContext().currentTime.toFixed(3)}`);
       setIsPlaying(true);
       isPlayingRef.current = true;
       startTimer();
@@ -342,12 +321,15 @@ export function useSynthPlayer(
       setError(msg);
       console.error("[useSynthPlayer] play error:", e);
     }
-  }, [notes, positionMs, rawDurationMs, scheduleFromOffset, startTimer, findNoteIndexAtTime]);
+  }, [notes, positionMs, rawDurationMs, scheduleFromOffset, startTimer]);
 
   const pause = useCallback(async () => {
     console.log("[SynthPlayer] pause() called");
-    // Capture elapsed time before stopping
-    const elapsed = getCurrentTime() - playbackStartCtxTime.current;
+    // Stop the timer guard immediately — prevents a rogue tick from double-counting elapsed
+    // after we update playbackOffsetSec.current below.
+    isPlayingRef.current = false;
+    // Capture elapsed time (wall clock always advances, even after AudioContext suspend)
+    const elapsed = (Date.now() - playbackStartWallMs.current) / 1000;
     const currentSec = playbackOffsetSec.current + elapsed;
     playbackOffsetSec.current = currentSec;
     setPositionMs(currentSec * 1000);
@@ -355,17 +337,15 @@ export function useSynthPlayer(
     await stopAll();
     stopTimer();
     setIsPlaying(false);
-    isPlayingRef.current = false;
   }, [stopTimer]);
 
   const stop = useCallback(async () => {
     console.log("[SynthPlayer] stop() called");
+    isPlayingRef.current = false;  // block timer immediately
     await stopAll();
     stopTimer();
     setIsPlaying(false);
-    isPlayingRef.current = false;
     setPositionMs(0);
-    setCurrentNoteIndex(-1);
     playbackOffsetSec.current = 0;
   }, [stopTimer]);
 
@@ -374,8 +354,6 @@ export function useSynthPlayer(
       const currentDurationMs = rawDurationMs / tempoRef.current;
       const clampedMs = Math.max(0, Math.min(ms, currentDurationMs));
       setPositionMs(clampedMs);
-      setCurrentNoteIndex(findNoteIndexAtTime(clampedMs / 1000));
-
       if (isPlayingRef.current) {
         await stopAll();
         stopTimer();
@@ -386,7 +364,7 @@ export function useSynthPlayer(
         playbackOffsetSec.current = clampedMs / 1000;
       }
     },
-    [rawDurationMs, findNoteIndexAtTime, scheduleFromOffset, startTimer, stopTimer],
+    [rawDurationMs, scheduleFromOffset, startTimer, stopTimer],
   );
 
   /** Change the instrument. Loads samples asynchronously if needed. */
@@ -428,7 +406,7 @@ export function useSynthPlayer(
 
       // If currently playing, reschedule with new instrument
       if (isPlayingRef.current) {
-        const elapsed = getCurrentTime() - playbackStartCtxTime.current;
+        const elapsed = (Date.now() - playbackStartWallMs.current) / 1000;
         const currentSec = playbackOffsetSec.current + elapsed;
         await stopAll();
         await resumeAudioContext();
@@ -445,7 +423,7 @@ export function useSynthPlayer(
 
       if (isPlayingRef.current) {
         // Calculate current position in original (unscaled) time
-        const elapsed = getCurrentTime() - playbackStartCtxTime.current;
+        const elapsed = (Date.now() - playbackStartWallMs.current) / 1000;
         const currentScaledSec = playbackOffsetSec.current + elapsed;
         // Convert current position to original time, then to new tempo-scaled time
         const originalTimeSec = currentScaledSec * tempoRef.current;
@@ -489,12 +467,12 @@ export function useSynthPlayer(
     setInstrumentMode(resolveMode(initialInstrument));
   }, [initialInstrument, resolveMode]);
 
-  // Cleanup on unmount
+  // Cleanup on unmount — destroy AudioContext here (the only place it should be closed)
   useEffect(() => {
     return () => {
-      console.log("[SynthPlayer] cleanup — unmounting, stopping all");
+      console.log("[SynthPlayer] cleanup — unmounting, destroying audio context");
       stopTimer();
-      stopAll();
+      destroyAudioContext();
     };
   }, [stopTimer]);
 
@@ -502,7 +480,6 @@ export function useSynthPlayer(
     isPlaying,
     positionMs,
     durationMs,
-    currentNoteIndex,
     error,
     instrument,
     instrumentLoading,

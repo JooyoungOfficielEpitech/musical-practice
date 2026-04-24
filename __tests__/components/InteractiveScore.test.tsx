@@ -187,3 +187,68 @@ describe("InteractiveScore", () => {
     expect(json).toContain("scrollIntoView");
   });
 });
+
+// ─── Phase 3: visiblePartIndices prop (RED) ───────────────────────────────────
+// These tests FAIL against the current implementation (prop doesn't exist yet,
+// and setVisibleParts JS function is not in the WebView HTML).
+
+describe("InteractiveScore — visiblePartIndices (Phase 3)", () => {
+  it("3.1 — renders without error when visiblePartIndices={[0]} is passed", () => {
+    const { toJSON } = render(
+      <InteractiveScore musicXml={testMusicXml} visiblePartIndices={[0]} />
+    );
+    expect(toJSON()).toBeTruthy();
+  });
+
+  it("3.2 — WebView HTML contains setVisibleParts function", () => {
+    const { toJSON } = render(
+      <InteractiveScore musicXml={testMusicXml} visiblePartIndices={[0]} />
+    );
+    const json = JSON.stringify(toJSON());
+    expect(json).toContain("setVisibleParts");
+  });
+
+  it("3.3 — WebView HTML handles setVisibleParts message type", () => {
+    const { toJSON } = render(
+      <InteractiveScore musicXml={testMusicXml} />
+    );
+    const json = JSON.stringify(toJSON());
+    expect(json).toContain("setVisibleParts");
+  });
+});
+
+// ─── Phase 1: Score Reader Bug Fixes (RED) ────────────────────────────────────
+describe("InteractiveScore — score reader bug fixes (Phase 1)", () => {
+  it("1.1 — cursor element width is NOT forced to 100%", () => {
+    const { toJSON } = render(
+      <InteractiveScore musicXml={testMusicXml} />
+    );
+    const json = JSON.stringify(toJSON());
+    expect(json).not.toContain("style.width='100%'");
+  });
+
+  it("1.2 — OSMD is initialized with zoom 0.65", () => {
+    const { toJSON } = render(
+      <InteractiveScore musicXml={testMusicXml} />
+    );
+    const json = JSON.stringify(toJSON());
+    expect(json).toContain("zoom:0.65");
+  });
+
+  it("1.3 — scrollIntoView uses instant behavior, not smooth", () => {
+    const { toJSON } = render(
+      <InteractiveScore musicXml={testMusicXml} />
+    );
+    const json = JSON.stringify(toJSON());
+    expect(json).toContain("behavior:'instant'");
+    expect(json).not.toContain("behavior:'smooth'");
+  });
+
+  it("1.4 — currentStep variable exists for incremental cursor tracking", () => {
+    const { toJSON } = render(
+      <InteractiveScore musicXml={testMusicXml} />
+    );
+    const json = JSON.stringify(toJSON());
+    expect(json).toContain("currentStep");
+  });
+});

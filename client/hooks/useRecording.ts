@@ -34,7 +34,7 @@ export function useRecording(): UseRecordingReturn {
   const addAudioData = useCallback((data: Float32Array) => {
     if (!isRecordingRef.current) return;
     chunksRef.current.push(data);
-    if (chunksRef.current.length % 100 === 1) {
+    if (chunksRef.current.length % 500 === 1) {
       if (__DEV__) console.log(`[useRecording] chunks: ${chunksRef.current.length}, latest size: ${data.length}`);
     }
   }, []);

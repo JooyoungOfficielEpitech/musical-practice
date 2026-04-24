@@ -14,7 +14,7 @@ import { useOmr } from "@/hooks/useOmr";
 import { useNoteEditor } from "@/hooks/useNoteEditor";
 import { parseMusicXml } from "@/lib/audio/musicXmlParser";
 import type { SheetFormData } from "@/lib/storage";
-import type { NoteSequence } from "@/types/music";
+import type { NoteSequence, PartInfo } from "@/types/music";
 import type { PitchResult } from "@/lib/audio/types";
 
 export type AudioMode = "reference" | "autoplay";
@@ -32,6 +32,9 @@ export interface PracticeDetailState {
   musicXmlContent: string | null; musicXmlLoading: boolean; hasMusicXml: boolean;
   showInstrumentPicker: boolean; setShowInstrumentPicker: (v: boolean) => void;
   editMode: boolean; setEditMode: React.Dispatch<React.SetStateAction<boolean>>;
+  partInfos: PartInfo[];
+  visiblePartIds: Set<string>;
+  togglePartVisibility: (partId: string) => void;
   noteSequence: NoteSequence;
   sheetSessions: ReturnType<typeof usePractice>["sessions"];
   bestScore: number | null;
@@ -72,9 +75,31 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
   const [noteSequence, setNoteSequence] = useState<NoteSequence>([]);
   const [musicXmlLoading, setMusicXmlLoading] = useState(false);
   const [showInstrumentPicker, setShowInstrumentPicker] = useState(false);
-  const [editMode, setEditMode] = useState(false);
+  const [editMode, setEditMode] = useState(true);
 
-  const synthPlayer = useSynthPlayer(noteSequence);
+  const [partInfos, setPartInfos] = useState<PartInfo[]>([]);
+  const [visiblePartIds, setVisiblePartIds] = useState<Set<string>>(new Set());
+  const notePartIndicesRef = useRef<number[]>([]);
+  const filteredNotes = useMemo(() => {
+    const indices = notePartIndicesRef.current;
+    if (visiblePartIds.size === 0 || visiblePartIds.size === partInfos.length || indices.length === 0) {
+      return noteSequence;
+    }
+    return noteSequence.filter((_, i) => {
+      const idx = indices[i];
+      return idx !== undefined && visiblePartIds.has(partInfos[idx]?.id);
+    });
+  }, [noteSequence, visiblePartIds, partInfos]);
+
+  const togglePartVisibility = useCallback((partId: string) => {
+    setVisiblePartIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(partId)) { next.delete(partId); } else { next.add(partId); }
+      return next;
+    });
+  }, []);
+
+  const synthPlayer = useSynthPlayer(filteredNotes);
   const audioPlayer = useAudioPlayer();
   const noteEditor = useNoteEditor(musicXmlContent ?? "", noteSequence);
   const { isRecording, startRecording, stopRecording, addAudioData } = useRecording();
@@ -107,16 +132,17 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
         const xml = await new File(sheet.musicXmlUri!).text(); // non-null: guarded above
         if (cancelled) return;
         setMusicXmlContent(xml);
-        setNoteSequence(parseMusicXml(xml));
+        const parsed = parseMusicXml(xml);
+        setNoteSequence(parsed.notes);
+        setPartInfos(parsed.parts);
+        notePartIndicesRef.current = parsed.notePartIndices;
+        setVisiblePartIds(new Set(parsed.parts.map((p) => p.id)));
       } catch { if (!cancelled) { setMusicXmlContent(null); setNoteSequence([]); } }
       finally { if (!cancelled) setMusicXmlLoading(false); }
     })();
     return () => { cancelled = true; };
   }, [sheet?.musicXmlUri]);
 
-  useEffect(() => {
-    if (hasMusicXml && !sheet?.audioUri) setAudioMode("autoplay");
-  }, [hasMusicXml, sheet?.audioUri]);
 
   useEffect(() => {
     if (sheet?.audioUri) audioPlayer.loadSound(sheet.audioUri);
@@ -222,6 +248,7 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
     sessionResult, setSessionResult, audioMode, setAudioMode,
     musicXmlContent, musicXmlLoading, hasMusicXml, noteSequence,
     showInstrumentPicker, setShowInstrumentPicker, editMode, setEditMode,
+    partInfos, visiblePartIds, togglePartVisibility,
     sheetSessions, bestScore, sheetRecordings,
     synthPlayer, audioPlayer, noteEditor,
     isListening, currentPitch, pitchError: pitchError ?? null, sessionAccuracy, isRecording, omr,

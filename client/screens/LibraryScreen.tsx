@@ -7,6 +7,8 @@ import {
   Platform,
   Pressable,
   TextInput,
+  ActionSheetIOS,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,6 +18,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTheme } from "@/hooks/useTheme";
 import { usePractice } from "@/context/PracticeContext";
 import { SheetCard } from "@/components/SheetCard";
+import { SheetFormModal } from "@/components/SheetFormModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { EmptyState } from "@/components/EmptyState";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
@@ -32,10 +35,11 @@ export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  const { sheets, sessions, removeSheet, toggleFavorite } = usePractice();
+  const { sheets, sessions, removeSheet, toggleFavorite, addSheet } = usePractice();
   const [search, setSearch] = useState("");
   const [activeFolder, setActiveFolder] = useState("All");
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
   const filtered = useMemo(() => sheets.filter((s) => {
     const matchFolder = activeFolder === "All" || s.folder === activeFolder;
     const matchSearch =
@@ -56,13 +60,32 @@ export default function LibraryScreen() {
     }
   }, [deleteTarget, removeSheet]);
 
+  const handleAddPress = useCallback(() => {
+    const options = ["Add Score", "Import PDF", "Cancel"];
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options, cancelButtonIndex: 2 },
+        (index) => {
+          if (index === 0) setShowAddModal(true);
+          else if (index === 1) navigation.navigate("PdfImport");
+        },
+      );
+    } else {
+      Alert.alert("Add to Library", undefined, [
+        { text: "Add Score", onPress: () => setShowAddModal(true) },
+        { text: "Import PDF", onPress: () => navigation.navigate("PdfImport") },
+        { text: "Cancel", style: "cancel" },
+      ]);
+    }
+  }, [navigation]);
+
   return (
     <View style={[styles.container, { backgroundColor: colors.backgroundDefault, paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Library</Text>
         <Pressable
-          onPress={() => navigation.navigate("PdfImport")}
-          accessibilityLabel="Import PDF"
+          onPress={handleAddPress}
+          accessibilityLabel="Add new score"
           accessibilityRole="button"
           style={({ pressed }) => [styles.addBtn, { opacity: pressed ? 0.8 : 1 }]}
         >
@@ -178,6 +201,12 @@ export default function LibraryScreen() {
         icon="trash-outline"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <SheetFormModal
+        visible={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSubmit={(data) => { addSheet(data); setShowAddModal(false); }}
       />
 
     </View>

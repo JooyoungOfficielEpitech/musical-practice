@@ -1,0 +1,4 @@
+appId: "com.musicalpractice"
+---
+# Profile tab is covered by home/user.yaml combined flow
+- waitForAnimationToEnd

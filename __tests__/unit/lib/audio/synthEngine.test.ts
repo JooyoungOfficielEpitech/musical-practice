@@ -4,6 +4,7 @@ import {
   playNote,
   scheduleNotes,
   stopAll,
+  destroyAudioContext,
   getCurrentTime,
   setInstrumentMode,
 } from "../../../../client/lib/audio/synthEngine";
@@ -12,8 +13,8 @@ import {
 
 describe("synthEngine", () => {
   beforeEach(async () => {
-    // Reset module state between tests by stopping any previous context
-    await stopAll();
+    // Reset module state between tests by fully destroying the context
+    await destroyAudioContext();
     // Use oscillator mode for predictable test assertions (1 oscillator per note)
     setInstrumentMode("oscillator");
   });
@@ -31,11 +32,11 @@ describe("synthEngine", () => {
       expect(ctx1).toBe(ctx2);
     });
 
-    it("creates a new AudioContext after the previous one is closed", async () => {
+    it("returns same AudioContext after stopAll (context is suspended, not closed)", async () => {
       const ctx1 = getAudioContext();
       await stopAll();
       const ctx2 = getAudioContext();
-      expect(ctx2).not.toBe(ctx1);
+      expect(ctx2).toBe(ctx1); // context survives stopAll, only destroyed by destroyAudioContext
     });
   });
 
@@ -148,10 +149,11 @@ describe("synthEngine", () => {
   });
 
   describe("stopAll", () => {
-    it("closes the audio context", async () => {
+    it("suspends the audio context (keeps it alive)", async () => {
       const ctx = getAudioContext();
       await stopAll();
-      expect(ctx.close).toHaveBeenCalled();
+      expect(ctx.suspend).toHaveBeenCalled();
+      expect(ctx.close).not.toHaveBeenCalled();
     });
 
     it("is safe to call multiple times", async () => {
@@ -168,9 +170,11 @@ describe("synthEngine", () => {
       expect(getCurrentTime()).toBe(5.5);
     });
 
-    it("returns 0 when no context exists", async () => {
+    it("returns currentTime after stopAll (context stays alive)", async () => {
+      const ctx = getAudioContext();
+      (ctx as any).currentTime = 3.0;
       await stopAll();
-      expect(getCurrentTime()).toBe(0);
+      expect(getCurrentTime()).toBe(3.0);
     });
   });
 });

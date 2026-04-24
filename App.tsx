@@ -9,6 +9,13 @@ import {
   Nunito_700Bold,
   useFonts,
 } from "@expo-google-fonts/nunito";
+import {
+  Poppins_400Regular,
+  Poppins_500Medium,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
+} from "@expo-google-fonts/poppins";
+import { Righteous_400Regular } from "@expo-google-fonts/righteous";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { NavigationContainer } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -32,6 +39,11 @@ function App() {
     Nunito_500Medium,
     Nunito_600SemiBold,
     Nunito_700Bold,
+    Poppins_400Regular,
+    Poppins_500Medium,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+    Righteous_400Regular,
   });
 
   useEffect(() => {

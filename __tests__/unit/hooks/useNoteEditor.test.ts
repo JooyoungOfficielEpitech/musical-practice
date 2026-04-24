@@ -14,7 +14,7 @@ jest.mock("../../../client/lib/audio/synthEngine", () => ({
   resumeAudioContext: jest.fn().mockResolvedValue(undefined),
 }));
 
-const noteSequence = parseMusicXml(SAMPLE_MUSICXML);
+const { notes: noteSequence } = parseMusicXml(SAMPLE_MUSICXML);
 
 type HookResult = NoteEditorState & NoteEditorActions;
 
@@ -144,7 +144,7 @@ describe("useNoteEditor — applyPitch", () => {
     await act(async () => {
       result.current.applyPitch("G", 0, 4);
     });
-    const reparsed = reparse(result.current.editedMusicXml);
+    const { notes: reparsed } = reparse(result.current.editedMusicXml);
     const atZero = reparsed.find((n) => Math.abs(n.startTime) < 0.05);
     expect(atZero).toBeDefined();
     expect(atZero!.pitch).toBe("G4");
