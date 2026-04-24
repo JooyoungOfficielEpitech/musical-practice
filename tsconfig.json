@@ -15,6 +15,7 @@
   ],
   "exclude": [
     "supabase/functions/**/*",
+    "e2e/**/*",
     "node_modules"
   ]
 }
