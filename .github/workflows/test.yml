@@ -61,11 +61,11 @@ jobs:
           xcrun simctl boot "iPhone 16" 2>/dev/null || true
           xcrun simctl list devices | grep Booted
 
+      - name: Generate native iOS project
+        run: npx expo prebuild --platform ios --clean --non-interactive
+
       - name: Install CocoaPods dependencies
-        run: cd ios && pod install --repo-update
-        env:
-          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: cd ios && pod install
 
       - name: Build app for simulator
         run: |
