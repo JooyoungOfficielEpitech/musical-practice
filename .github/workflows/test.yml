@@ -34,6 +34,7 @@ jobs:
   e2e-tests:
     name: E2E Tests (Maestro)
     runs-on: macos-latest
+    timeout-minutes: 30
     # Only run E2E on main branch pushes (not every PR — too slow)
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
     needs: unit-tests
@@ -60,10 +61,33 @@ jobs:
           xcrun simctl boot "iPhone 16" 2>/dev/null || true
           xcrun simctl list devices | grep Booted
 
-      - name: Build & install app on simulator
-        run: npx expo run:ios --configuration Release --device "iPhone 16"
+      - name: Install CocoaPods dependencies
+        run: cd ios && pod install --repo-update
         env:
-          EXPO_NO_DOTENV: 1
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+      - name: Build app for simulator
+        run: |
+          xcodebuild \
+            -workspace ios/MusicalPractice.xcworkspace \
+            -scheme MusicalPractice \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build | xcpretty || true
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+      - name: Install app on simulator
+        run: |
+          APP_PATH=$(find build/DerivedData -name "MusicalPractice.app" -path "*/Debug-iphonesimulator/*" | head -1)
+          echo "Installing: $APP_PATH"
+          xcrun simctl install booted "$APP_PATH"
 
       - name: Create E2E env file
         run: |
