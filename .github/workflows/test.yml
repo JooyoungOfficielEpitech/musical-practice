@@ -98,6 +98,21 @@ jobs:
           NODE_ENV=test
           EOF
 
+      - name: Create E2E accounts file
+        run: |
+          cat > e2e/accounts.json << EOF
+          {
+            "backend": "supabase",
+            "roles": {
+              "user": {
+                "email": "e2e-user@test.local",
+                "password": "${{ secrets.E2E_USER_PASSWORD }}",
+                "seedData": {}
+              }
+            }
+          }
+          EOF
+
       - name: Seed test accounts
         run: npm run test:e2e:seed
         env:
