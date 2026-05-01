@@ -34,7 +34,7 @@ jobs:
   e2e-tests:
     name: E2E Tests (Maestro)
     runs-on: macos-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     # Only run E2E on main branch pushes (not every PR — too slow)
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
     needs: unit-tests
@@ -64,8 +64,22 @@ jobs:
       - name: Generate native iOS project
         run: npx expo prebuild --platform ios --clean --non-interactive
 
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: ios/Pods
+          key: pods-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: pods-
+
       - name: Install CocoaPods dependencies
         run: cd ios && pod install
+
+      - name: Cache Xcode DerivedData
+        uses: actions/cache@v4
+        with:
+          path: build/DerivedData
+          key: derived-${{ hashFiles('ios/Podfile.lock', 'package-lock.json') }}
+          restore-keys: derived-
 
       - name: Build app for simulator
         run: |

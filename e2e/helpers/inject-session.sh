@@ -32,17 +32,16 @@ if [ -z "$UDID" ]; then
   fi
 fi
 
-# Find app data container (identified by bundle ID in the path)
-APP_SUPPORT=$(find ~/Library/Developer/CoreSimulator/Devices/$UDID/data/Containers/Data/Application \
-  -maxdepth 4 -type d -name "$BUNDLE_ID" 2>/dev/null | head -1)
+# Find app data container via simctl (works as soon as app is installed)
+APP_CONTAINER=$(xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" data 2>/dev/null)
 
-if [ -z "$APP_SUPPORT" ]; then
+if [ -z "$APP_CONTAINER" ]; then
   echo "❌ App data container not found for $BUNDLE_ID on $UDID" >&2
-  echo "   Have you run the app at least once? Try: maestro test e2e/flows/onboarding/user.yaml" >&2
+  echo "   Is the app installed? Try: xcrun simctl install booted /path/to/App.app" >&2
   exit 1
 fi
 
-STORAGE_DIR=$(cd "$APP_SUPPORT" && pwd)/RCTAsyncLocalStorage_V1
+STORAGE_DIR="$APP_CONTAINER/Library/RCTAsyncLocalStorage_V1"
 mkdir -p "$STORAGE_DIR"
 
 echo "📂 AsyncStorage: $STORAGE_DIR"
