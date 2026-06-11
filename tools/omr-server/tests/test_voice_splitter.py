@@ -105,3 +105,59 @@ class TestSplitVoices:
         for key, xml_str in result.items():
             root = ET.fromstring(xml_str)
             assert root.find(".//backup") is None, f"{key} still has <backup>"
+
+
+DEGENERATE_VOICE_XML = """\
+<?xml version='1.0' encoding='utf-8'?>
+<score-partwise version="3.1">
+  <part-list><score-part id="P1"><part-name>SA</part-name></score-part></part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>2</divisions></attributes>
+      <note><voice>1</voice><pitch><step>G</step><octave>5</octave></pitch><duration>2</duration></note>
+      <note><voice>1</voice><pitch><step>G</step><octave>5</octave></pitch><duration>2</duration></note>
+      <note><voice>1</voice><pitch><step>B</step><octave>4</octave></pitch><duration>2</duration></note>
+      <note><chord/><voice>1</voice><pitch><step>F</step><octave>4</octave></pitch><duration>2</duration></note>
+      <note><voice>1</voice><pitch><step>B</step><octave>4</octave></pitch><duration>2</duration></note>
+      <note><chord/><voice>1</voice><pitch><step>F</step><octave>4</octave></pitch><duration>2</duration></note>
+      <backup><duration>8</duration></backup>
+      <note><voice>2</voice><pitch><step>F</step><octave>4</octave></pitch><duration>8</duration></note>
+    </measure>
+  </part>
+</score-partwise>"""
+
+
+def _pitched_count(xml: str) -> int:
+    root = ET.fromstring(xml)
+    return sum(1 for n in root.findall(".//note") if n.find("pitch") is not None)
+
+
+class TestDegenerateVoiceSplit:
+    """A stray voice-2 tag must not starve voice2 when chords carry the content.
+
+    Real failure (p8 SA, scale1.5): homr tagged ONE note voice=2 and put all
+    chords in voice 1; voice-number split returned a 1-note voice2 and the
+    chord content never split. Expected: fall through to chord splitting.
+    """
+
+    def test_falls_back_to_chord_split(self):
+        result = split_voices(DEGENERATE_VOICE_XML)
+        assert set(result.keys()) == {"voice1", "voice2"}
+        # voice2 must contain the chord bottoms (2× F4), not just the stray note
+        assert _pitched_count(result["voice2"]) >= 2
+
+    def test_voice1_keeps_chord_tops(self):
+        result = split_voices(DEGENERATE_VOICE_XML)
+        root = ET.fromstring(result["voice1"])
+        pitches = {
+            f"{n.findtext('pitch/step')}{n.findtext('pitch/octave')}"
+            for n in root.findall(".//note") if n.find("pitch") is not None
+        }
+        assert "B4" in pitches  # chord top stays in voice1
+
+    def test_no_backup_in_chord_split_output(self):
+        result = split_voices(DEGENERATE_VOICE_XML)
+        for xml in result.values():
+            root = ET.fromstring(xml)
+            assert root.find(".//backup") is None
+            assert root.find(".//forward") is None

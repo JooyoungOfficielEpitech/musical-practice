@@ -1,5 +1,4 @@
 """Tests for omr_queue/job_processor.py — download, OMR, upload cycle."""
-import os
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
@@ -250,9 +249,9 @@ class TestProgressReporting:
             patch("omr_queue.job_processor.pdf_to_png", return_value=[
                 [str(tmp_path / "p1.png"), str(tmp_path / "p2.png")],
             ]),
-            patch("omr_queue.job_processor._process_vocal_page", return_value=(fake_char_sys, fake_g_indices)),
-            patch("omr_queue.job_processor.align_and_flatten", return_value={"Soprano": _make_measure_list()}),
-            patch("omr_queue.job_processor.combine_chars_to_xml_string", return_value=SAMPLE_XML),
+            patch("omr_queue.vocal_pipeline._process_vocal_page", return_value=(fake_char_sys, fake_g_indices)),
+            patch("omr_queue.vocal_pipeline.align_and_flatten", return_value={"Soprano": _make_measure_list()}),
+            patch("omr_queue.vocal_pipeline.combine_chars_to_xml_string", return_value=SAMPLE_XML),
         ):
             from omr_queue.job_processor import process_job
             process_job(job, client)

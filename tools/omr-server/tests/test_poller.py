@@ -1,5 +1,4 @@
 """Tests for omr_queue/poller.py — job claiming, processing, status updates."""
-import pytest
 from unittest.mock import MagicMock, patch
 
 

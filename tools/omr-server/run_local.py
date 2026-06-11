@@ -39,7 +39,7 @@ def run(pdf_path: str, output_xml: str | None = None):
     import tempfile
     with tempfile.TemporaryDirectory() as tmp:
         # ── Step 1: PDF → PNG ────────────────────────────────────────────────
-        print(f"\n[1/4] Converting PDF → PNG at 300 DPI...")
+        print("\n[1/4] Converting PDF → PNG at 300 DPI...")
         png_groups = pdf_to_png(pdf_path, [], tmp)
         all_pages = [p for group in png_groups for p in group]
         print(f"      {len(all_pages)} page(s)")
@@ -64,7 +64,7 @@ def run(pdf_path: str, output_xml: str | None = None):
             # ── Step 2: crop all vocal staves ─────────────────────────────
             staves_dict, sys_info = crop_all_vocal_staves(img)
             if not staves_dict:
-                print(f"      [WARN] No vocal staves detected — skipping page")
+                print("      [WARN] No vocal staves detected — skipping page")
                 continue
 
             print(f"      Detected characters: {list(staves_dict.keys())}")
@@ -79,7 +79,7 @@ def run(pdf_path: str, output_xml: str | None = None):
             all_sys_indices.extend(global_indices)
 
             # ── Step 3 + 4: per character, per system ─────────────────────
-            print(f"\n[3/4] x-notehead replacement + homr per staff")
+            print("\n[3/4] x-notehead replacement + homr per staff")
             for char, stave_list in staves_dict.items():
                 safe_char = _safe_name(char)
                 for staff_img, local_s in stave_list:
@@ -129,7 +129,7 @@ def run(pdf_path: str, output_xml: str | None = None):
                     all_known_chars.add(char)
 
         # ── Step 5: align + combine ──────────────────────────────────────
-        print(f"\n[4/4] Aligning and combining all parts...")
+        print("\n[4/4] Aligning and combining all parts...")
         if not all_known_chars:
             print("[ERROR] No characters detected across all pages")
             return

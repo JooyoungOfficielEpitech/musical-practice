@@ -86,11 +86,12 @@ def _split_by_chord(part: ET.Element, root: ET.Element) -> dict[str, str]:
     v1_part = v1_root.find(".//part")
     v2_part = v2_root.find(".//part")
 
-    # Clear all notes from copies — we'll repopulate
+    # Clear all notes (and multi-voice bookkeeping) from copies — we'll repopulate
     for vpart in (v1_part, v2_part):
         for measure in vpart.findall("measure"):
-            for note in measure.findall("note"):
-                measure.remove(note)
+            for child in list(measure):
+                if child.tag in ("note", "backup", "forward"):
+                    measure.remove(child)
 
     orig_measures = part.findall("measure")
     v1_measures = v1_part.findall("measure")
@@ -155,6 +156,27 @@ def _split_by_chord(part: ET.Element, root: ET.Element) -> dict[str, str]:
     }
 
 
+def _count_pitched(xml_string: str) -> int:
+    try:
+        root = ET.fromstring(xml_string)
+    except ET.ParseError:
+        return 0
+    return sum(1 for n in root.findall(".//note") if n.find("pitch") is not None)
+
+
+def _is_degenerate_split(result: dict[str, str], has_chords: bool) -> bool:
+    """A voice-number split is degenerate when one voice is a stray remnant.
+
+    homr sometimes tags a single note voice=2 while all real two-voice
+    content sits as chords in voice 1 — the voice split then starves voice2.
+    When chords exist to split on, prefer the chord split in that case.
+    """
+    if not has_chords or len(result) < 2:
+        return False
+    counts = sorted(_count_pitched(xml) for xml in result.values())
+    return counts[0] < 2 and counts[-1] >= 4
+
+
 def _get_divisions(part: ET.Element) -> int:
     for measure in part.findall("measure"):
         div_el = measure.find(".//divisions")
@@ -187,18 +209,20 @@ def split_voices(xml_string: str) -> dict[str, str]:
     if part is None:
         return {"voice1": xml_string}
 
-    # Try voice-number split first
-    result = _split_by_voice(part, root)
-    if result is not None:
-        log.info("split_voices: split by voice number (%d voices)", len(result))
-        return result
-
-    # Check if there are chord notes to split on
     has_chords = any(
         note.find("chord") is not None
         for measure in part.findall("measure")
         for note in measure.findall("note")
     )
+
+    # Try voice-number split first
+    result = _split_by_voice(part, root)
+    if result is not None and not _is_degenerate_split(result, has_chords):
+        log.info("split_voices: split by voice number (%d voices)", len(result))
+        return result
+    if result is not None:
+        log.info("split_voices: voice-number split degenerate — using chord split")
+
     if has_chords:
         log.info("split_voices: single voice with chords — splitting by pitch")
         return _split_by_chord(part, root)

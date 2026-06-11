@@ -71,7 +71,7 @@ class TestPdfToPng:
 
     def test_default_dpi_renders_at_300(self, tmp_path):
         """At 300 DPI a 595pt-wide PDF page renders to ~2479px wide."""
-        import fitz, cv2
+        import cv2
         pdf = _make_pdf(str(tmp_path), 1)
         result = pdf_to_png(pdf, [(1, 1)], str(tmp_path))
         img = cv2.imread(result[0][0])
@@ -80,7 +80,7 @@ class TestPdfToPng:
 
     def test_explicit_dpi_150_still_works(self, tmp_path):
         """Explicitly passing dpi=150 produces half-resolution output."""
-        import fitz, cv2
+        import cv2
         pdf = _make_pdf(str(tmp_path), 1)
         result = pdf_to_png(pdf, [(1, 1)], str(tmp_path), dpi=150)
         img = cv2.imread(result[0][0])

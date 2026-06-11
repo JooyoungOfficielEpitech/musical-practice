@@ -1,4 +1,4 @@
-"""OMR pipeline: homr subprocess invocation, preprocessing strategies, quality scoring."""
+"""OMR pipeline: homr subprocess invocation, quality scoring."""
 
 import glob
 import logging
@@ -13,83 +13,11 @@ import cv2
 import numpy as np
 
 from pipeline.postprocessor import postprocess as postprocess_musicxml
-from pipeline.voice_splitter import split_voices
+from pipeline.strategies import STRATEGIES
 
 log = logging.getLogger("omr.runner")
 
 MIN_ACCEPTABLE_SCORE = 40.0
-
-
-# ── Preprocessing strategies ────────────────────────────────────────────────
-
-def _preprocess_original(img: np.ndarray) -> np.ndarray:
-    return img
-
-
-def _preprocess_otsu(img: np.ndarray) -> np.ndarray:
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if img.ndim == 3 else img
-    _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    return binary
-
-
-def _preprocess_adaptive(img: np.ndarray) -> np.ndarray:
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if img.ndim == 3 else img
-    return cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 15, 10)
-
-
-def _preprocess_high_contrast(img: np.ndarray) -> np.ndarray:
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if img.ndim == 3 else img
-    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
-    enhanced = clahe.apply(gray)
-    _, binary = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    return binary
-
-
-def _preprocess_denoise(img: np.ndarray) -> np.ndarray:
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if img.ndim == 3 else img
-    denoised = cv2.fastNlMeansDenoising(gray, h=12)
-    _, binary = cv2.threshold(denoised, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    return binary
-
-
-def _preprocess_deskew(img: np.ndarray) -> np.ndarray:
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if img.ndim == 3 else img
-    edges = cv2.Canny(gray, 50, 150, apertureSize=3)
-    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=100, maxLineGap=10)
-    if lines is None or len(lines) < 5:
-        return img
-    angles = [
-        np.degrees(np.arctan2(line[0][3] - line[0][1], line[0][2] - line[0][0]))
-        for line in lines
-        if abs(np.degrees(np.arctan2(line[0][3] - line[0][1], line[0][2] - line[0][0]))) < 10
-    ]
-    if not angles:
-        return img
-    median_angle = np.median(angles)
-    if abs(median_angle) < 0.3:
-        return img
-    h, w = gray.shape[:2]
-    M = cv2.getRotationMatrix2D((w // 2, h // 2), median_angle, 1.0)
-    return cv2.warpAffine(img, M, (w, h), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
-
-
-def _preprocess_sharpen(img: np.ndarray) -> np.ndarray:
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if img.ndim == 3 else img
-    kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-    sharpened = cv2.filter2D(gray, -1, kernel)
-    _, binary = cv2.threshold(sharpened, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    return binary
-
-
-STRATEGIES = [
-    ("original", _preprocess_original),
-    ("otsu", _preprocess_otsu),
-    ("adaptive", _preprocess_adaptive),
-    ("high_contrast", _preprocess_high_contrast),
-    ("denoise", _preprocess_denoise),
-    ("deskew", _preprocess_deskew),
-    ("sharpen", _preprocess_sharpen),
-]
 
 
 # ── Quality scoring ─────────────────────────────────────────────────────────
@@ -132,12 +60,15 @@ def score_musicxml(xml_string: str) -> tuple[float, dict]:
         density_score = 0
     score += density_score
 
+    chord_notes = [n for n in all_notes if n.find("chord") is not None]
+
     return round(score, 1), {
         "notes": note_count,
         "rests": len(rests),
         "measures": measure_count,
         "pitches": len(pitches),
         "durations": len(durations),
+        "chord_notes": len(chord_notes),
         "note_ratio": round(note_ratio, 2),
         "notes_per_measure": round(note_count / max(measure_count, 1), 1),
     }
@@ -150,10 +81,17 @@ def run_homr(image_path: str, work_dir: str) -> Optional[str]:
     for old in glob.glob(os.path.join(work_dir, "*.musicxml")) + glob.glob(os.path.join(work_dir, "*.xml")):
         os.remove(old)
 
-    result = subprocess.run(
-        ["homr", image_path],
-        capture_output=True, text=True, timeout=300, cwd=work_dir,
-    )
+    try:
+        result = subprocess.run(
+            ["homr", image_path],
+            capture_output=True, text=True, timeout=300, cwd=work_dir,
+        )
+    except FileNotFoundError:
+        log.error("homr binary not found on PATH")
+        return None
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        log.error(f"homr invocation failed: {exc}")
+        return None
     if result.returncode != 0:
         log.error(f"homr failed: {result.stderr[:200]}")
         return None
@@ -247,108 +185,47 @@ def run_best_strategy(image: np.ndarray) -> tuple[str, float, str]:
         return best_xml, best_score, best_strategy
 
 
-def process_page(
-    image_path: str,
-    page_num: int,
-    tmp_dir: str,
-    output_dir: Optional[str] = None,
-) -> list[ET.Element]:
-    """Process a single page image: crop → homr → postprocess → return measures."""
-    from core.staff_cropper import crop_vocal_staff, replace_x_noteheads
-
-    log.info(f"=== Page {page_num}: {os.path.basename(image_path)} ===")
-    img = cv2.imread(image_path)
-    if img is None:
-        log.error(f"Could not read image: {image_path}")
-        return []
-
-    cropped = crop_vocal_staff(img)
-    if cropped is None:
-        log.warning("Staff cropping failed, using raw image")
-        cropped = img
-
-    if output_dir:
-        cv2.imwrite(os.path.join(output_dir, f"page{page_num}_cropped.png"), cropped)
-
-    processed = replace_x_noteheads(cropped)
-    processed_path = os.path.join(tmp_dir, f"page{page_num}_processed.png")
-    cv2.imwrite(processed_path, processed)
-
-    raw_xml = run_homr(processed_path, tmp_dir)
-    if raw_xml is None:
-        return []
-
-    processed_xml = postprocess_musicxml(raw_xml)
-
-    try:
-        root = ET.fromstring(processed_xml)
-    except ET.ParseError as e:
-        log.error(f"Failed to parse XML: {e}")
-        return []
-
-    part = root.find(".//part")
-    return list(part.findall("measure")) if part is not None else []
+# Strategies that measurably improve homr's chord recall on shared staves
+# (sweeps 2026-06-11: adaptive/sharpen +67% chord notes vs original on p13;
+# scale1.5 lifted the remaining gap crop p8-SA from 3 to 4 chords).
+CHORD_STRATEGY_NAMES = ("original", "adaptive", "sharpen", "scale1.5")
 
 
-def process_single_staff(
-    character: str,
-    staff_image: np.ndarray,
-    system_idx: int,
-    tmp_dir: str,
-    output_dir: Optional[str] = None,
-) -> dict[str, list[ET.Element]]:
-    """Process one staff image through OMR pipeline.
+def run_chord_strategy(image: np.ndarray) -> tuple[str, float, str]:
+    """Multi-strategy OMR optimised for CHORD recall (compound SATB staves).
 
-    Handles compound SATB staves (Co.SA / Co.TB) by voice-splitting.
+    The generic score in run_best_strategy can rank a result with fewer
+    chords higher, and its early-exit skips exploration entirely. Here a
+    fixed trio of strategies always runs, and selection maximises
+    (chord_notes, pitched notes, score) — chords carry the second voice's
+    content, so they outrank everything else.
 
-    Returns dict mapping character name -> list of measure Elements.
+    Returns (postprocessed_musicxml, quality_score, strategy_name).
+    Raises RuntimeError if all strategies fail.
     """
-    from core.staff_cropper import replace_x_noteheads
+    with tempfile.TemporaryDirectory() as tmpdir:
+        candidates = []
+        for name, prep in [(n, p) for n, p in STRATEGIES if n in CHORD_STRATEGY_NAMES]:
+            _, xml, score, details = _try_strategy(name, prep, image, tmpdir)
+            if xml:
+                key = (details.get("chord_notes", 0), details.get("notes", 0), score)
+                candidates.append((key, xml, score, name))
 
-    COMPOUND_VOICES = {"Co.SA": ("Soprano", "Alto"), "Co.TB": ("Tenor", "Bass")}
-    safe_name = character.replace(" ", "_").replace(".", "")
-    tag = f"{safe_name}_sys{system_idx}"
+        if not candidates:
+            raise RuntimeError("All OMR strategies failed")
 
-    if output_dir:
-        cv2.imwrite(os.path.join(output_dir, f"{tag}_cropped.png"), staff_image)
+        candidates.sort(key=lambda c: c[0], reverse=True)
+        _, best_xml, best_score, best_name = candidates[0]
+        log.info(
+            f"chord strategy: picked {best_name} "
+            f"(chords={candidates[0][0][0]}, notes={candidates[0][0][1]})"
+        )
 
-    # x-notehead replacement then direct OMR on clean image
-    processed = replace_x_noteheads(staff_image)
-    with tempfile.TemporaryDirectory() as _omr_dir:
-        _img_path = os.path.join(_omr_dir, f"{tag}.png")
-        cv2.imwrite(_img_path, processed)
-        raw_xml = run_homr(_img_path, _omr_dir)
+        try:
+            best_xml = postprocess_musicxml(best_xml)
+        except Exception as e:
+            log.warning(f"Post-processing failed: {e}")
 
-    if raw_xml is None:
-        if character in COMPOUND_VOICES:
-            v1, v2 = COMPOUND_VOICES[character]
-            return {v1: [], v2: []}
-        return {character: []}
+        return best_xml, best_score, best_name
 
-    processed_xml = postprocess_musicxml(raw_xml)
 
-    if character in COMPOUND_VOICES:
-        v1_name, v2_name = COMPOUND_VOICES[character]
-        voice_parts = split_voices(processed_xml)
-        result: dict[str, list[ET.Element]] = {}
-        for voice_key, voice_name in [("voice1", v1_name), ("voice2", v2_name)]:
-            voice_xml = voice_parts.get(voice_key)
-            if voice_xml is None:
-                result[voice_name] = []
-                continue
-            try:
-                vroot = ET.fromstring(voice_xml)
-            except ET.ParseError:
-                result[voice_name] = []
-                continue
-            vpart = vroot.find(".//part")
-            result[voice_name] = list(vpart.findall("measure")) if vpart is not None else []
-        return result
-
-    try:
-        root = ET.fromstring(processed_xml)
-    except ET.ParseError:
-        return {character: []}
-
-    part = root.find(".//part")
-    return {character: list(part.findall("measure")) if part is not None else []}

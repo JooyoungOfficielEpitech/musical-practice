@@ -1,7 +1,5 @@
 """Tests for duration_aligner: rhythm normalization of TB measures to SA reference."""
-import copy
 import xml.etree.ElementTree as ET
-import pytest
 from pipeline.duration_aligner import align_rhythm_to_reference
 
 
