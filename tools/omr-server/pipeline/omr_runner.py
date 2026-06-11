@@ -3,10 +3,13 @@
 import glob
 import logging
 import os
+import shutil
 import subprocess
+import sys
 import tempfile
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 from typing import Optional
 
 import cv2
@@ -76,6 +79,19 @@ def score_musicxml(xml_string: str) -> tuple[float, dict]:
 
 # ── homr invocation ─────────────────────────────────────────────────────────
 
+def _homr_executable() -> str:
+    """Resolve the homr CLI: PATH first, then next to the interpreter.
+
+    The server is often started as ./venv/bin/python main.py WITHOUT the
+    venv on PATH — bare "homr" then fails with FileNotFoundError and every
+    staff silently yields nothing.
+    """
+    found = shutil.which("homr")
+    if found:
+        return found
+    return str(Path(sys.executable).parent / "homr")
+
+
 def run_homr(image_path: str, work_dir: str) -> Optional[str]:
     """Run homr on an image file. Returns MusicXML string or None on failure."""
     for old in glob.glob(os.path.join(work_dir, "*.musicxml")) + glob.glob(os.path.join(work_dir, "*.xml")):
@@ -83,7 +99,7 @@ def run_homr(image_path: str, work_dir: str) -> Optional[str]:
 
     try:
         result = subprocess.run(
-            ["homr", image_path],
+            [_homr_executable(), image_path],
             capture_output=True, text=True, timeout=300, cwd=work_dir,
         )
     except FileNotFoundError:

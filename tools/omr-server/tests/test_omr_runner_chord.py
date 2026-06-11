@@ -105,3 +105,22 @@ class TestScale15Strategy:
         img = np.full((60, 80), 255, dtype=np.uint8)
         out = preprocess_scale15(img)
         assert out.shape == (90, 120)
+
+
+class TestHomrExecutableResolution:
+    def test_resolves_venv_homr_when_not_on_path(self, monkeypatch):
+        """Server runs as ./venv/bin/python main.py without venv on PATH —
+        run_homr must find the homr CLI next to the interpreter."""
+        import sys
+        from pathlib import Path
+        from pipeline.omr_runner import _homr_executable
+
+        monkeypatch.setattr("shutil.which", lambda name: None)
+        expected = str(Path(sys.executable).parent / "homr")
+        assert _homr_executable() == expected
+
+    def test_prefers_path_homr_when_available(self, monkeypatch):
+        from pipeline.omr_runner import _homr_executable
+
+        monkeypatch.setattr("shutil.which", lambda name: "/usr/local/bin/homr")
+        assert _homr_executable() == "/usr/local/bin/homr"
