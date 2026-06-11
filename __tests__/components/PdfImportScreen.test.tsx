@@ -66,6 +66,19 @@ jest.mock("../../client/components/ProgressTrack", () => {
   };
 });
 
+// ── JobRowItem ────────────────────────────────────────────────────────────────
+jest.mock("../../client/components/JobRowItem", () => {
+  const { View, Text } = require("react-native");
+  return {
+    JobRowItem: ({ job }: any) => (
+      <View testID={`job-row-${job.title}`}>
+        <Text>{job.title}</Text>
+        <Text>{job.status}</Text>
+      </View>
+    ),
+  };
+});
+
 // ── Import after mocks ────────────────────────────────────────────────────────
 import PdfImportScreen from "../../client/screens/PdfImportScreen";
 import { usePdfImport } from "../../client/hooks/usePdfImport";
@@ -175,7 +188,7 @@ describe("PdfImportScreen — Phase 2: 1-tap PDF import", () => {
     expect(getByText(/View Library/i)).toBeTruthy();
   });
 
-  it("5. error state renders Try Again button", () => {
+  it("5. error state renders Retry Upload button for upload errors", () => {
     mockUsePdfImport.mockReturnValue({
       ...idlePdfHook,
       state: "error",
@@ -187,7 +200,7 @@ describe("PdfImportScreen — Phase 2: 1-tap PDF import", () => {
     });
 
     const { getByText } = render(<PdfImportScreen />);
-    expect(getByText(/Try Again/i)).toBeTruthy();
+    expect(getByText(/Retry Upload/i)).toBeTruthy();
   });
 
   it("6. does NOT render TextInput for naming", () => {

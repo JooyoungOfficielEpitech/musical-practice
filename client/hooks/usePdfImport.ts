@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from "react";
+import { AccessibilityInfo } from "react-native";
 import {
   pickPdf,
   readFileAsBase64,
@@ -37,6 +38,7 @@ export function usePdfImport(): UsePdfImportReturn {
       if (!uri) {
         setState("error");
         setError("No file selected");
+        AccessibilityInfo.announceForAccessibility("File selection cancelled");
         return;
       }
       setState("uploading");
@@ -51,11 +53,15 @@ export function usePdfImport(): UsePdfImportReturn {
       const autoTitle = autoNameFromFile(fileName);
       setSectionTitles([autoTitle]);
       // state stays "uploading" — PdfImportScreen auto-triggers submitAll via useEffect
+      AccessibilityInfo.announceForAccessibility(
+        `File ${fileName} uploaded, preparing for music recognition`,
+      );
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
       console.error("[usePdfImport] startImport failed:", e);
       setState("error");
       setError(msg);
+      AccessibilityInfo.announceForAccessibility(`Upload failed: ${msg}`);
     }
   }, []);
 

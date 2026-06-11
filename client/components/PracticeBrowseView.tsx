@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   StyleSheet, Text, View, ScrollView, Pressable,
-  ActivityIndicator, RefreshControl,
+  ActivityIndicator, RefreshControl, Platform,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { SheetMusicPager } from "@/components/SheetMusicPager";
@@ -11,15 +12,12 @@ import { InteractiveScore } from "@/components/InteractiveScore";
 import { RecordingsList } from "@/components/RecordingsList";
 import { MetronomeBottomSheet } from "@/components/MetronomeBottomSheet";
 import { AudioBottomSheet } from "@/components/AudioBottomSheet";
-import { Spacing, BorderRadius, Typography, Shadows, Fonts, ClayShadow, ClayShadowSmall } from "@/constants/theme";
+import { ScorePreviewEmpty } from "@/components/ScorePreviewEmpty";
+import { ScorePreviewControls } from "@/components/ScorePreviewControls";
+import { Spacing, BorderRadius, Typography, Shadows, Fonts, ClayShadow, ClayShadowSmall, Colors } from "@/constants/theme";
 import type { SheetMusic } from "@/lib/storage";
 import type { PracticeDetailState } from "@/hooks/usePracticeDetail";
 import type { Recording } from "@/lib/audio/types";
-
-function formatSynthTime(seconds: number): string {
-  const total = Math.floor(seconds);
-  return `${Math.floor(total / 60)}:${(total % 60).toString().padStart(2, "0")}`;
-}
 
 export interface PracticeBrowseViewProps {
   sheet: SheetMusic;
@@ -32,7 +30,7 @@ export interface PracticeBrowseViewProps {
   renameRecording: (id: string, name: string) => Promise<void>;
 }
 
-export function PracticeBrowseView({
+function PracticeBrowseViewComponent({
   sheet, state, screenWidth, loading, onRefresh, onGoBack, removeRecording, renameRecording,
 }: PracticeBrowseViewProps): React.JSX.Element {
   const { colors } = useTheme();
@@ -47,10 +45,32 @@ export function PracticeBrowseView({
     handleScanSheet, handleStartPractice, handleDeletePress,
   } = state;
 
+  const handleScanPress = useCallback(() => {
+    if (Platform.OS === "ios") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    }
+    handleScanSheet();
+  }, [handleScanSheet]);
+
+  const handleStartPress = useCallback(() => {
+    if (Platform.OS === "ios") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    }
+    handleStartPractice();
+  }, [handleStartPractice]);
+
+  const handleMetronomePress = useCallback(() => {
+    setMetronomeVisible(true);
+  }, []);
+
+  const handleAudioPress = useCallback(() => {
+    setAudioVisible(true);
+  }, []);
+
   return (
     <>
       <View style={styles.topBar}>
-        <Pressable onPress={onGoBack} accessibilityLabel="Go back" accessibilityRole="button" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        <Pressable onPress={onGoBack} accessibilityLabel="Go back" accessibilityRole="button" hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           style={({ pressed }) => [styles.backBtn, { backgroundColor: colors.surface, opacity: pressed ? 0.7 : 1 }]}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </Pressable>
@@ -59,10 +79,10 @@ export function PracticeBrowseView({
           <Text style={[styles.subtitleText, { color: colors.textSecondary }]} numberOfLines={1}>{sheet.artist}</Text>
         </View>
         <View style={styles.topBarRight}>
-          <Pressable onPress={() => setShowEdit(true)} accessibilityLabel="Edit score" accessibilityRole="button" hitSlop={8} style={({ pressed }) => [styles.actionBtn, { opacity: pressed ? 0.7 : 1 }]}>
+          <Pressable onPress={() => setShowEdit(true)} accessibilityLabel="Edit score" accessibilityRole="button" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={({ pressed }) => [styles.actionBtn, { opacity: pressed ? 0.7 : 1 }]}>
             <Ionicons name="create-outline" size={22} color={colors.text} />
           </Pressable>
-          <Pressable onPress={handleDeletePress} accessibilityLabel="Delete score" accessibilityRole="button" hitSlop={8} style={({ pressed }) => [styles.actionBtn, { opacity: pressed ? 0.7 : 1 }]}>
+          <Pressable onPress={handleDeletePress} accessibilityLabel="Delete score" accessibilityRole="button" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={({ pressed }) => [styles.actionBtn, { opacity: pressed ? 0.7 : 1 }]}>
             <Ionicons name="trash-outline" size={20} color={colors.error} />
           </Pressable>
           {bestScore !== null && (
@@ -82,8 +102,9 @@ export function PracticeBrowseView({
 
         {/* Scan button */}
         {sheet.imageUris.length > 0 && sheet.omrStatus !== "ready" && (
-          <Pressable onPress={handleScanSheet} disabled={omr.isProcessing} accessibilityLabel="Scan sheet music for auto-play" accessibilityRole="button" accessibilityState={{ busy: omr.isProcessing }}
+          <Pressable onPress={handleScanPress} accessibilityLabel="Scan sheet music for auto-play" accessibilityRole="button" accessibilityState={{ busy: omr.isProcessing }}
             style={({ pressed }) => [styles.scanBtn, { backgroundColor: omr.isProcessing ? colors.backgroundSecondary : colors.surface, borderColor: colors.primary, opacity: pressed && !omr.isProcessing ? 0.8 : 1 }]}
+            android_ripple={{ color: Colors.light.ripple, borderless: false }}
           >
             {omr.isProcessing ? <ActivityIndicator size="small" color={colors.primary} /> : <Ionicons name="scan-outline" size={18} color={colors.primary} />}
             <Text style={[styles.scanBtnText, { color: colors.primary }]}>{omr.isProcessing ? "Scanning..." : omr.error ? "Retry Scan" : "Scan Sheet Music"}</Text>
@@ -92,8 +113,9 @@ export function PracticeBrowseView({
         {omr.error && sheet.omrStatus !== "ready" && <Text style={[styles.scanErrorText, { color: colors.error }]}>{omr.error}</Text>}
 
         {/* Start Practice CTA */}
-        <Pressable onPress={handleStartPractice} disabled={isStartingPractice} accessibilityLabel="Start practice session" accessibilityRole="button" accessibilityState={{ busy: isStartingPractice }}
+        <Pressable onPress={handleStartPress} accessibilityLabel="Start practice session" accessibilityRole="button" accessibilityState={{ busy: isStartingPractice }}
           style={({ pressed }) => [styles.startPracticeBtn, { backgroundColor: isStartingPractice ? colors.textSecondary : colors.primaryDark, opacity: pressed && !isStartingPractice ? 0.9 : 1 }]}
+          android_ripple={{ color: Colors.light.ripple, borderless: false }}
         >
           {isStartingPractice ? <ActivityIndicator size="small" color={colors.buttonText} /> : <Ionicons name="play" size={22} color={colors.buttonText} />}
           <Text style={[styles.startPracticeText, { color: colors.buttonText }]}>{isStartingPractice ? "Preparing..." : "Start Practice"}</Text>
@@ -105,13 +127,13 @@ export function PracticeBrowseView({
         </View>
 
         <View style={styles.quickActions}>
-          <Pressable onPress={() => setMetronomeVisible(true)} accessibilityLabel="Open metronome" accessibilityRole="button"
+          <Pressable onPress={handleMetronomePress} accessibilityLabel="Open metronome" accessibilityRole="button" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={({ pressed }) => [styles.quickActionBtn, { borderColor: colors.borderLight, opacity: pressed ? 0.9 : 1 }]}>
             <Ionicons name="musical-note-outline" size={16} color={colors.primary} />
             <Text style={[styles.quickActionText, { color: colors.primary }]}>Metronome</Text>
           </Pressable>
           {sheet.audioUri && (
-            <Pressable onPress={() => setAudioVisible(true)} accessibilityLabel="Open audio player" accessibilityRole="button"
+            <Pressable onPress={handleAudioPress} accessibilityLabel="Open audio player" accessibilityRole="button" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={({ pressed }) => [styles.quickActionBtn, { borderColor: colors.borderLight, opacity: pressed ? 0.9 : 1 }]}>
               <Ionicons name="headset-outline" size={16} color={colors.primary} />
               <Text style={[styles.quickActionText, { color: colors.primary }]}>Reference Audio</Text>
@@ -120,7 +142,7 @@ export function PracticeBrowseView({
         </View>
 
         {/* Score Preview section */}
-        {hasMusicXml && (
+        {hasMusicXml ? (
           <View style={styles.browseSection}>
             <View style={styles.sectionLabel}><Ionicons name="play-circle-outline" size={14} color={colors.primary} /><Text style={[styles.sectionLabelText, { color: colors.primary }]}>Score Preview</Text></View>
             {musicXmlLoading ? (
@@ -128,47 +150,27 @@ export function PracticeBrowseView({
             ) : musicXmlContent ? (
               <>
                 <InteractiveScore musicXml={noteEditor.editedMusicXml || musicXmlContent} positionMs={synthPlayer.positionMs * synthPlayer.tempo} onNotePress={editMode ? noteEditor.selectNote : handleNotePress} />
-                <View style={[styles.synthControls, { backgroundColor: colors.surface }, Shadows.sm]}>
-                  <Pressable onPress={handleSynthPlayPause} accessibilityLabel={synthPlayer.isPlaying ? "Pause synth" : "Play synth"} accessibilityRole="button" style={({ pressed }) => [styles.synthPlayButton, { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 }]}>
-                    <Ionicons name={synthPlayer.isPlaying ? "pause" : "play"} size={20} color={colors.buttonText} />
-                  </Pressable>
-                  <View style={styles.synthTrackSection}>
-                    <View style={[styles.synthTrackBg, { backgroundColor: colors.borderLight }]}>
-                      <View style={[styles.synthTrackProgress, { backgroundColor: colors.primary, width: synthPlayer.durationMs > 0 ? `${(synthPlayer.positionMs / synthPlayer.durationMs) * 100}%` : "0%" }]} />
-                    </View>
-                    <View style={styles.synthTimeRow}>
-                      <Text style={[styles.synthTimeText, { color: colors.textSecondary }]}>{formatSynthTime(synthPlayer.positionMs / 1000)}</Text>
-                      <Text style={[styles.synthTimeText, { color: colors.textSecondary }]}>{formatSynthTime(synthPlayer.durationMs / 1000)}</Text>
-                    </View>
-                  </View>
-                </View>
-                <View style={[styles.tempoControl, { backgroundColor: colors.surface }, Shadows.sm]}>
-                  <Ionicons name="speedometer-outline" size={16} color={colors.textSecondary} />
-                  <Text style={[styles.tempoLabel, { color: colors.textSecondary }]}>Tempo</Text>
-                  <View style={styles.tempoStepper}>
-                    <Pressable onPress={() => synthPlayer.setTempo(Math.max(0.5, synthPlayer.tempo - 0.25))} accessibilityLabel="Decrease tempo" accessibilityRole="button" style={({ pressed }) => [styles.tempoStepBtn, { backgroundColor: colors.backgroundSecondary, opacity: pressed ? 0.7 : 1 }]}><Ionicons name="remove" size={16} color={colors.text} /></Pressable>
-                    <Text style={[styles.tempoValue, { color: colors.text }]}>{synthPlayer.tempo.toFixed(2)}x</Text>
-                    <Pressable onPress={() => synthPlayer.setTempo(Math.min(2.0, synthPlayer.tempo + 0.25))} accessibilityLabel="Increase tempo" accessibilityRole="button" style={({ pressed }) => [styles.tempoStepBtn, { backgroundColor: colors.backgroundSecondary, opacity: pressed ? 0.7 : 1 }]}><Ionicons name="add" size={16} color={colors.text} /></Pressable>
-                  </View>
-                </View>
-                <Pressable onPress={() => setEditMode((prev) => !prev)} accessibilityLabel={editMode ? "Exit edit mode" : "Edit notes"} accessibilityRole="button" style={({ pressed }) => [styles.instrumentRow, { backgroundColor: editMode ? colors.primary : colors.surface, opacity: pressed ? 0.8 : 1 }]}>
-                  <Ionicons name="create-outline" size={16} color={editMode ? "#fff" : colors.textSecondary} />
-                  <Text style={[styles.tempoLabel, { color: editMode ? "#fff" : colors.textSecondary }]}>{editMode ? "Editing" : "Edit Notes"}</Text>
-                  {noteEditor.hasEdits && <Text style={[styles.instrumentBtnText, { color: editMode ? "#fff" : colors.primary }]}>(edited)</Text>}
-                </Pressable>
-                <Pressable onPress={() => setShowInstrumentPicker(true)} accessibilityLabel="Change instrument" accessibilityRole="button" style={({ pressed }) => [styles.instrumentRow, { backgroundColor: colors.surface, opacity: pressed ? 0.8 : 1 }]}>
-                  <Ionicons name="musical-note-outline" size={16} color={colors.textSecondary} />
-                  <Text style={[styles.tempoLabel, { color: colors.textSecondary }]}>Sound</Text>
-                  <View style={styles.instrumentButtons}>
-                    <Text style={[styles.instrumentBtnText, { color: colors.text }]}>{synthPlayer.instrument === "piano" ? "Piano" : synthPlayer.instrument === "oscillator" ? "Sine Wave" : synthPlayer.instrument}</Text>
-                    {synthPlayer.instrumentLoading ? <ActivityIndicator size="small" color={colors.primary} /> : <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />}
-                  </View>
-                </Pressable>
+                <ScorePreviewControls
+                  isPlaying={synthPlayer.isPlaying}
+                  positionMs={synthPlayer.positionMs}
+                  durationMs={synthPlayer.durationMs}
+                  tempo={synthPlayer.tempo}
+                  onTempoChange={synthPlayer.setTempo}
+                  instrument={synthPlayer.instrument}
+                  instrumentLoading={synthPlayer.instrumentLoading}
+                  onPlayPause={handleSynthPlayPause}
+                  editMode={editMode}
+                  onToggleEdit={() => setEditMode((prev) => !prev)}
+                  hasEdits={noteEditor.hasEdits}
+                  onOpenInstrumentPicker={() => setShowInstrumentPicker(true)}
+                />
               </>
             ) : (
               <View style={[styles.autoplayLoading, { backgroundColor: colors.surface }]}><Ionicons name="alert-circle-outline" size={20} color={colors.textSecondary} /><Text style={[styles.autoplayLoadingText, { color: colors.textSecondary }]}>Failed to load score</Text></View>
             )}
           </View>
+        ) : (
+          <ScorePreviewEmpty />
         )}
 
         {/* Recordings */}
@@ -190,13 +192,15 @@ export function PracticeBrowseView({
   );
 }
 
+export const PracticeBrowseView = React.memo(PracticeBrowseViewComponent);
+
 const row = { flexDirection: "row" as const, alignItems: "center" as const };
 const semibold = { ...Typography.label, fontFamily: "Nunito_600SemiBold" as const, fontWeight: "600" as const };
 const medium = { ...Typography.label, fontFamily: "Nunito_500Medium" as const, fontWeight: "500" as const };
 
 const styles = StyleSheet.create({
   topBar: { ...row, height: 56, paddingHorizontal: Spacing.lg, gap: Spacing.sm + 2 },
-  backBtn: { width: 44, height: 44, borderRadius: 50, alignItems: "center", justifyContent: "center" },
+  backBtn: { width: 44, height: 44, borderRadius: BorderRadius.sm, alignItems: "center", justifyContent: "center" },
   topBarTitle: { flex: 1 },
   titleText: { ...Typography.subtitle, fontFamily: Fonts.heading, fontSize: 18 },
   subtitleText: { ...Typography.small },
@@ -224,19 +228,4 @@ const styles = StyleSheet.create({
   recordingsCount: medium, sectionTitle: semibold,
   autoplayLoading: { ...row, justifyContent: "center", gap: Spacing.sm, padding: Spacing.lg, borderRadius: BorderRadius.md },
   autoplayLoadingText: { ...Typography.body },
-  synthControls: { ...row, padding: Spacing.md, borderRadius: 32, gap: Spacing.md, marginTop: Spacing.sm, ...ClayShadowSmall },
-  synthPlayButton: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
-  synthTrackSection: { flex: 1, gap: Spacing.xs },
-  synthTrackBg: { height: 8, borderRadius: 4, overflow: "hidden" },
-  synthTrackProgress: { height: "100%", borderRadius: 2 },
-  synthTimeRow: { flexDirection: "row", justifyContent: "space-between" },
-  synthTimeText: medium,
-  tempoControl: { ...row, padding: Spacing.sm, borderRadius: BorderRadius.md, gap: Spacing.sm, marginTop: Spacing.xs },
-  tempoLabel: { ...medium, flex: 1 },
-  tempoStepper: { ...row, gap: Spacing.sm },
-  tempoStepBtn: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
-  tempoValue: { ...Typography.label, fontFamily: "Nunito_700Bold", fontWeight: "700", minWidth: 48, textAlign: "center" },
-  instrumentRow: { ...row, padding: Spacing.sm, borderRadius: BorderRadius.md, gap: Spacing.sm, marginTop: Spacing.xs },
-  instrumentButtons: { ...row, gap: Spacing.xs },
-  instrumentBtnText: semibold,
 });

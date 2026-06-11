@@ -96,6 +96,7 @@ export function PracticeActiveView({
           onPress={toggleLandscape}
           accessibilityLabel="Exit fullscreen"
           accessibilityRole="button"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={[styles.exitFullscreenBtn, { backgroundColor: colors.surface }]}
         >
           <Ionicons name="contract" size={20} color={colors.text} />
@@ -111,7 +112,11 @@ export function PracticeActiveView({
           visiblePartIndices={visiblePartIndices}
         />
         {editMode && noteEditor.selectedIndex === null && (
-          <Text style={[styles.editHint, { color: colors.primary }]}>
+          <Text
+            style={[styles.editHint, { color: colors.primary }]}
+            accessibilityLiveRegion="polite"
+            accessible={true}
+          >
             Tap a note to edit pitch
           </Text>
         )}
@@ -186,7 +191,7 @@ const styles = StyleSheet.create({
   backBtn: {
     width: 44,
     height: 44,
-    borderRadius: 50,
+    borderRadius: BorderRadius.sm,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -212,9 +217,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 12,
     right: 16,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
     zIndex: 10,

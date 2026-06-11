@@ -303,4 +303,40 @@ describe("useMultiOmrJobs", () => {
 
     expect(result.current.jobs[0].progressPercent).toBe(100);
   });
+
+  it("13. retry(index) resets failed job to queued and resubmits", async () => {
+    mockUploadPdf.mockResolvedValue("storage/path.pdf");
+    mockSubmitJob
+      .mockResolvedValueOnce("job-1")
+      .mockResolvedValueOnce("job-1-retry");
+    mockDownloadResult.mockResolvedValue("file:///musicxml/s0.musicxml");
+
+    const onJobDone = jest.fn().mockResolvedValue(undefined);
+    const { result } = renderHook(() => useMultiOmrJobs());
+
+    await act(async () => {
+      result.current.submitAll("pdfB64==", [section1], onJobDone);
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      fireFailed(0, "OMR timeout");
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.jobs[0].status).toBe("failed");
+    expect(result.current.jobs[0].error).toBe("OMR timeout");
+
+    // Now retry
+    mockSubmitJob.mockResolvedValueOnce("job-1-retry");
+    await act(async () => {
+      result.current.retry(0);
+      await Promise.resolve();
+    });
+
+    expect(result.current.jobs[0].status).toBe("queued");
+    expect(result.current.jobs[0].error).toBeUndefined();
+    expect(mockSubmitJob).toHaveBeenCalledTimes(2);
+  });
 });

@@ -1,7 +1,8 @@
-import React from "react";
-import { StyleSheet, Text, View, Pressable, useWindowDimensions } from "react-native";
+import React, { useCallback } from "react";
+import { StyleSheet, Text, View, Pressable, useWindowDimensions, Platform } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Typography, Shadows } from "@/constants/theme";
 import type { SheetMusic } from "@/lib/storage";
@@ -15,7 +16,7 @@ interface SheetCardProps {
   lastAccuracy?: number;
 }
 
-export function SheetCard({ sheet, onPress, onFavorite, compact, lastAccuracy }: SheetCardProps) {
+function SheetCardComponent({ sheet, onPress, onFavorite, compact, lastAccuracy }: SheetCardProps) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
@@ -23,10 +24,20 @@ export function SheetCard({ sheet, onPress, onFavorite, compact, lastAccuracy }:
   const compactCardWidth = isTablet ? 180 : 140;
   const compactImageHeight = isTablet ? 130 : 100;
 
+  const handleCardPress = useCallback(() => {
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  }, [onPress]);
+
+  const handleFavoritePress = useCallback(() => {
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onFavorite?.();
+  }, [onFavorite]);
+
   if (compact) {
     return (
       <Pressable
-        onPress={onPress}
+        onPress={handleCardPress}
         accessibilityLabel={`${sheet.title} by ${sheet.artist}`}
         accessibilityRole="button"
         style={({ pressed }) => [
@@ -52,7 +63,7 @@ export function SheetCard({ sheet, onPress, onFavorite, compact, lastAccuracy }:
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handleCardPress}
       accessibilityLabel={`${sheet.title} by ${sheet.artist}`}
       accessibilityRole="button"
       style={({ pressed }) => [
@@ -61,7 +72,10 @@ export function SheetCard({ sheet, onPress, onFavorite, compact, lastAccuracy }:
         Shadows.lg,
       ]}
     >
-      <View>
+      <View
+        accessible={true}
+        accessibilityLabel={`${sheet.title}, ${sheet.imageUris.length} page${sheet.imageUris.length !== 1 ? "s" : ""}${sheet.audioUri ? ", audio available" : ""}${(() => { const omr = omrStatusLabel(sheet.omrStatus ?? "none"); return omr ? `, ${omr.label}` : ""; })()}`}
+      >
         {sheet.imageUris[0] ? (
           <Image source={{ uri: sheet.imageUris[0] }} style={[styles.image, { backgroundColor: colors.backgroundSecondary, height: imageHeight }]} contentFit="cover" />
         ) : (
@@ -70,12 +84,12 @@ export function SheetCard({ sheet, onPress, onFavorite, compact, lastAccuracy }:
           </View>
         )}
         {sheet.imageUris.length > 1 && (
-          <View style={[styles.pagesBadge, { backgroundColor: colors.accent }]}>
+          <View style={[styles.pagesBadge, { backgroundColor: colors.accent }]} accessible={false}>
             <Text style={[styles.pagesBadgeText, { color: colors.buttonText }]}>{sheet.imageUris.length}</Text>
           </View>
         )}
         {sheet.audioUri && (
-          <View style={[styles.audioBadge, { backgroundColor: colors.primary }]}>
+          <View style={[styles.audioBadge, { backgroundColor: colors.primary }]} accessible={false}>
             <Ionicons name="musical-note" size={10} color={colors.buttonText} />
           </View>
         )}
@@ -89,7 +103,7 @@ export function SheetCard({ sheet, onPress, onFavorite, compact, lastAccuracy }:
               ? colors.accent
               : colors.error;
           return (
-            <View testID="omr-badge" style={[styles.omrBadge, { backgroundColor: bgColor }]}>
+            <View testID="omr-badge" style={[styles.omrBadge, { backgroundColor: bgColor }]} accessible={false}>
               <Text style={[styles.omrBadgeText, { color: colors.buttonText }]}>{omr.label}</Text>
             </View>
           );
@@ -103,11 +117,11 @@ export function SheetCard({ sheet, onPress, onFavorite, compact, lastAccuracy }:
           </View>
           {onFavorite && (
             <Pressable
-              onPress={onFavorite}
+              onPress={handleFavoritePress}
               accessibilityLabel={sheet.isFavorite ? "Remove from favorites" : "Add to favorites"}
               accessibilityRole="button"
-              hitSlop={12}
-              style={styles.favBtn}
+              hitSlop={16}
+              style={[styles.favBtn, { minWidth: 44, minHeight: 44, justifyContent: "center", alignItems: "center" }]}
             >
               <Ionicons
                 name={sheet.isFavorite ? "heart" : "heart-outline"}
@@ -135,6 +149,8 @@ export function SheetCard({ sheet, onPress, onFavorite, compact, lastAccuracy }:
     </Pressable>
   );
 }
+
+export const SheetCard = React.memo(SheetCardComponent);
 
 const styles = StyleSheet.create({
   card: { borderRadius: BorderRadius.lg, overflow: "hidden" },

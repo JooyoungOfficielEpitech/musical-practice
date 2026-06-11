@@ -3,10 +3,15 @@ import {
   Modal,
   View,
   Text,
-  Pressable,
   StyleSheet,
 } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
+import { BorderRadius, Colors } from "@/constants/theme";
+import {
+  NoteGrid,
+  OctaveSelector,
+  ActionButtons,
+} from "./PitchPickerComponents";
 
 export interface PitchPickerProps {
   visible: boolean;
@@ -14,29 +19,6 @@ export interface PitchPickerProps {
   onConfirm: (step: string, alter: number, octave: number) => void;
   onDismiss: () => void;
 }
-
-interface ChromaticNote {
-  label: string;
-  step: string;
-  alter: number;
-}
-
-const CHROMATIC_NOTES: ChromaticNote[] = [
-  { label: "C", step: "C", alter: 0 },
-  { label: "C#", step: "C", alter: 1 },
-  { label: "D", step: "D", alter: 0 },
-  { label: "D#", step: "D", alter: 1 },
-  { label: "E", step: "E", alter: 0 },
-  { label: "F", step: "F", alter: 0 },
-  { label: "F#", step: "F", alter: 1 },
-  { label: "G", step: "G", alter: 0 },
-  { label: "G#", step: "G", alter: 1 },
-  { label: "A", step: "A", alter: 0 },
-  { label: "A#", step: "A", alter: 1 },
-  { label: "B", step: "B", alter: 0 },
-];
-
-const OCTAVES = [2, 3, 4, 5, 6];
 
 export function PitchPicker({
   visible,
@@ -66,7 +48,7 @@ export function PitchPicker({
 
   if (!visible) return <View />;
 
-  const handleNotePress = (note: ChromaticNote) => {
+  const handleNotePress = (note: { step: string; alter: number }) => {
     setSelectedStep(note.step);
     setSelectedAlter(note.alter);
   };
@@ -75,15 +57,13 @@ export function PitchPicker({
     onConfirm(selectedStep, selectedAlter, selectedOctave);
   };
 
-  const isNoteSelected = (note: ChromaticNote) =>
-    note.step === selectedStep && note.alter === selectedAlter;
-
   return (
     <Modal
       visible={visible}
       transparent
       animationType="slide"
       onRequestClose={onDismiss}
+      accessibilityViewIsModal={true}
     >
       <View style={styles.backdrop}>
         <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
@@ -91,86 +71,21 @@ export function PitchPicker({
             Select Note
           </Text>
 
-          {/* Chromatic note grid */}
-          <View style={styles.noteGrid}>
-            {CHROMATIC_NOTES.map((note) => (
-              <Pressable
-                key={note.label}
-                style={[
-                  styles.noteButton,
-                  { borderColor: colors.border },
-                  isNoteSelected(note) && {
-                    backgroundColor: colors.primary,
-                    borderColor: colors.primary,
-                  },
-                ]}
-                onPress={() => handleNotePress(note)}
-                accessibilityLabel={note.label}
-              >
-                <Text
-                  style={[
-                    styles.noteLabel,
-                    { color: isNoteSelected(note) ? "#fff" : colors.text },
-                  ]}
-                >
-                  {note.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+          <NoteGrid
+            selectedStep={selectedStep}
+            selectedAlter={selectedAlter}
+            onNotePress={handleNotePress}
+          />
 
-          {/* Octave selector */}
-          <View style={styles.octaveRow}>
-            {OCTAVES.map((oct) => (
-              <Pressable
-                key={oct}
-                style={[
-                  styles.octaveButton,
-                  { borderColor: colors.border },
-                  selectedOctave === oct && {
-                    backgroundColor: colors.primary,
-                    borderColor: colors.primary,
-                  },
-                ]}
-                onPress={() => setSelectedOctave(oct)}
-                accessibilityLabel={String(oct)}
-              >
-                <Text
-                  style={[
-                    styles.octaveLabel,
-                    {
-                      color: selectedOctave === oct ? "#fff" : colors.text,
-                    },
-                  ]}
-                >
-                  {oct}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+          <OctaveSelector
+            selectedOctave={selectedOctave}
+            onOctavePress={setSelectedOctave}
+          />
 
-          {/* Action buttons */}
-          <View style={styles.actions}>
-            <Pressable
-              style={[styles.actionButton, { borderColor: colors.border }]}
-              onPress={onDismiss}
-            >
-              <Text style={[styles.actionLabel, { color: colors.textSecondary }]}>
-                Cancel
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[
-                styles.actionButton,
-                { backgroundColor: colors.primary, borderColor: colors.primary },
-              ]}
-              onPress={handleConfirm}
-            >
-              <Text style={[styles.actionLabel, { color: "#fff" }]}>
-                Confirm
-              </Text>
-            </Pressable>
-          </View>
+          <ActionButtons
+            onCancel={onDismiss}
+            onConfirm={handleConfirm}
+          />
         </View>
       </View>
     </Modal>
@@ -181,11 +96,11 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: Colors.light.overlay,
   },
   sheet: {
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: BorderRadius.lg,
+    borderTopRightRadius: BorderRadius.lg,
     padding: 24,
     paddingBottom: 40,
   },
@@ -194,56 +109,5 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginBottom: 16,
     textAlign: "center",
-  },
-  noteGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 16,
-  },
-  noteButton: {
-    width: 52,
-    height: 44,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  noteLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  octaveRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 24,
-  },
-  octaveButton: {
-    flex: 1,
-    height: 40,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  octaveLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  actions: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    height: 44,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  actionLabel: {
-    fontSize: 15,
-    fontWeight: "600",
   },
 });

@@ -26,7 +26,11 @@ jest.mock("../../client/hooks/useTheme", () => ({
 }));
 
 // ── Haptics ───────────────────────────────────────────────────────────────────
-jest.mock("expo-haptics", () => ({ selectionAsync: jest.fn() }));
+jest.mock("expo-haptics", () => ({
+  selectionAsync: jest.fn(),
+  impactAsync: jest.fn(),
+  ImpactFeedbackStyle: { Light: "light", Medium: "medium", Heavy: "heavy" },
+}));
 
 // ── PracticeContext ────────────────────────────────────────────────────────────
 jest.mock("../../client/context/PracticeContext", () => ({

@@ -24,6 +24,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 import type { RootStackParamList } from "@/types/navigation";
 import { getLastSession } from "@/lib/practiceCardUtils";
+import type { SheetMusic } from "@/lib/storage";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -64,7 +65,7 @@ export default function LibraryScreen() {
     const options = ["Add Score", "Import PDF", "Cancel"];
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
-        { options, cancelButtonIndex: 2 },
+        { options, cancelButtonIndex: 2, userInterfaceStyle: "dark" },
         (index) => {
           if (index === 0) setShowAddModal(true);
           else if (index === 1) navigation.navigate("PdfImport");
@@ -79,15 +80,38 @@ export default function LibraryScreen() {
     }
   }, [navigation]);
 
+  const renderItem = useCallback(({ item }: { item: SheetMusic }) => (
+    <Pressable
+      onLongPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        handleDeletePress(item.id, item.title);
+      }}
+      delayLongPress={500}
+      accessibilityLabel={`Open ${item.title}`}
+      accessibilityRole="button"
+      accessibilityHint="Long press to delete"
+    >
+      <SheetCard
+        sheet={item}
+        onPress={() => navigation.navigate("PracticeDetail", { sheetId: item.id })}
+        onFavorite={() => toggleFavorite(item.id)}
+        lastAccuracy={getLastSession(sessions, item.id)?.accuracy}
+      />
+    </Pressable>
+  ), [navigation, sessions, toggleFavorite, handleDeletePress]);
+
   return (
     <View style={[styles.container, { backgroundColor: colors.backgroundDefault, paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Library</Text>
         <Pressable
-          onPress={handleAddPress}
+          onPress={() => {
+            handleAddPress();
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }}
           accessibilityLabel="Add new score"
           accessibilityRole="button"
-          style={({ pressed }) => [styles.addBtn, { opacity: pressed ? 0.8 : 1 }]}
+          style={({ pressed }) => [styles.addBtn, { width: 44, height: 44, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.8 : 1 }]}
         >
           <Ionicons name="add-circle" size={28} color={colors.primary} />
         </Pressable>
@@ -124,15 +148,16 @@ export default function LibraryScreen() {
         contentContainerStyle={styles.folderContent}
         scrollEnabled={FOLDERS.length > 0}
         keyExtractor={(item) => item}
-        renderItem={({ item }) => (
+        renderItem={({ item }: { item: string }) => (
           <Pressable
             onPress={() => {
               setActiveFolder(item);
-              if (Platform.OS !== "web") Haptics.selectionAsync();
+              if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }}
             accessibilityLabel={`Filter by ${item}`}
             accessibilityRole="button"
             accessibilityState={{ selected: activeFolder === item }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={[
               styles.folderChip,
               { backgroundColor: colors.surface, borderColor: colors.borderLight },
@@ -167,20 +192,7 @@ export default function LibraryScreen() {
             onAction={!search ? () => navigation.navigate("PdfImport") : undefined}
           />
         }
-        renderItem={({ item }) => (
-          <Pressable
-            onLongPress={() => handleDeletePress(item.id, item.title)}
-            delayLongPress={500}
-            accessibilityHint="Long press to delete"
-          >
-            <SheetCard
-              sheet={item}
-              onPress={() => navigation.navigate("PracticeDetail", { sheetId: item.id })}
-              onFavorite={() => toggleFavorite(item.id)}
-              lastAccuracy={getLastSession(sessions, item.id)?.accuracy}
-            />
-          </Pressable>
-        )}
+        renderItem={renderItem}
         ItemSeparatorComponent={ListSeparator}
         ListFooterComponent={
           filtered.length > 0 ? (
@@ -223,7 +235,7 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, ...Typography.body, padding: 0 },
   folderList: { flexGrow: 0, marginBottom: Spacing.sm + 6 },
   folderContent: { paddingHorizontal: Spacing.xl, gap: Spacing.sm },
-  folderChip: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, borderRadius: Spacing.xl, borderWidth: 1 },
+  folderChip: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, borderRadius: Spacing.xl, borderWidth: 1, minHeight: 44 },
   folderText: { ...Typography.small, fontFamily: "Nunito_500Medium", fontWeight: "500" },
   listContent: { paddingHorizontal: Spacing.xl, paddingBottom: 100 },
   longPressHint: { ...Typography.label, textAlign: "center", marginTop: Spacing.lg, marginBottom: Spacing.xl },

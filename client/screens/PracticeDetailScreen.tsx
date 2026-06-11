@@ -39,9 +39,9 @@ export default function PracticeDetailScreen() {
   const {
     isPracticing, showEdit, setShowEdit, showDeleteConfirm, setShowDeleteConfirm,
     sessionResult, setSessionResult, showInstrumentPicker, setShowInstrumentPicker,
-    editMode, setEditMode, synthPlayer, noteEditor, handleNotePress, handleSessionStop, handleRunningChange,
-    handleDeleteConfirm, handleEdit, audioMode, musicXmlContent,
-    isListening, currentPitch, pitchError, sessionAccuracy, isRecording, currentBpm, setCurrentBpm,
+    editMode, setEditMode, synthPlayer, noteEditor, handleSessionStop, handleRunningChange,
+    handleDeleteConfirm, handleEdit, musicXmlContent, currentBpm,
+    isListening, currentPitch,
     partInfos, visiblePartIds, togglePartVisibility,
   } = state;
 

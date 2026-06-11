@@ -1,5 +1,6 @@
-import React from "react";
-import { StyleSheet, View, Pressable } from "react-native";
+import React, { useCallback } from "react";
+import { StyleSheet, View, Pressable, Platform } from "react-native";
+import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, ClayShadow } from "@/constants/theme";
@@ -30,6 +31,48 @@ export function PracticeToolbar({
 }: PracticeToolbarProps): React.JSX.Element {
   const { colors } = useTheme();
 
+  const handlePlayPause = useCallback(() => {
+    if (Platform.OS === "ios") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    }
+    onPlayPause();
+  }, [onPlayPause]);
+
+  const handleMetronome = useCallback(() => {
+    if (Platform.OS === "ios") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    }
+    onMetronome();
+  }, [onMetronome]);
+
+  const handleAudio = useCallback(() => {
+    if (Platform.OS === "ios") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    }
+    onAudio();
+  }, [onAudio]);
+
+  const handleToggleEditMode = useCallback(() => {
+    if (Platform.OS === "ios") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    }
+    onToggleEditMode();
+  }, [onToggleEditMode]);
+
+  const handleSelectParts = useCallback(() => {
+    if (Platform.OS === "ios") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    }
+    onSelectParts();
+  }, [onSelectParts]);
+
+  const handleToggleLandscape = useCallback(() => {
+    if (Platform.OS === "ios") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    }
+    onToggleLandscape();
+  }, [onToggleLandscape]);
+
   return (
     <View
       testID="practice-toolbar"
@@ -39,20 +82,20 @@ export function PracticeToolbar({
       <View style={styles.group}>
         <ToolbarButton
           icon="musical-notes"
-          onPress={onMetronome}
+          onPress={handleMetronome}
           color={colors.text}
           accessibilityLabel="Open metronome"
         />
         <ToolbarButton
           icon="volume-medium"
-          onPress={onAudio}
+          onPress={handleAudio}
           color={colors.text}
           accessibilityLabel="Open audio player"
         />
         {parts.length > 1 && (
           <ToolbarButton
             icon="layers"
-            onPress={onSelectParts}
+            onPress={handleSelectParts}
             color={colors.text}
             accessibilityLabel="Select parts"
           />
@@ -61,7 +104,7 @@ export function PracticeToolbar({
 
       {/* Center — large play/pause */}
       <Pressable
-        onPress={onPlayPause}
+        onPress={handlePlayPause}
         accessibilityLabel={isPlaying ? "Pause" : "Play"}
         accessibilityRole="button"
         style={({ pressed }) => [
@@ -80,13 +123,13 @@ export function PracticeToolbar({
       <View style={styles.group}>
         <ToolbarButton
           icon={editMode ? "pencil" : "pencil-outline"}
-          onPress={onToggleEditMode}
+          onPress={handleToggleEditMode}
           color={editMode ? colors.primary : colors.text}
           accessibilityLabel="Edit notes"
         />
         <ToolbarButton
           icon="expand"
-          onPress={onToggleLandscape}
+          onPress={handleToggleLandscape}
           color={colors.text}
           accessibilityLabel="Fullscreen"
         />
@@ -102,19 +145,19 @@ interface ToolbarButtonProps {
   accessibilityLabel: string;
 }
 
-function ToolbarButton({ icon, onPress, color, accessibilityLabel }: ToolbarButtonProps): React.JSX.Element {
+const ToolbarButton = React.memo(function ToolbarButton({ icon, onPress, color, accessibilityLabel }: ToolbarButtonProps): React.JSX.Element {
   return (
     <Pressable
       onPress={onPress}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
-      hitSlop={6}
+      hitSlop={12}
       style={({ pressed }) => [styles.iconBtn, { opacity: pressed ? 0.6 : 1 }]}
     >
       <Ionicons name={icon} size={22} color={color} />
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   toolbar: {

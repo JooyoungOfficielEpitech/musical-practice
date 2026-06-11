@@ -4,8 +4,11 @@ import {
   View,
   ActivityIndicator,
   Text,
+  Pressable,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 
@@ -25,6 +28,8 @@ type WebViewIncoming =
 
 function buildHtml(isDark: boolean): string {
   const cursorColor = isDark ? "#3B82F6" : "#2563EB";
+  const bgColor = isDark ? "#1A1A2E" : "#FFFFFF";
+  const textColor = isDark ? "#FFFFFF" : "#1F2937";
 
   return `<!DOCTYPE html>
 <html>
@@ -33,7 +38,7 @@ function buildHtml(isDark: boolean): string {
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    html, body { width:100%; height:100%; overflow-x:hidden; background:#FFFFFF !important; color:#1F2937; margin:0; padding:16px; }
+    html, body { width:100%; height:100%; overflow-x:hidden; background:${bgColor} !important; color:${textColor}; margin:0; padding:16px; }
     #score { width:100%; min-height:100%; }
     #error { display:none; padding:16px; color:#DC2626; font-family:sans-serif; font-size:14px; }
   </style>
@@ -77,6 +82,7 @@ export const InteractiveScore = memo(function InteractiveScore({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const readyRef = useRef(false);
+  const handleWebViewLoadRef = useRef<() => void>(() => {});
 
   const html = useMemo(() => buildHtml(isDark), [isDark]);
 
@@ -92,6 +98,11 @@ export const InteractiveScore = memo(function InteractiveScore({
       sendToWebView({ type: "loadXml", xml: musicXml });
     }
   }, [musicXml, sendToWebView]);
+
+  // Store the latest handleWebViewLoad function for retry button
+  useEffect(() => {
+    handleWebViewLoadRef.current = handleWebViewLoad;
+  }, [handleWebViewLoad]);
 
   const handleMessage = useCallback(
     (event: WebViewMessageEvent) => {
@@ -157,14 +168,36 @@ export const InteractiveScore = memo(function InteractiveScore({
         }}
       />
       {loading && !error && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <SafeAreaView style={[styles.overlayBackdrop, { backgroundColor: colors.overlay }]}>
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[styles.overlayText, { color: colors.text }]}>Loading score...</Text>
+          </View>
+        </SafeAreaView>
       )}
       {error && (
-        <View style={styles.errorOverlay}>
-          <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
-        </View>
+        <SafeAreaView
+          style={[styles.overlayBackdrop, { backgroundColor: colors.overlay }]}
+          accessible={true}
+          accessibilityRole="alert"
+        >
+          <View style={styles.errorOverlay}>
+            <Ionicons name="alert-circle-outline" size={48} color={colors.error} />
+            <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
+            <Pressable
+              onPress={() => {
+                setError(null);
+                setLoading(true);
+                handleWebViewLoadRef.current();
+              }}
+              style={[styles.retryBtn, { backgroundColor: colors.primary }]}
+              accessibilityLabel="Retry loading score"
+              accessibilityRole="button"
+            >
+              <Text style={[styles.retryBtnText, { color: colors.buttonText }]}>Retry</Text>
+            </Pressable>
+          </View>
+        </SafeAreaView>
       )}
     </View>
   );
@@ -173,16 +206,33 @@ export const InteractiveScore = memo(function InteractiveScore({
 const styles = StyleSheet.create({
   container: { borderRadius: BorderRadius.sm, overflow: "hidden", flex: 1 },
   webView: { flex: 1, backgroundColor: "transparent" },
-  loadingOverlay: {
+  overlayBackdrop: {
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
   },
-  errorOverlay: {
-    ...StyleSheet.absoluteFillObject,
+  loadingOverlay: {
     alignItems: "center",
     justifyContent: "center",
-    padding: Spacing.lg,
+    gap: Spacing.md,
+  },
+  overlayText: { ...Typography.body, textAlign: "center" },
+  errorOverlay: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.xl,
   },
   errorText: { ...Typography.body, textAlign: "center" },
+  retryBtn: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.sm,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
+    minWidth: 100,
+  },
+  retryBtnText: { ...Typography.body, fontWeight: "600" },
 });

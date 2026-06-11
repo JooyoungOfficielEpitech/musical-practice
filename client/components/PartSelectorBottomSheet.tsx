@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { StyleSheet, Text, View, Modal, Pressable, FlatList } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, ClayShadow, Fonts } from "@/constants/theme";
+import { Spacing, BorderRadius, ClayShadow, Fonts, Colors } from "@/constants/theme";
 import type { PartInfo } from "@/types/music";
 
 export interface PartSelectorBottomSheetProps {
@@ -28,23 +28,22 @@ export function PartSelectorBottomSheet({
       transparent
       animationType="slide"
       onRequestClose={onDismiss}
+      accessibilityViewIsModal={true}
     >
-      <Pressable style={styles.backdrop} onPress={onDismiss} />
+      <Pressable
+        style={styles.backdrop}
+        onPress={onDismiss}
+        accessible={false}
+        accessibilityLabel="Dismiss"
+      />
       <SheetContent onDismiss={onDismiss}>
         {parts.length <= 1 ? (
           <SinglePartMessage />
         ) : (
-          <FlatList
-            data={parts}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <PartRow
-                part={item}
-                isVisible={visiblePartIds.has(item.id)}
-                onToggle={() => onTogglePart(item.id)}
-              />
-            )}
-            style={styles.list}
+          <PartList
+            parts={parts}
+            visiblePartIds={visiblePartIds}
+            onTogglePart={onTogglePart}
           />
         )}
       </SheetContent>
@@ -74,13 +73,17 @@ function SheetContent({ onDismiss, children }: SheetContentProps): React.JSX.Ele
       style={[styles.sheet, { backgroundColor: colors.surface }]}
     >
       <View style={styles.header}>
-        <View style={[styles.handle, { backgroundColor: colors.borderLight }]} />
+        <View
+          accessible={true}
+          accessibilityLabel="Drag to dismiss"
+          style={[styles.handle, { backgroundColor: colors.borderLight }]}
+        />
         <Text style={[styles.title, { color: colors.text }]}>Parts</Text>
         <Pressable
           onPress={onDismiss}
           accessibilityLabel="Close parts selector"
           accessibilityRole="button"
-          hitSlop={8}
+          hitSlop={12}
           style={styles.closeBtn}
         >
           <Ionicons name="close" size={22} color={colors.text} />
@@ -97,12 +100,17 @@ interface PartRowProps {
   onToggle: () => void;
 }
 
-function PartRow({ part, isVisible, onToggle }: PartRowProps): React.JSX.Element {
+const PartRow = React.memo(function PartRow({
+  part,
+  isVisible,
+  onToggle,
+}: PartRowProps): React.JSX.Element {
   const { colors } = useTheme();
   return (
     <Pressable
       onPress={onToggle}
       accessibilityRole="checkbox"
+      accessibilityLabel={part.name}
       accessibilityState={{ checked: isVisible }}
       style={({ pressed }) => [
         styles.row,
@@ -120,12 +128,44 @@ function PartRow({ part, isVisible, onToggle }: PartRowProps): React.JSX.Element
       />
     </Pressable>
   );
+});
+
+interface PartListProps {
+  parts: PartInfo[];
+  visiblePartIds: Set<string>;
+  onTogglePart: (partId: string) => void;
+}
+
+function PartList({
+  parts,
+  visiblePartIds,
+  onTogglePart,
+}: PartListProps): React.JSX.Element {
+  const renderItem = useCallback(
+    ({ item }: { item: PartInfo }) => (
+      <PartRow
+        part={item}
+        isVisible={visiblePartIds.has(item.id)}
+        onToggle={() => onTogglePart(item.id)}
+      />
+    ),
+    [visiblePartIds, onTogglePart],
+  );
+
+  return (
+    <FlatList
+      data={parts}
+      keyExtractor={(item) => item.id}
+      renderItem={renderItem}
+      style={styles.list}
+    />
+  );
 }
 
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: Colors.light.ripple,
   },
   sheet: {
     borderTopLeftRadius: BorderRadius.lg,
