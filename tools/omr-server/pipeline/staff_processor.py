@@ -9,6 +9,7 @@ from typing import Optional
 import cv2
 import numpy as np
 
+from core.crop_cleaner import strip_outside_staff
 from core.voice_separator import separate_voices_image
 from pipeline.chord_voicer import take_voice
 from pipeline.postprocessor import postprocess as postprocess_musicxml
@@ -105,7 +106,10 @@ def process_single_staff(
     if output_dir:
         cv2.imwrite(os.path.join(output_dir, f"{tag}_cropped.png"), staff_image)
 
-    processed = replace_x_noteheads(staff_image)
+    # Remove out-of-band contamination (clap lanes, neighbor-staff bleed)
+    # before x-notehead conversion turns clap heads into fake pitched notes.
+    cleaned = strip_outside_staff(staff_image)
+    processed = replace_x_noteheads(cleaned)
 
     if character not in COMPOUND_VOICES:
         # Non-compound: existing path

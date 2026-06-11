@@ -298,3 +298,29 @@ class TestProcessSingleStaffCacheMergedPath:
 
         best_mock.assert_called_once()
         assert result == {"Soprano": [], "Alto": []}
+
+
+class TestCropCleaning:
+    def test_strip_outside_staff_called_before_x_replacement(self, tmp_path):
+        staff_image = np.zeros((100, 200), dtype=np.uint8)
+        cleaned = np.full((100, 200), 255, dtype=np.uint8)
+
+        with (
+            patch(
+                "pipeline.staff_processor.strip_outside_staff",
+                return_value=cleaned,
+            ) as strip_mock,
+            patch(
+                "core.staff_cropper.replace_x_noteheads",
+                return_value=cleaned,
+            ) as replace_mock,
+            patch("pipeline.staff_processor.run_homr", return_value=_make_xml_with_measures(2)),
+            patch("pipeline.staff_processor.postprocess_musicxml", return_value=_make_xml_with_measures(2)),
+        ):
+            from pipeline.staff_processor import process_single_staff
+
+            process_single_staff("Piano", staff_image, 0, str(tmp_path))
+
+        strip_mock.assert_called_once()
+        # replace_x_noteheads must receive the CLEANED image
+        assert replace_mock.call_args.args[0] is cleaned
