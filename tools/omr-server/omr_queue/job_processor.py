@@ -71,7 +71,10 @@ def process_job(job: dict, client: Client) -> str:
         else:
             result_xml = _run_simple_pipeline(chunks, tmp_dir, title, report_progress)
 
-        result_path = f"{job_id}.musicxml"
+        # Prefix with the owning user's ID so client RLS (omr_results_select,
+        # path-scoped to auth.uid()) can download the result.
+        user_id = job.get("user_id")
+        result_path = f"{user_id}/{job_id}.musicxml" if user_id else f"{job_id}.musicxml"
         _upload_result(client, result_path, result_xml)
 
     return result_path

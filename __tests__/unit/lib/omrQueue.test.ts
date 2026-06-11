@@ -9,11 +9,14 @@ const mockDownload = jest.fn();
 const mockInsert = jest.fn();
 const MOCK_USER_ID = "user-uuid-123";
 
+const mockGetUser = jest.fn();
+const mockSignInAnonymously = jest.fn();
+
 jest.mock("../../../client/lib/supabase", () => ({
   supabase: {
     auth: {
-      // Hardcoded — jest.mock is hoisted before const declarations
-      getUser: jest.fn().mockResolvedValue({ data: { user: { id: "user-uuid-123" } }, error: null }),
+      getUser: (...args: unknown[]) => mockGetUser(...args),
+      signInAnonymously: (...args: unknown[]) => mockSignInAnonymously(...args),
     },
     storage: {
       from: jest.fn((bucket: string) => ({
@@ -65,6 +68,49 @@ import {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockGetUser.mockResolvedValue({ data: { user: { id: MOCK_USER_ID } }, error: null });
+  mockSignInAnonymously.mockResolvedValue({ data: { user: { id: "anon-uuid" } }, error: null });
+});
+
+describe("anonymous session bootstrap", () => {
+  it("signs in anonymously when no session exists, then uploads under anon uid", async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null }, error: null });
+    mockUpload.mockResolvedValue({ error: null });
+
+    const path = await uploadPdfToStorage("cGRm", "job-1");
+
+    expect(mockSignInAnonymously).toHaveBeenCalledTimes(1);
+    expect(path).toBe("anon-uuid/job-1.pdf");
+  });
+
+  it("does not sign in anonymously when a session already exists", async () => {
+    mockUpload.mockResolvedValue({ error: null });
+
+    await uploadPdfToStorage("cGRm", "job-2");
+
+    expect(mockSignInAnonymously).not.toHaveBeenCalled();
+  });
+
+  it("throws a friendly error when anonymous sign-in fails", async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null }, error: null });
+    mockSignInAnonymously.mockResolvedValue({
+      data: { user: null },
+      error: { message: "Anonymous sign-ins are disabled" },
+    });
+
+    await expect(uploadPdfToStorage("cGRm", "job-3")).rejects.toThrow(
+      /could not start a session/i,
+    );
+  });
+
+  it("submitOmrJob also bootstraps an anonymous session", async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null }, error: null });
+    mockInsert.mockResolvedValue({ data: { id: "job-row-1" }, error: null });
+
+    await submitOmrJob("anon-uuid/job-1.pdf", []);
+
+    expect(mockSignInAnonymously).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("uploadPdfToStorage", () => {

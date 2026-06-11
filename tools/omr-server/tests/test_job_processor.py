@@ -65,6 +65,20 @@ class TestProcessJob:
         assert upload_call.call_args[0][0] == "job-123.musicxml"
         assert result_path == "job-123.musicxml"
 
+    def test_result_path_scoped_to_user_when_job_has_user_id(self, tmp_path):
+        """Results upload under {user_id}/ so client RLS (omr_results_select) can read them."""
+        client = _make_mock_client()
+        job = {**SAMPLE_JOB, "user_id": "user-uuid-1"}
+
+        with (
+            patch("omr_queue.job_processor.pdf_to_png", return_value=[[str(tmp_path / "p1.png")]]),
+            patch("omr_queue.job_processor._process_simple_page", return_value=_make_measure_list()),
+        ):
+            from omr_queue.job_processor import process_job
+            result_path = process_job(job, client)
+
+        assert result_path == "user-uuid-1/job-123.musicxml"
+
     def test_raises_omr_queue_error_on_storage_download_failure(self):
         client = MagicMock()
         client.storage.from_.return_value.download.side_effect = Exception("storage error")

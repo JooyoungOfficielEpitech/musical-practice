@@ -19,6 +19,25 @@ const PDF_BUCKET = "omr-pdfs";
 const RESULT_BUCKET = "omr-results";
 const JOBS_TABLE = "omr_jobs";
 
+/**
+ * Return the current user, bootstrapping a silent anonymous session when
+ * none exists. The app has no account UX — uploads are scoped per-device
+ * via Supabase anonymous auth so storage RLS (auth.uid() path prefix) holds.
+ */
+async function ensureUser(client: NonNullable<typeof supabase>) {
+  const { data: { user } } = await client.auth.getUser();
+  if (user) return user;
+
+  const { data, error } = await client.auth.signInAnonymously();
+  if (error || !data.user) {
+    throw new OmrQueueError(
+      "Could not start a session for upload. Please check your connection and try again." +
+        (error ? ` (${error.message})` : ""),
+    );
+  }
+  return data.user;
+}
+
 function requireSupabase() {
   if (!supabase) {
     throw new OmrQueueError(
@@ -41,10 +60,7 @@ export async function uploadPdfToStorage(
 ): Promise<string> {
   const client = requireSupabase();
 
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) {
-    throw new OmrQueueError("Cannot upload PDF: user is not authenticated.");
-  }
+  const user = await ensureUser(client);
 
   const storagePath = `${user.id}/${jobId}.pdf`;
   const binary = atob(pdfB64);
@@ -75,10 +91,7 @@ export async function submitOmrJob(
 ): Promise<string> {
   const client = requireSupabase();
 
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) {
-    throw new OmrQueueError("Cannot submit OMR job: user is not authenticated.");
-  }
+  const user = await ensureUser(client);
 
   const { data, error } = await client
     .from(JOBS_TABLE)
