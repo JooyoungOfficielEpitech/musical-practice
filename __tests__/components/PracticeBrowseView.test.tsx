@@ -93,7 +93,7 @@ const baseState = {
   musicXmlContent: null, musicXmlLoading: false, hasMusicXml: false,
   showInstrumentPicker: false, setShowInstrumentPicker: jest.fn(),
   editMode: false, setEditMode: jest.fn(),
-  partInfos: [], visiblePartIds: new Set<string>(), togglePartVisibility: jest.fn(),
+  partInfos: [], partNoteCounts: {}, visiblePartIds: new Set<string>(), togglePartVisibility: jest.fn(),
   noteSequence: [], sheetSessions: [], bestScore: null, sheetRecordings: [],
   synthPlayer: baseSynthPlayer,
   audioPlayer: baseAudioPlayer,

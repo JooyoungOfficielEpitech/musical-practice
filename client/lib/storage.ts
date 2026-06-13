@@ -14,6 +14,7 @@ export interface SheetMusic {
   noteSequenceUri?: string;
   omrStatus?: "none" | "processing" | "ready" | "failed";
   selectedInstrument?: string;
+  selectedPartIds?: string[]; // parts the user chose to practice (성부 선택), persisted
 }
 
 export interface PracticeSession {

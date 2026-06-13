@@ -35,6 +35,7 @@ interface PracticeContextType {
   editSheet: (sheet: SheetMusic) => Promise<void>;
   removeSheet: (id: string) => Promise<void>;
   toggleFavorite: (id: string) => Promise<void>;
+  persistPartSelection: (id: string, partIds: string[]) => Promise<void>;
   addSession: (session: Omit<PracticeSession, "id">) => Promise<string>;
   removeRecording: (id: string) => Promise<void>;
   renameRecording: (id: string, newTitle: string) => Promise<void>;
@@ -173,6 +174,17 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
     [sheets],
   );
 
+  const persistPartSelection = useCallback(
+    async (id: string, partIds: string[]) => {
+      const sheet = sheets.find((s) => s.id === id);
+      if (!sheet) return;
+      const updated = { ...sheet, selectedPartIds: partIds };
+      await updateSheet(updated);
+      setSheets((prev) => prev.map((s) => (s.id === id ? updated : s)));
+    },
+    [sheets],
+  );
+
   const addSession = useCallback(
     async (data: Omit<PracticeSession, "id">): Promise<string> => {
       const session: PracticeSession = { ...data, id: generateId() };
@@ -259,6 +271,7 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
         editSheet,
         removeSheet,
         toggleFavorite,
+        persistPartSelection,
         addSession,
         removeRecording,
         renameRecording,

@@ -14,6 +14,7 @@ import { MetronomeBottomSheet } from "@/components/MetronomeBottomSheet";
 import { AudioBottomSheet } from "@/components/AudioBottomSheet";
 import { ScorePreviewEmpty } from "@/components/ScorePreviewEmpty";
 import { ScorePreviewControls } from "@/components/ScorePreviewControls";
+import { PartCheckCard } from "@/components/PartCheckCard";
 import { Spacing, BorderRadius, Typography, Shadows, Fonts, ClayShadow, ClayShadowSmall, Colors } from "@/constants/theme";
 import type { SheetMusic } from "@/lib/storage";
 import type { PracticeDetailState } from "@/hooks/usePracticeDetail";
@@ -43,6 +44,7 @@ function PracticeBrowseViewComponent({
     sheetRecordings, synthPlayer, noteEditor, isListening, currentPitch, pitchError,
     sessionAccuracy, isRecording, omr, handleNotePress, handleSynthPlayPause,
     handleScanSheet, handleStartPractice, handleDeletePress,
+    partInfos, partNoteCounts, visiblePartIds, togglePartVisibility,
   } = state;
 
   const handleScanPress = useCallback(() => {
@@ -111,6 +113,14 @@ function PracticeBrowseViewComponent({
           </Pressable>
         )}
         {omr.error && sheet.omrStatus !== "ready" && <Text style={[styles.scanErrorText, { color: colors.error }]}>{omr.error}</Text>}
+
+        {/* Part check (성부 확인) — confirm/select voices before practicing */}
+        <PartCheckCard
+          parts={partInfos}
+          visiblePartIds={visiblePartIds}
+          partNoteCounts={partNoteCounts}
+          onTogglePart={togglePartVisibility}
+        />
 
         {/* Start Practice CTA */}
         <Pressable onPress={handleStartPress} accessibilityLabel="Start practice session" accessibilityRole="button" accessibilityState={{ busy: isStartingPractice }}

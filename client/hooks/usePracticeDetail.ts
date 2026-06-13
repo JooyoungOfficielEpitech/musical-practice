@@ -13,6 +13,7 @@ import { useRecording } from "@/hooks/useRecording";
 import { useOmr } from "@/hooks/useOmr";
 import { useNoteEditor } from "@/hooks/useNoteEditor";
 import { parseMusicXml } from "@/lib/audio/musicXmlParser";
+import { countNotesByPart, resolveInitialVisibleParts } from "@/lib/audio/partSelection";
 import type { SheetFormData } from "@/lib/storage";
 import type { NoteSequence, PartInfo } from "@/types/music";
 import type { PitchResult } from "@/lib/audio/types";
@@ -33,6 +34,7 @@ export interface PracticeDetailState {
   showInstrumentPicker: boolean; setShowInstrumentPicker: (v: boolean) => void;
   editMode: boolean; setEditMode: React.Dispatch<React.SetStateAction<boolean>>;
   partInfos: PartInfo[];
+  partNoteCounts: Record<string, number>;
   visiblePartIds: Set<string>;
   togglePartVisibility: (partId: string) => void;
   noteSequence: NoteSequence;
@@ -60,7 +62,7 @@ export interface PracticeDetailState {
 
 export function usePracticeDetail(sheetId: string): PracticeDetailState {
   const navigation = useNavigation();
-  const { sheets, sessions, recordings, addSession, editSheet, removeSheet, refreshData } = usePractice();
+  const { sheets, sessions, recordings, addSession, editSheet, removeSheet, refreshData, persistPartSelection } = usePractice();
   const sheet = useMemo(() => sheets.find((s) => s.id === sheetId), [sheets, sheetId]);
 
   const [currentBpm, setCurrentBpm] = useState(120);
@@ -78,6 +80,7 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
   const [editMode, setEditMode] = useState(true);
 
   const [partInfos, setPartInfos] = useState<PartInfo[]>([]);
+  const [partNoteCounts, setPartNoteCounts] = useState<Record<string, number>>({});
   const [visiblePartIds, setVisiblePartIds] = useState<Set<string>>(new Set());
   const notePartIndicesRef = useRef<number[]>([]);
   const filteredNotes = useMemo(() => {
@@ -92,12 +95,13 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
   }, [noteSequence, visiblePartIds, partInfos]);
 
   const togglePartVisibility = useCallback((partId: string) => {
-    setVisiblePartIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(partId)) { next.delete(partId); } else { next.add(partId); }
-      return next;
-    });
-  }, []);
+    const next = new Set(visiblePartIds);
+    if (next.has(partId)) { next.delete(partId); } else { next.add(partId); }
+    // Never leave a score with zero audible parts.
+    if (next.size === 0) return;
+    setVisiblePartIds(next);
+    if (sheet) persistPartSelection(sheet.id, [...next]).catch(() => {});
+  }, [visiblePartIds, sheet, persistPartSelection]);
 
   const synthPlayer = useSynthPlayer(filteredNotes);
   const audioPlayer = useAudioPlayer();
@@ -135,12 +139,15 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
         const parsed = parseMusicXml(xml);
         setNoteSequence(parsed.notes);
         setPartInfos(parsed.parts);
+        setPartNoteCounts(countNotesByPart(parsed.notePartIndices, parsed.parts));
         notePartIndicesRef.current = parsed.notePartIndices;
-        setVisiblePartIds(new Set(parsed.parts.map((p) => p.id)));
+        setVisiblePartIds(resolveInitialVisibleParts(parsed.parts, sheet.selectedPartIds));
       } catch { if (!cancelled) { setMusicXmlContent(null); setNoteSequence([]); } }
       finally { if (!cancelled) setMusicXmlLoading(false); }
     })();
     return () => { cancelled = true; };
+    // Re-seed parts only when the score file changes, not on every selection edit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheet?.musicXmlUri]);
 
 
@@ -248,7 +255,7 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
     sessionResult, setSessionResult, audioMode, setAudioMode,
     musicXmlContent, musicXmlLoading, hasMusicXml, noteSequence,
     showInstrumentPicker, setShowInstrumentPicker, editMode, setEditMode,
-    partInfos, visiblePartIds, togglePartVisibility,
+    partInfos, partNoteCounts, visiblePartIds, togglePartVisibility,
     sheetSessions, bestScore, sheetRecordings,
     synthPlayer, audioPlayer, noteEditor,
     isListening, currentPitch, pitchError: pitchError ?? null, sessionAccuracy, isRecording, omr,
