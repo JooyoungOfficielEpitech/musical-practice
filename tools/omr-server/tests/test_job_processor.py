@@ -65,6 +65,22 @@ class TestProcessJob:
         assert upload_call.call_args[0][0] == "job-123.musicxml"
         assert result_path == "job-123.musicxml"
 
+    def test_upload_uses_upsert_so_reprocessing_overwrites(self, tmp_path):
+        """Reprocessing a job re-uploads to the same path; without upsert the
+        storage API returns 409 Duplicate and the job fails after full OMR work."""
+        client = _make_mock_client()
+
+        with (
+            patch("omr_queue.job_processor.pdf_to_png", return_value=[[str(tmp_path / "p1.png")]]),
+            patch("omr_queue.job_processor._process_simple_page", return_value=_make_measure_list()),
+        ):
+            from omr_queue.job_processor import process_job
+            process_job(SAMPLE_JOB, client)
+
+        upload_call = client.storage.from_.return_value.upload
+        file_options = upload_call.call_args[0][2]
+        assert str(file_options.get("upsert")).lower() == "true"
+
     def test_result_path_scoped_to_user_when_job_has_user_id(self, tmp_path):
         """Results upload under {user_id}/ so client RLS (omr_results_select) can read them."""
         client = _make_mock_client()

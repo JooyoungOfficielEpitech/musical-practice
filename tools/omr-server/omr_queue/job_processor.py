@@ -157,7 +157,9 @@ def _upload_result(client: Client, result_path: str, xml_content: str) -> None:
         client.storage.from_(RESULT_BUCKET).upload(
             result_path,
             xml_content.encode("utf-8"),
-            {"content-type": "application/xml"},
+            # upsert: a reprocessed job re-uploads to the same path; without it
+            # storage returns 409 Duplicate after all the OMR work is done.
+            {"content-type": "application/xml", "upsert": "true"},
         )
     except Exception as exc:
         raise OmrQueueError(f"Failed to upload result to storage: {exc}") from exc
