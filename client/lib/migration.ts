@@ -76,11 +76,26 @@ export async function migrateFileUrisToDocument(
       }
     }
 
+    // Re-root OMR artifact URIs (musicXML, note sequence). These always live in
+    // document storage, so they only ever need rebasing — never a cache copy.
+    let migratedMusicXml = sheet.musicXmlUri;
+    if (sheet.musicXmlUri && isDocumentUri(sheet.musicXmlUri)) {
+      const rebased = rebaseDocumentUri(sheet.musicXmlUri);
+      if (rebased !== sheet.musicXmlUri) { migratedMusicXml = rebased; changed = true; }
+    }
+    let migratedNoteSeq = sheet.noteSequenceUri;
+    if (sheet.noteSequenceUri && isDocumentUri(sheet.noteSequenceUri)) {
+      const rebased = rebaseDocumentUri(sheet.noteSequenceUri);
+      if (rebased !== sheet.noteSequenceUri) { migratedNoteSeq = rebased; changed = true; }
+    }
+
     if (changed) {
       results.push({
         ...sheet,
         imageUris: migratedImages,
         audioUri: migratedAudio,
+        musicXmlUri: migratedMusicXml,
+        noteSequenceUri: migratedNoteSeq,
       });
     } else {
       results.push(sheet);

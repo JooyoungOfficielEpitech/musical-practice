@@ -190,6 +190,27 @@ describe("migrateFileUrisToDocument", () => {
     expect(result[0].audioUri).toBeUndefined();
   });
 
+  it("rebases a stale musicXmlUri to the current container", async () => {
+    const sheets: SheetMusic[] = [
+      {
+        id: "5",
+        title: "OMR Score",
+        artist: "E",
+        imageUris: [],
+        musicXmlUri: "/var/OLD-UUID/Documents/musicxml/score.musicxml",
+        noteSequenceUri: "/var/OLD-UUID/Documents/notes/seq.json",
+        createdAt: 1000,
+        folder: "Musical",
+        isFavorite: false,
+      },
+    ];
+
+    const result = await migrateFileUrisToDocument(sheets);
+
+    expect(result[0].musicXmlUri).toBe("/permanent/documents/musicxml/score.musicxml");
+    expect(result[0].noteSequenceUri).toBe("/permanent/documents/notes/seq.json");
+  });
+
   it("returns unchanged array when all sheets already migrated", async () => {
     const sheets: SheetMusic[] = [
       {

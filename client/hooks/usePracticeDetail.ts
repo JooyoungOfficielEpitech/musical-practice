@@ -14,6 +14,7 @@ import { useOmr } from "@/hooks/useOmr";
 import { useNoteEditor } from "@/hooks/useNoteEditor";
 import { parseMusicXml } from "@/lib/audio/musicXmlParser";
 import { countNotesByPart, resolveInitialVisibleParts } from "@/lib/audio/partSelection";
+import { resolveExistingUri } from "@/lib/fileStorage";
 import type { SheetFormData } from "@/lib/storage";
 import type { NoteSequence, PartInfo } from "@/types/music";
 import type { PitchResult } from "@/lib/audio/types";
@@ -133,7 +134,8 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
     (async () => {
       try {
         const { File } = await import("expo-file-system");
-        const xml = await new File(sheet.musicXmlUri!).text(); // non-null: guarded above
+        // Rebase in case the app container path changed after an update.
+        const xml = await new File(resolveExistingUri(sheet.musicXmlUri!)).text();
         if (cancelled) return;
         setMusicXmlContent(xml);
         const parsed = parseMusicXml(xml);
@@ -152,7 +154,7 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
 
 
   useEffect(() => {
-    if (sheet?.audioUri) audioPlayer.loadSound(sheet.audioUri);
+    if (sheet?.audioUri) audioPlayer.loadSound(resolveExistingUri(sheet.audioUri));
     return () => { audioPlayer.unload(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheet?.audioUri]);
@@ -190,7 +192,7 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
       return false;
     }
     if (sheet?.audioUri) {
-      try { await audioPlayer.loadSound(sheet.audioUri); await audioPlayer.play(); } catch { /* non-fatal */ }
+      try { await audioPlayer.loadSound(resolveExistingUri(sheet.audioUri)); await audioPlayer.play(); } catch { /* non-fatal */ }
     }
     return true;
   }, [isGranted, requestPermission, resetAccuracy, setupAudioSession, startListening, startRecording, stopRecording, audioPlayer, sheet]);

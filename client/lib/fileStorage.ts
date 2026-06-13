@@ -64,6 +64,25 @@ export function fileExists(uri: string): boolean {
 }
 
 /**
+ * Resolve a persisted file URI to one that actually exists right now.
+ *
+ * Stored URIs are absolute paths under the iOS app container; an app update can
+ * change the container path prefix, leaving the original stale. Returns the
+ * original when its file exists, otherwise the URI rebased onto the current
+ * container (best effort — the file content survives the container change).
+ * Apply this at every READ site before handing a stored URI to a player or File.
+ */
+export function resolveExistingUri(uri: string): string {
+  if (!uri) return uri;
+  try {
+    if (new File(uri).exists) return uri;
+  } catch {
+    // fall through to rebased candidate
+  }
+  return rebaseDocumentUri(uri);
+}
+
+/**
  * Copy a file to the app's permanent local storage.
  * Returns the new URI, or null on failure.
  */

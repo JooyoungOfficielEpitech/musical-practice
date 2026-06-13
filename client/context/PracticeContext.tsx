@@ -72,7 +72,9 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
       const sheetsChanged = migratedSheets.some(
         (s, i) =>
           s.imageUris !== sheetsData[i].imageUris ||
-          s.audioUri !== sheetsData[i].audioUri,
+          s.audioUri !== sheetsData[i].audioUri ||
+          s.musicXmlUri !== sheetsData[i].musicXmlUri ||
+          s.noteSequenceUri !== sheetsData[i].noteSequenceUri,
       );
       if (sheetsChanged) {
         for (const sheet of migratedSheets) {
