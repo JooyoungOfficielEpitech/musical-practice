@@ -82,9 +82,8 @@ def score_musicxml(xml_string: str) -> tuple[float, dict]:
 def _homr_executable() -> str:
     """Resolve the homr CLI: PATH first, then next to the interpreter.
 
-    The server is often started as ./venv/bin/python main.py WITHOUT the
-    venv on PATH — bare "homr" then fails with FileNotFoundError and every
-    staff silently yields nothing.
+    Servers started as ./venv/bin/python main.py lack venv/bin on PATH —
+    bare "homr" then fails and every staff silently yields nothing.
     """
     found = shutil.which("homr")
     if found:
@@ -93,7 +92,16 @@ def _homr_executable() -> str:
 
 
 def run_homr(image_path: str, work_dir: str) -> Optional[str]:
-    """Run homr on an image file. Returns MusicXML string or None on failure."""
+    """Run homr on an image file. Returns MusicXML string or None on failure.
+
+    Routes through the persistent worker pool when it is running (models stay
+    warm); otherwise falls back to the homr CLI subprocess.
+    """
+    from pipeline import homr_pool
+
+    if homr_pool.pool_running():
+        return homr_pool.run_homr_pooled(image_path)
+
     for old in glob.glob(os.path.join(work_dir, "*.musicxml")) + glob.glob(os.path.join(work_dir, "*.xml")):
         os.remove(old)
 
@@ -201,23 +209,18 @@ def run_best_strategy(image: np.ndarray) -> tuple[str, float, str]:
         return best_xml, best_score, best_strategy
 
 
-# Strategies that measurably improve homr's chord recall on shared staves
-# (sweeps 2026-06-11: adaptive/sharpen +67% chord notes vs original on p13;
-# scale1.5 lifted the remaining gap crop p8-SA from 3 to 4 chords).
+# Proven chord-recall set (2026-06-11 sweeps). scale2 forbidden: homr collapses.
 CHORD_STRATEGY_NAMES = ("original", "adaptive", "sharpen", "scale1.5")
 
 
 def run_chord_strategy(image: np.ndarray) -> tuple[str, float, str]:
     """Multi-strategy OMR optimised for CHORD recall (compound SATB staves).
 
-    The generic score in run_best_strategy can rank a result with fewer
-    chords higher, and its early-exit skips exploration entirely. Here a
-    fixed trio of strategies always runs, and selection maximises
-    (chord_notes, pitched notes, score) — chords carry the second voice's
-    content, so they outrank everything else.
-
-    Returns (postprocessed_musicxml, quality_score, strategy_name).
-    Raises RuntimeError if all strategies fail.
+    run_best_strategy's generic score can prefer chord-poorer results and its
+    early-exit skips exploration; here all CHORD_STRATEGY_NAMES run and the
+    pick maximises (chord_notes, pitched, score) — chords carry voice 2.
+    Returns (postprocessed_musicxml, score, strategy). Raises RuntimeError
+    when every strategy fails.
     """
     with tempfile.TemporaryDirectory() as tmpdir:
         candidates = []

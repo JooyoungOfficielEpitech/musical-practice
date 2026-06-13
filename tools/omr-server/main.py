@@ -130,6 +130,8 @@ def _start_poller():
 
 @app.on_event("startup")
 def startup_event():
+    from pipeline.homr_pool import start_pool
+    start_pool()  # keep homr models warm across jobs
     t = threading.Thread(target=_start_poller, daemon=True)
     t.start()
 
