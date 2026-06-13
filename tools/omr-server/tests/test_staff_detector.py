@@ -12,7 +12,38 @@ from core.staff_detector import (
     _group_staves_into_systems,
     _find_staff_start_x,
     _check_barline_connectivity,
+    _select_lead_sheet_vocal_staves,
 )
+
+
+class TestSelectLeadSheetVocalStaves:
+    """The vocal line in a piano-vocal score is the top staff sitting above the
+    piano grand staff (the bottom two staves). Systems that are grand-staff only
+    (e.g. a piano intro) carry no vocal."""
+
+    def test_picks_top_staff_above_grand_staff(self):
+        # sys0 = 2-staff piano intro (skip); sys1, sys2 = vocal + grand staff
+        systems = [[0, 1], [2, 3, 4], [5, 6, 7]]
+        assert _select_lead_sheet_vocal_staves(systems) == [(1, 2), (2, 5)]
+
+    def test_all_three_staff_systems(self):
+        systems = [[0, 1, 2], [3, 4, 5]]
+        assert _select_lead_sheet_vocal_staves(systems) == [(0, 0), (1, 3)]
+
+    def test_lone_staff_is_vocal(self):
+        # a cappella system: a single staff with no accompaniment
+        assert _select_lead_sheet_vocal_staves([[0]]) == [(0, 0)]
+
+    def test_pure_piano_has_no_vocal(self):
+        # every system is just a grand staff — nothing to sing
+        assert _select_lead_sheet_vocal_staves([[0, 1], [2, 3]]) == []
+
+    def test_extra_vocal_staves_pick_topmost(self):
+        # 2 vocal staves above a grand staff — v1 extracts the topmost line
+        assert _select_lead_sheet_vocal_staves([[0, 1, 2, 3]]) == [(0, 0)]
+
+    def test_empty_systems(self):
+        assert _select_lead_sheet_vocal_staves([]) == []
 
 
 def make_synthetic_score(

@@ -17,6 +17,7 @@ from core.staff_detector import (
     _group_into_staves,
     _group_staff_lines,
     _group_staves_into_systems,
+    _select_lead_sheet_vocal_staves,
     _to_gray,
 )
 from core.label_ocr import _assign_labels_by_position
@@ -289,6 +290,30 @@ def crop_all_vocal_staves(
             "num_staves": len(system),
             "num_vocal_staves": len(assignments),
         })
+
+    # Lead-sheet fallback: no character labels anywhere (e.g. a piano-vocal
+    # score where the singer's name sits above the staff, not in the left
+    # margin). Treat the top staff of each vocal system as a single "Voice".
+    if not result:
+        picks = _select_lead_sheet_vocal_staves(systems)
+        if picks:
+            log.info("No character labels found — lead-sheet mode, extracting %d vocal staves", len(picks))
+            system_info = []
+            for sys_idx, staff_idx in picks:
+                system = systems[sys_idx]
+                next_top = staves[system[1]][0][0] if len(system) > 1 else None
+                prev_bottom = staves[systems[sys_idx - 1][-1]][-1][1] if sys_idx > 0 else None
+                cropped = _crop_single_staff(
+                    img, staves[staff_idx], h, w, staves, staff_idx,
+                    prev_bottom, next_top, padding_factor,
+                )
+                result.setdefault("Voice", []).append((cropped, sys_idx))
+                system_info.append({
+                    "system_index": sys_idx,
+                    "characters": {"Voice"},
+                    "num_staves": len(system),
+                    "num_vocal_staves": 1,
+                })
 
     return result, system_info
 

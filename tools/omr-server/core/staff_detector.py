@@ -246,3 +246,29 @@ def _group_staves_into_systems(
         systems.append(current_system)
 
     return systems
+
+
+# A piano grand staff is two staves (treble + bass).
+GRAND_STAFF_SIZE = 2
+
+
+def _select_lead_sheet_vocal_staves(
+    systems: list[list[int]],
+    grand_staff_size: int = GRAND_STAFF_SIZE,
+) -> list[tuple[int, int]]:
+    """Pick the vocal staff of each system in an unlabeled piano-vocal score.
+
+    Used as a fallback when no character labels are found anywhere: the singer's
+    line is the top staff sitting above the piano grand staff (the bottom
+    ``grand_staff_size`` staves). A system that is grand-staff only (a piano
+    intro/interlude) carries no vocal and is skipped; a lone staff is taken as
+    an a cappella vocal line.
+
+    Returns a list of (system_index, staff_index) for the vocal staves.
+    """
+    picks: list[tuple[int, int]] = []
+    for sys_idx, system in enumerate(systems):
+        n = len(system)
+        if n == 1 or n > grand_staff_size:
+            picks.append((sys_idx, system[0]))  # topmost staff is the vocal line
+    return picks
