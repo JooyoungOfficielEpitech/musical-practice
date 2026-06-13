@@ -998,4 +998,46 @@ describe("parseMusicXml — part metadata (Phase 1)", () => {
       expect(parts[0].name).toBeTruthy();
     });
   });
+
+  describe("per-measure divisions changes (sticky divisions)", () => {
+    // Each homr-run system emits its own <divisions>; a single part's measures
+    // therefore declare different divisions mid-stream. Two notes of the same
+    // notated value (quarter) must sound the same length regardless.
+    const CHANGING_DIVISIONS_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="3.1">
+  <part-list><score-part id="P1"><part-name>V</part-name></score-part></part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+      <direction><sound tempo="120"/></direction>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><rest/><duration>3</duration><type>half</type></note>
+    </measure>
+    <measure number="2">
+      <attributes><divisions>4</divisions></attributes>
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><rest/><duration>12</duration><type>half</type></note>
+    </measure>
+  </part>
+</score-partwise>`;
+
+    it("gives equal real duration to same-value notes across divisions changes", () => {
+      const { notes } = parseMusicXml(CHANGING_DIVISIONS_XML);
+      const c4 = notes.find((n) => n.pitch === "C4")!;
+      const d4 = notes.find((n) => n.pitch === "D4")!;
+      expect(c4).toBeDefined();
+      expect(d4).toBeDefined();
+      // Both are quarter notes — equal duration despite divisions 1 vs 4.
+      expect(d4.duration).toBeCloseTo(c4.duration, 5);
+      // At 120 BPM a quarter = 0.5s.
+      expect(c4.duration).toBeCloseTo(0.5, 5);
+    });
+
+    it("places the second measure one full bar after the first", () => {
+      const { notes } = parseMusicXml(CHANGING_DIVISIONS_XML);
+      const d4 = notes.find((n) => n.pitch === "D4")!;
+      // Measure 1 is a full 4/4 bar = 4 beats = 2.0s at 120 BPM.
+      expect(d4.startTime).toBeCloseTo(2.0, 5);
+    });
+  });
 });

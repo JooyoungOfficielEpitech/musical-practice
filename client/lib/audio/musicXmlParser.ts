@@ -219,13 +219,16 @@ function parsePartList(xmlString: string, allPartXmls: string[]): PartInfo[] {
  * key signatures, and basic repeats.
  */
 export function parseMusicXml(xmlString: string): ParsedMusicXml {
-  // Parse global attributes (use first occurrence — applies to all parts)
+  // The first <divisions> seen is only the INITIAL value. Each measure may
+  // declare its own <divisions> (every per-system homr run emits one), so it is
+  // tracked per-measure below. All position/duration math is done in quarter-note
+  // beats — divisions-independent — so mid-stream divisions changes stay
+  // temporally consistent across measures and parts.
   const divisionsStr = getTagContent(xmlString, "divisions");
-  const divisions = divisionsStr ? parseInt(divisionsStr, 10) : DEFAULT_DIVISIONS;
+  const firstDivisions = divisionsStr ? parseInt(divisionsStr, 10) : DEFAULT_DIVISIONS;
 
   const tempo = parseTempo(xmlString);
   const secondsPerBeat = 60 / tempo;
-  const secondsPerDivision = secondsPerBeat / divisions;
 
   // Parse key signature
   const fifthsStr = getTagContent(xmlString, "fifths");
@@ -240,10 +243,10 @@ export function parseMusicXml(xmlString: string): ParsedMusicXml {
   const notePartIndices: number[] = [];
 
   interface VoiceState {
-    currentDivision: number;
+    currentBeat: number;
     tiedPitch: string | null;
-    tiedStartDivision: number;
-    tiedDuration: number;
+    tiedStartBeat: number;
+    tiedDurationBeats: number;
     tiedMidi: number;
     tiedFrequency: number;
     tiedVelocity: number;
@@ -263,18 +266,21 @@ export function parseMusicXml(xmlString: string): ParsedMusicXml {
     // Fresh voice state per part
     const voiceStates = new Map<string, VoiceState>();
     let currentVelocity = DEFAULT_VELOCITY;
-    // Tracks the division position at the start of the current measure.
+    // Divisions in effect for the current measure. Sticky: a measure without a
+    // <divisions> inherits the previous one.
+    let measureDivisions = firstDivisions;
+    // Tracks the beat position at the start of the current measure.
     // New voices that first appear mid-song inherit this so they don't
     // incorrectly place their notes back at t=0.
-    let measureStartDiv = 0;
+    let measureStartBeat = 0;
 
     function getVoiceState(voice: string): VoiceState {
       if (!voiceStates.has(voice)) {
         voiceStates.set(voice, {
-          currentDivision: measureStartDiv,
+          currentBeat: measureStartBeat,
           tiedPitch: null,
-          tiedStartDivision: 0,
-          tiedDuration: 0,
+          tiedStartBeat: 0,
+          tiedDurationBeats: 0,
           tiedMidi: 0,
           tiedFrequency: 0,
           tiedVelocity: DEFAULT_VELOCITY,
@@ -287,15 +293,22 @@ export function parseMusicXml(xmlString: string): ParsedMusicXml {
       const measure = measures[measureIdx];
       const elements = getMeasureElements(measure);
 
+      // Pick up this measure's divisions if it declares one (sticky otherwise).
+      const measureDivStr = getTagContent(measure, "divisions");
+      if (measureDivStr) {
+        const parsed = parseInt(measureDivStr, 10);
+        if (parsed > 0) measureDivisions = parsed;
+      }
+
       // Compute where this measure starts: the max cursor across all voices.
       // Voices absent in prior measures would otherwise start at 0.
-      measureStartDiv = 0;
+      measureStartBeat = 0;
       for (const state of voiceStates.values()) {
-        measureStartDiv = Math.max(measureStartDiv, state.currentDivision);
+        measureStartBeat = Math.max(measureStartBeat, state.currentBeat);
       }
 
       // Track last non-chord note's startTime per voice for chord handling
-      const lastNoteStartDivision = new Map<string, number>();
+      const lastNoteStartBeat = new Map<string, number>();
 
       for (const element of elements) {
         if (element.type === "direction") {
@@ -315,9 +328,11 @@ export function parseMusicXml(xmlString: string): ParsedMusicXml {
       const voiceStr = getTagContent(noteXml, "voice") ?? "1";
       const state = getVoiceState(voiceStr);
 
-      // Get duration in divisions
+      // Duration in quarter-note beats — divide raw divisions by THIS measure's
+      // divisions so the value is comparable across measures with different ones.
       const durationStr = getTagContent(noteXml, "duration");
-      const durationDivisions = durationStr ? parseInt(durationStr, 10) : divisions;
+      const durationDivisions = durationStr ? parseInt(durationStr, 10) : measureDivisions;
+      const durationBeats = measureDivisions > 0 ? durationDivisions / measureDivisions : durationDivisions;
 
       // Check for tie
       const hasTieStart = noteXml.includes('<tie type="start"');
@@ -330,29 +345,29 @@ export function parseMusicXml(xmlString: string): ParsedMusicXml {
             pitch: state.tiedPitch,
             midiNumber: state.tiedMidi,
             frequency: state.tiedFrequency,
-            startTime: state.tiedStartDivision * secondsPerDivision,
-            duration: state.tiedDuration * secondsPerDivision,
+            startTime: state.tiedStartBeat * secondsPerBeat,
+            duration: state.tiedDurationBeats * secondsPerBeat,
             velocity: state.tiedVelocity,
           });
           state.tiedPitch = null;
         }
-        state.currentDivision += durationDivisions;
-        lastNoteStartDivision.set(voiceStr, state.currentDivision);
+        state.currentBeat += durationBeats;
+        lastNoteStartBeat.set(voiceStr, state.currentBeat);
         continue;
       }
 
       // For chord notes, use the same startTime as the previous note in this voice
-      // (don't advance currentDivision)
+      // (don't advance currentBeat)
       if (isChord) {
         // Rewind to the last note's start position
-        const lastStart = lastNoteStartDivision.get(voiceStr) ?? state.currentDivision;
+        const lastStart = lastNoteStartBeat.get(voiceStr) ?? state.currentBeat;
         // Chord note occupies the same time slot; we'll set startDivision from lastStart
-        // but don't advance state.currentDivision
+        // but don't advance state.currentBeat
       }
 
-      const startDivisionForNote = isChord
-        ? (lastNoteStartDivision.get(voiceStr) ?? state.currentDivision)
-        : state.currentDivision;
+      const startBeatForNote = isChord
+        ? (lastNoteStartBeat.get(voiceStr) ?? state.currentBeat)
+        : state.currentBeat;
 
       // Check for unpitched (x-noteheads / spoken rhythm) — treat as percussive hit
       const isUnpitched = noteXml.includes("<unpitched");
@@ -375,8 +390,8 @@ export function parseMusicXml(xmlString: string): ParsedMusicXml {
 
       if (!step || !octaveStr) {
         if (!isChord) {
-          state.currentDivision += durationDivisions;
-          lastNoteStartDivision.set(voiceStr, startDivisionForNote);
+          state.currentBeat += durationBeats;
+          lastNoteStartBeat.set(voiceStr, startBeatForNote);
         }
         continue;
       }
@@ -396,7 +411,7 @@ export function parseMusicXml(xmlString: string): ParsedMusicXml {
 
       if (hasTieStop && state.tiedPitch === pitch) {
         // Continue the tied note
-        state.tiedDuration += durationDivisions;
+        state.tiedDurationBeats += durationBeats;
 
         if (!hasTieStart) {
           // Tie ends here — flush
@@ -404,8 +419,8 @@ export function parseMusicXml(xmlString: string): ParsedMusicXml {
             pitch: state.tiedPitch,
             midiNumber: state.tiedMidi,
             frequency: state.tiedFrequency,
-            startTime: state.tiedStartDivision * secondsPerDivision,
-            duration: state.tiedDuration * secondsPerDivision,
+            startTime: state.tiedStartBeat * secondsPerBeat,
+            duration: state.tiedDurationBeats * secondsPerBeat,
             velocity: state.tiedVelocity,
           });
           state.tiedPitch = null;
@@ -417,8 +432,8 @@ export function parseMusicXml(xmlString: string): ParsedMusicXml {
             pitch: state.tiedPitch,
             midiNumber: state.tiedMidi,
             frequency: state.tiedFrequency,
-            startTime: state.tiedStartDivision * secondsPerDivision,
-            duration: state.tiedDuration * secondsPerDivision,
+            startTime: state.tiedStartBeat * secondsPerBeat,
+            duration: state.tiedDurationBeats * secondsPerBeat,
             velocity: state.tiedVelocity,
           });
           state.tiedPitch = null;
@@ -427,8 +442,8 @@ export function parseMusicXml(xmlString: string): ParsedMusicXml {
         if (hasTieStart) {
           // Start a new tie
           state.tiedPitch = pitch;
-          state.tiedStartDivision = startDivisionForNote;
-          state.tiedDuration = durationDivisions;
+          state.tiedStartBeat = startBeatForNote;
+          state.tiedDurationBeats = durationBeats;
           state.tiedMidi = midiNumber;
           state.tiedFrequency = frequency;
           state.tiedVelocity = currentVelocity;
@@ -438,27 +453,27 @@ export function parseMusicXml(xmlString: string): ParsedMusicXml {
             pitch,
             midiNumber,
             frequency,
-            startTime: startDivisionForNote * secondsPerDivision,
-            duration: durationDivisions * secondsPerDivision,
+            startTime: startBeatForNote * secondsPerBeat,
+            duration: durationBeats * secondsPerBeat,
             velocity: currentVelocity,
           });
         }
       }
 
       if (!isChord) {
-        lastNoteStartDivision.set(voiceStr, startDivisionForNote);
-        state.currentDivision += durationDivisions;
+        lastNoteStartBeat.set(voiceStr, startBeatForNote);
+        state.currentBeat += durationBeats;
       }
       }
 
       // End-of-measure sync: any voice that had no notes this measure gets
       // advanced to the measure end so it starts the next measure correctly.
-      let measureEnd = measureStartDiv;
+      let measureEnd = measureStartBeat;
       for (const state of voiceStates.values()) {
-        measureEnd = Math.max(measureEnd, state.currentDivision);
+        measureEnd = Math.max(measureEnd, state.currentBeat);
       }
       for (const state of voiceStates.values()) {
-        state.currentDivision = measureEnd;
+        state.currentBeat = measureEnd;
       }
     }
 
@@ -469,8 +484,8 @@ export function parseMusicXml(xmlString: string): ParsedMusicXml {
           pitch: state.tiedPitch,
           midiNumber: state.tiedMidi,
           frequency: state.tiedFrequency,
-          startTime: state.tiedStartDivision * secondsPerDivision,
-          duration: state.tiedDuration * secondsPerDivision,
+          startTime: state.tiedStartBeat * secondsPerBeat,
+          duration: state.tiedDurationBeats * secondsPerBeat,
           velocity: state.tiedVelocity,
         });
       }
@@ -486,7 +501,7 @@ export function parseMusicXml(xmlString: string): ParsedMusicXml {
   const totalDuration = sortedNotes.length > 0
     ? Math.max(...sortedNotes.map((n) => n.startTime + n.duration))
     : 0;
-  console.log(`[MusicXmlParser] parsed ${allPartXmls.length} parts → ${sortedNotes.length} notes, tempo=${tempo}, divisions=${divisions}, totalDuration=${totalDuration.toFixed(2)}s`);
+  console.log(`[MusicXmlParser] parsed ${allPartXmls.length} parts → ${sortedNotes.length} notes, tempo=${tempo}, firstDivisions=${firstDivisions}, totalDuration=${totalDuration.toFixed(2)}s`);
   if (sortedNotes.length > 0) {
     console.log(`[MusicXmlParser] first note: ${sortedNotes[0].pitch} at ${sortedNotes[0].startTime.toFixed(3)}s dur=${sortedNotes[0].duration.toFixed(3)}s`);
     const last = sortedNotes[sortedNotes.length - 1];

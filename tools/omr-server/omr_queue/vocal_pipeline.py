@@ -8,6 +8,7 @@ from core.staff_cropper import crop_all_vocal_staves
 from omr_io.xml_writer import combine_chars_to_xml_string
 from omr_queue.errors import OmrQueueError
 from pipeline.alignment import align_and_flatten
+from pipeline.divisions_normalizer import normalize_divisions
 from pipeline.staff_processor import process_single_staff
 
 logger = logging.getLogger(__name__)
@@ -136,5 +137,9 @@ def run_vocal_score_pipeline(
     char_flat = {c: m for c, m in char_flat.items() if m}
     if not char_flat:
         raise OmrQueueError("OMR produced no measures — all characters empty after alignment")
+
+    # Collapse per-system divisions to one canonical value so consumers that
+    # read divisions once per file interpret every measure consistently.
+    char_flat = normalize_divisions(char_flat)
 
     return combine_chars_to_xml_string(char_flat, title=title)
