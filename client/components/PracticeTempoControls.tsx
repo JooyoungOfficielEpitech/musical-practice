@@ -2,6 +2,7 @@ import React, { useCallback } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
+import { TempoPresets } from "@/components/TempoPresets";
 import { Spacing, BorderRadius, Typography, Shadows } from "@/constants/theme";
 
 interface TempoControlsProps {
@@ -21,41 +22,44 @@ export function TempoControls({ tempo, onTempoChange }: TempoControlsProps): Rea
   }, [tempo, onTempoChange]);
 
   return (
-    <View
-      style={[styles.tempoControl, { backgroundColor: colors.surface }, Shadows.sm]}
-      accessible={true}
-      accessibilityValue={{ min: 0.5, max: 2.0, now: tempo, text: `${tempo.toFixed(2)}x speed` }}
-    >
-      <Ionicons name="speedometer-outline" size={16} color={colors.textSecondary} />
-      <Text style={[styles.tempoLabel, { color: colors.textSecondary }]}>Tempo</Text>
-      <View style={styles.tempoStepper}>
-        <Pressable
-          onPress={handleDecrease}
-          accessibilityLabel="Decrease tempo"
-          accessibilityRole="adjustable"
-          style={({ pressed }) => [
-            styles.tempoStepBtn,
-            { backgroundColor: colors.backgroundSecondary, opacity: pressed ? 0.7 : 1 },
-          ]}
-        >
-          <Ionicons name="remove" size={16} color={colors.text} />
-        </Pressable>
-        <Text style={[styles.tempoValue, { color: colors.text }]}>
-          {tempo.toFixed(2)}x
-        </Text>
-        <Pressable
-          onPress={handleIncrease}
-          accessibilityLabel="Increase tempo"
-          accessibilityRole="adjustable"
-          style={({ pressed }) => [
-            styles.tempoStepBtn,
-            { backgroundColor: colors.backgroundSecondary, opacity: pressed ? 0.7 : 1 },
-          ]}
-        >
-          <Ionicons name="add" size={16} color={colors.text} />
-        </Pressable>
+    <>
+      <View
+        style={[styles.tempoControl, { backgroundColor: colors.surface }, Shadows.sm]}
+        accessible={true}
+        accessibilityValue={{ min: 0.5, max: 2.0, now: tempo, text: `${tempo.toFixed(2)}x speed` }}
+      >
+        <Ionicons name="speedometer-outline" size={16} color={colors.textSecondary} />
+        <Text style={[styles.tempoLabel, { color: colors.textSecondary }]}>Tempo</Text>
+        <View style={styles.tempoStepper}>
+          <Pressable
+            onPress={handleDecrease}
+            accessibilityLabel="Decrease tempo"
+            accessibilityRole="adjustable"
+            style={({ pressed }) => [
+              styles.tempoStepBtn,
+              { backgroundColor: colors.backgroundSecondary, opacity: pressed ? 0.7 : 1 },
+            ]}
+          >
+            <Ionicons name="remove" size={16} color={colors.text} />
+          </Pressable>
+          <Text style={[styles.tempoValue, { color: colors.text }]}>
+            {tempo.toFixed(2)}x
+          </Text>
+          <Pressable
+            onPress={handleIncrease}
+            accessibilityLabel="Increase tempo"
+            accessibilityRole="adjustable"
+            style={({ pressed }) => [
+              styles.tempoStepBtn,
+              { backgroundColor: colors.backgroundSecondary, opacity: pressed ? 0.7 : 1 },
+            ]}
+          >
+            <Ionicons name="add" size={16} color={colors.text} />
+          </Pressable>
+        </View>
       </View>
-    </View>
+      <TempoPresets tempo={tempo} onTempoChange={onTempoChange} />
+    </>
   );
 }
 

@@ -3,6 +3,8 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { TempoControls } from "@/components/PracticeTempoControls";
+import { SeekBar } from "@/components/SeekBar";
+import type { LoopRange } from "@/hooks/useSynthPlayer";
 import { BorderRadius, ClayShadowSmall, Shadows, Spacing, Typography } from "@/constants/theme";
 
 function formatSynthTime(seconds: number): string {
@@ -26,12 +28,15 @@ export interface ScorePreviewControlsProps {
   /** When true, render only the transport + tempo (the edit/sound rows are
    *  surfaced elsewhere, e.g. a compact tools row). */
   compact?: boolean;
+  loopRange?: LoopRange | null;
+  onSeek?: (ms: number) => void;
 }
 
 export function ScorePreviewControls({
   isPlaying, positionMs, durationMs, tempo, onTempoChange,
   instrument, instrumentLoading, onPlayPause, editMode, onToggleEdit,
   hasEdits, onOpenInstrumentPicker, compact = false,
+  loopRange = null, onSeek,
 }: ScorePreviewControlsProps): React.JSX.Element {
   const { colors } = useTheme();
 
@@ -42,9 +47,18 @@ export function ScorePreviewControls({
           <Ionicons name={isPlaying ? "pause" : "play"} size={20} color={colors.buttonText} />
         </Pressable>
         <View style={styles.synthTrackSection}>
-          <View style={[styles.synthTrackBg, { backgroundColor: colors.borderLight }]}>
-            <View style={[styles.synthTrackProgress, { backgroundColor: colors.primary, width: durationMs > 0 ? `${(positionMs / durationMs) * 100}%` : "0%" }]} />
-          </View>
+          {onSeek ? (
+            <SeekBar
+              positionMs={positionMs}
+              durationMs={durationMs}
+              loopRange={loopRange}
+              onSeek={onSeek}
+            />
+          ) : (
+            <View style={[styles.synthTrackBg, { backgroundColor: colors.borderLight }]}>
+              <View style={[styles.synthTrackProgress, { backgroundColor: colors.primary, width: durationMs > 0 ? `${(positionMs / durationMs) * 100}%` : "0%" }]} />
+            </View>
+          )}
           <View style={styles.synthTimeRow}>
             <Text style={[styles.synthTimeText, { color: colors.textSecondary }]}>{formatSynthTime(positionMs / 1000)}</Text>
             <Text style={[styles.synthTimeText, { color: colors.textSecondary }]}>{formatSynthTime(durationMs / 1000)}</Text>

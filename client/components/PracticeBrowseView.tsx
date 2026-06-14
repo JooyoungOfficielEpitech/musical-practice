@@ -13,10 +13,12 @@ import { MetronomeBottomSheet } from "@/components/MetronomeBottomSheet";
 import { AudioBottomSheet } from "@/components/AudioBottomSheet";
 import { ScorePreviewEmpty } from "@/components/ScorePreviewEmpty";
 import { ScorePreviewControls } from "@/components/ScorePreviewControls";
+import { LoopControls } from "@/components/LoopControls";
 import { PartsSummaryBar } from "@/components/PartsSummaryBar";
 import { PartCheckSheet } from "@/components/PartCheckSheet";
 import { ScoreSettingsSheet } from "@/components/ScoreSettingsSheet";
 import { ScoreFullscreenModal } from "@/components/ScoreFullscreenModal";
+import { makeLoopRange } from "@/lib/audio/transportMath";
 import { Spacing, BorderRadius, Typography, Fonts, ClayShadow, Colors } from "@/constants/theme";
 import type { SheetMusic } from "@/lib/storage";
 import type { PracticeDetailState } from "@/hooks/usePracticeDetail";
@@ -70,6 +72,9 @@ function PracticeBrowseViewComponent({
   const [fullscreenVisible, setFullscreenVisible] = useState(false);
   const [editBtnFocused, setEditBtnFocused] = useState(false);
   const [deleteBtnFocused, setDeleteBtnFocused] = useState(false);
+  const [loopPointA, setLoopPointA] = useState<number | null>(null);
+  const [loopPointB, setLoopPointB] = useState<number | null>(null);
+  const [isLoopActive, setIsLoopActive] = useState(false);
 
   // Hero ~42% of the viewport, clamped so it never crowds out the CTA or shrinks
   // to uselessness on small/large devices.
@@ -117,6 +122,40 @@ function PracticeBrowseViewComponent({
   const handleFullscreenToggle = useCallback(() => {
     setFullscreenVisible(true);
   }, []);
+
+  const handleCaptureLoopPointA = useCallback((ms: number) => {
+    setLoopPointA(ms);
+  }, []);
+
+  const handleCaptureLoopPointB = useCallback(
+    (ms: number) => {
+      setLoopPointB(ms);
+      // Auto-arm loop if valid range
+      const range = makeLoopRange(loopPointA, ms, synthPlayer.durationMs);
+      if (range && !isLoopActive) {
+        synthPlayer.setLoopRange(range);
+        setIsLoopActive(true);
+      }
+    },
+    [loopPointA, isLoopActive, synthPlayer]
+  );
+
+  const handleApplyLoop = useCallback(() => {
+    if (loopPointA !== null && loopPointB !== null) {
+      const range = makeLoopRange(loopPointA, loopPointB, synthPlayer.durationMs);
+      if (range) {
+        synthPlayer.setLoopRange(range);
+        setIsLoopActive(true);
+      }
+    }
+  }, [loopPointA, loopPointB, synthPlayer]);
+
+  const handleClearLoop = useCallback(() => {
+    setLoopPointA(null);
+    setLoopPointB(null);
+    setIsLoopActive(false);
+    synthPlayer.clearLoopRange();
+  }, [synthPlayer]);
 
   const startPracticeCta = (
     <Pressable onPress={handleStartPress} accessibilityLabel="Start practice session" accessibilityRole="button" accessibilityState={{ busy: isStartingPractice }}
@@ -233,6 +272,19 @@ function PracticeBrowseViewComponent({
                   onToggleEdit={() => setEditMode((prev) => !prev)}
                   hasEdits={noteEditor.hasEdits}
                   onOpenInstrumentPicker={() => setShowInstrumentPicker(true)}
+                  loopRange={synthPlayer.loopRange}
+                  onSeek={synthPlayer.seekTo}
+                />
+                <LoopControls
+                  loopPointA={loopPointA}
+                  loopPointB={loopPointB}
+                  isLoopActive={isLoopActive}
+                  positionMs={synthPlayer.positionMs}
+                  durationMs={synthPlayer.durationMs}
+                  onCaptureA={handleCaptureLoopPointA}
+                  onCaptureB={handleCaptureLoopPointB}
+                  onApply={handleApplyLoop}
+                  onClear={handleClearLoop}
                 />
                 {/* Compact tools — frequent actions visible; edit/sound in settings */}
                 <View style={styles.tools}>
