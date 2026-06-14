@@ -21,6 +21,11 @@ jest.mock("@expo/vector-icons", () => ({
   Ionicons: "Ionicons",
 }));
 
+// Mock fileStorage so we can assert the URI is resolved before loading
+jest.mock("../../client/lib/fileStorage", () => ({
+  resolveExistingUri: (uri: string) => uri.replace("/OLD-UUID/", "/CURRENT/"),
+}));
+
 // Mock useAudioPlayer
 const mockPlay = jest.fn();
 const mockPause = jest.fn();
@@ -53,6 +58,26 @@ describe("AudioPlayer", () => {
     const json = JSON.stringify(toJSON());
     // Should have a play icon
     expect(json).toContain("play");
+  });
+
+  it("rebases a stale-container audio URI before loading", () => {
+    // A stored URI from before an app update (old container UUID) must be
+    // resolved to the current container, or playback fails with 'audio not found'.
+    render(<AudioPlayer audioUri="/var/mobile/.../OLD-UUID/Documents/audio/song.mp3" />);
+    expect(mockLoadSound).toHaveBeenCalledWith("/var/mobile/.../CURRENT/Documents/audio/song.mp3");
+  });
+
+  it("does not load through the internal player when externally controlled", () => {
+    render(
+      <AudioPlayer
+        audioUri="/OLD-UUID/x.mp3"
+        externalPlayer={{
+          isLoaded: true, isPlaying: false, positionMs: 0, durationMs: 1000,
+          error: null, play: mockPlay, pause: mockPause, seekTo: mockSeekTo,
+        }}
+      />,
+    );
+    expect(mockLoadSound).not.toHaveBeenCalled();
   });
 
   it("shows time labels", () => {

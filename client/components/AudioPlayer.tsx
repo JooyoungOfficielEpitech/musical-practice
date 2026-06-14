@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
+import { resolveExistingUri } from "@/lib/fileStorage";
 import { Spacing, BorderRadius, Typography, Shadows } from "@/constants/theme";
 
 interface AudioPlayerProps {
@@ -46,7 +47,8 @@ export const AudioPlayer = memo(function AudioPlayer({ audioUri, externalPlayer 
   // Only manage lifecycle when using internal player
   useEffect(() => {
     if (externalPlayer) return;
-    internalPlayer.loadSound(audioUri);
+    // Rebase persisted URIs whose app-container path went stale after an update.
+    internalPlayer.loadSound(resolveExistingUri(audioUri));
     return () => {
       internalPlayer.unload();
     };
