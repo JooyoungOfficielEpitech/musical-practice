@@ -23,12 +23,15 @@ export interface ScorePreviewControlsProps {
   onToggleEdit: () => void;
   hasEdits: boolean;
   onOpenInstrumentPicker: () => void;
+  /** When true, render only the transport + tempo (the edit/sound rows are
+   *  surfaced elsewhere, e.g. a compact tools row). */
+  compact?: boolean;
 }
 
 export function ScorePreviewControls({
   isPlaying, positionMs, durationMs, tempo, onTempoChange,
   instrument, instrumentLoading, onPlayPause, editMode, onToggleEdit,
-  hasEdits, onOpenInstrumentPicker,
+  hasEdits, onOpenInstrumentPicker, compact = false,
 }: ScorePreviewControlsProps): React.JSX.Element {
   const { colors } = useTheme();
 
@@ -49,25 +52,29 @@ export function ScorePreviewControls({
         </View>
       </View>
       <TempoControls tempo={tempo} onTempoChange={onTempoChange} />
-      <Pressable
-        accessible={true}
-        accessibilityLabel={editMode ? "Editing notes" : "Edit notes"}
-        accessibilityRole="button"
-        onPress={onToggleEdit}
-        style={({ pressed }) => [styles.instrumentRow, { backgroundColor: editMode ? colors.primary : colors.surface, opacity: pressed ? 0.8 : 1 }]}
-      >
-        <Ionicons name="create-outline" size={16} color={editMode ? colors.buttonText : colors.textSecondary} />
-        <Text style={[{ ...medium, flex: 1 }, { color: editMode ? colors.buttonText : colors.textSecondary }]}>{editMode ? "Editing" : "Edit Notes"}</Text>
-        {hasEdits && <Text style={[styles.instrumentBtnText, { color: editMode ? colors.buttonText : colors.primary }]}>(edited)</Text>}
-      </Pressable>
-      <Pressable onPress={onOpenInstrumentPicker} accessibilityLabel="Change instrument" accessibilityRole="button" style={({ pressed }) => [styles.instrumentRow, { backgroundColor: colors.surface, opacity: pressed ? 0.8 : 1 }]}>
-        <Ionicons name="musical-note-outline" size={16} color={colors.textSecondary} />
-        <Text style={[{ ...medium, flex: 1 }, { color: colors.textSecondary }]}>Sound</Text>
-        <View style={styles.instrumentButtons}>
-          <Text style={[styles.instrumentBtnText, { color: colors.text }]}>{instrument === "piano" ? "Piano" : instrument === "oscillator" ? "Sine Wave" : instrument}</Text>
-          {instrumentLoading ? <ActivityIndicator size="small" color={colors.primary} /> : <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />}
-        </View>
-      </Pressable>
+      {!compact && (
+        <>
+          <Pressable
+            accessible={true}
+            accessibilityLabel={editMode ? "Editing notes" : "Edit notes"}
+            accessibilityRole="button"
+            onPress={onToggleEdit}
+            style={({ pressed }) => [styles.instrumentRow, { backgroundColor: editMode ? colors.primary : colors.surface, opacity: pressed ? 0.8 : 1 }]}
+          >
+            <Ionicons name="create-outline" size={16} color={editMode ? colors.buttonText : colors.textSecondary} />
+            <Text style={[{ ...medium, flex: 1 }, { color: editMode ? colors.buttonText : colors.textSecondary }]}>{editMode ? "Editing" : "Edit Notes"}</Text>
+            {hasEdits && <Text style={[styles.instrumentBtnText, { color: editMode ? colors.buttonText : colors.primary }]}>(edited)</Text>}
+          </Pressable>
+          <Pressable onPress={onOpenInstrumentPicker} accessibilityLabel="Change instrument" accessibilityRole="button" style={({ pressed }) => [styles.instrumentRow, { backgroundColor: colors.surface, opacity: pressed ? 0.8 : 1 }]}>
+            <Ionicons name="musical-note-outline" size={16} color={colors.textSecondary} />
+            <Text style={[{ ...medium, flex: 1 }, { color: colors.textSecondary }]}>Sound</Text>
+            <View style={styles.instrumentButtons}>
+              <Text style={[styles.instrumentBtnText, { color: colors.text }]}>{instrument === "piano" ? "Piano" : instrument === "oscillator" ? "Sine Wave" : instrument}</Text>
+              {instrumentLoading ? <ActivityIndicator size="small" color={colors.primary} /> : <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />}
+            </View>
+          </Pressable>
+        </>
+      )}
     </>
   );
 }

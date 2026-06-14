@@ -353,7 +353,7 @@ describe("PracticeDetailScreen", () => {
 
   it("shows metronome button in browse mode", () => {
     const { getByLabelText } = render(<PracticeDetailScreen />);
-    expect(getByLabelText("Open metronome")).toBeTruthy();
+    expect(getByLabelText("Metronome")).toBeTruthy();
   });
 
   it("shows play button in bottom bar", () => {

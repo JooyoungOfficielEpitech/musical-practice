@@ -145,16 +145,18 @@ describe("PracticeBrowseView", () => {
   });
 });
 
-// ─── Phase 5: Rename Auto-Play → Score Preview (RED) ─────────────────────────
-describe("PracticeBrowseView — Score Preview label (Phase 5)", () => {
-  it("5.6 — shows 'Score Preview' section label (not 'Auto-Play')", () => {
-    const { getByText, queryByText } = render(
+// ─── Score-as-hero redesign ──────────────────────────────────────────────────
+describe("PracticeBrowseView — score hero layout", () => {
+  it("renders the score transport (and no legacy 'Auto-Play' label) when a score is loaded", () => {
+    const { getByLabelText, queryByText } = render(
       <PracticeBrowseView
         {...baseProps}
         state={{ ...baseProps.state, hasMusicXml: true, musicXmlContent: "<score/>" }}
       />
     );
-    expect(getByText("Score Preview")).toBeTruthy();
+    // Hero transport play control is present; the old section labels are gone.
+    expect(getByLabelText("Play synth")).toBeTruthy();
     expect(queryByText("Auto-Play")).toBeNull();
+    expect(queryByText("Score Preview")).toBeNull();
   });
 });
