@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from "react";
 import {
   StyleSheet, Text, View, ScrollView, Pressable,
-  ActivityIndicator, RefreshControl, Platform,
+  ActivityIndicator, RefreshControl, Platform, useWindowDimensions,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,6 +15,8 @@ import { ScorePreviewEmpty } from "@/components/ScorePreviewEmpty";
 import { ScorePreviewControls } from "@/components/ScorePreviewControls";
 import { PartsSummaryBar } from "@/components/PartsSummaryBar";
 import { PartCheckSheet } from "@/components/PartCheckSheet";
+import { ScoreSettingsSheet } from "@/components/ScoreSettingsSheet";
+import { ScoreFullscreenModal } from "@/components/ScoreFullscreenModal";
 import { Spacing, BorderRadius, Typography, Fonts, ClayShadow, Colors } from "@/constants/theme";
 import type { SheetMusic } from "@/lib/storage";
 import type { PracticeDetailState } from "@/hooks/usePracticeDetail";
@@ -60,9 +62,16 @@ function PracticeBrowseViewComponent({
   sheet, state, screenWidth, loading, onRefresh, onGoBack, removeRecording, renameRecording,
 }: PracticeBrowseViewProps): React.JSX.Element {
   const { colors } = useTheme();
+  const { height: screenHeight } = useWindowDimensions();
   const [metronomeVisible, setMetronomeVisible] = useState(false);
   const [audioVisible, setAudioVisible] = useState(false);
   const [partSheetVisible, setPartSheetVisible] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
+  const [fullscreenVisible, setFullscreenVisible] = useState(false);
+
+  // Hero ~42% of the viewport, clamped so it never crowds out the CTA or shrinks
+  // to uselessness on small/large devices.
+  const heroHeight = Math.round(Math.min(420, Math.max(240, screenHeight * 0.42)));
 
   const {
     currentBpm, setShowEdit, isStartingPractice, musicXmlContent, musicXmlLoading,
@@ -140,13 +149,22 @@ function PracticeBrowseViewComponent({
                   <Text style={[styles.heroLoadingText, { color: colors.textSecondary }]}>Loading score...</Text>
                 </View>
               ) : musicXmlContent ? (
-                <View style={styles.hero}>
+                <View style={[styles.hero, { height: heroHeight }]}>
                   <InteractiveScore
                     musicXml={noteEditor.editedMusicXml || musicXmlContent}
                     positionMs={synthPlayer.positionMs * synthPlayer.tempo}
                     visiblePartIndices={visiblePartIndices}
                     onNotePress={editMode ? noteEditor.selectNote : handleNotePress}
                   />
+                  <Pressable
+                    onPress={() => setFullscreenVisible(true)}
+                    accessibilityLabel="Expand score to fullscreen"
+                    accessibilityRole="button"
+                    hitSlop={8}
+                    style={[styles.expandBtn, { backgroundColor: colors.surface }]}
+                  >
+                    <Ionicons name="expand" size={18} color={colors.text} />
+                  </Pressable>
                 </View>
               ) : (
                 <View style={[styles.heroLoading, { backgroundColor: colors.surface }]}>
@@ -159,6 +177,10 @@ function PracticeBrowseViewComponent({
             {/* Transport — listen (synth) */}
             {musicXmlContent && (
               <View style={styles.transport}>
+                <View style={styles.listenLabel}>
+                  <Ionicons name="headset-outline" size={13} color={colors.textSecondary} />
+                  <Text style={[styles.listenLabelText, { color: colors.textSecondary }]}>LISTEN</Text>
+                </View>
                 <ScorePreviewControls
                   compact
                   isPlaying={synthPlayer.isPlaying}
@@ -174,12 +196,11 @@ function PracticeBrowseViewComponent({
                   hasEdits={noteEditor.hasEdits}
                   onOpenInstrumentPicker={() => setShowInstrumentPicker(true)}
                 />
-                {/* Compact tools */}
+                {/* Compact tools — frequent actions visible; edit/sound in settings */}
                 <View style={styles.tools}>
-                  <ToolChip icon="create-outline" label={editMode ? "Editing" : "Edit"} active={editMode} onPress={() => setEditMode((prev) => !prev)} />
-                  <ToolChip icon="musical-note-outline" label="Sound" onPress={() => setShowInstrumentPicker(true)} />
                   <ToolChip icon="timer-outline" label="Metronome" onPress={() => setMetronomeVisible(true)} />
                   {sheet.audioUri && <ToolChip icon="headset-outline" label="Audio" onPress={() => setAudioVisible(true)} />}
+                  <ToolChip icon="options-outline" label="Settings" active={editMode} onPress={() => setSettingsVisible(true)} />
                 </View>
               </View>
             )}
@@ -233,6 +254,27 @@ function PracticeBrowseViewComponent({
         visiblePartIds={visiblePartIds}
         onTogglePart={togglePartVisibility}
       />
+      <ScoreSettingsSheet
+        visible={settingsVisible}
+        onDismiss={() => setSettingsVisible(false)}
+        editMode={editMode}
+        onToggleEdit={() => setEditMode((prev) => !prev)}
+        hasEdits={noteEditor.hasEdits}
+        instrument={synthPlayer.instrument}
+        instrumentLoading={synthPlayer.instrumentLoading}
+        onOpenInstrumentPicker={() => { setSettingsVisible(false); setShowInstrumentPicker(true); }}
+      />
+      {musicXmlContent && (
+        <ScoreFullscreenModal
+          visible={fullscreenVisible}
+          onClose={() => setFullscreenVisible(false)}
+          musicXml={noteEditor.editedMusicXml || musicXmlContent}
+          positionMs={synthPlayer.positionMs * synthPlayer.tempo}
+          visiblePartIndices={visiblePartIndices}
+          isPlaying={synthPlayer.isPlaying}
+          onPlayPause={handleSynthPlayPause}
+        />
+      )}
     </>
   );
 }
@@ -261,10 +303,13 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingBottom: Spacing["2xl"] },
   heroWrap: { marginHorizontal: Spacing.lg, marginTop: Spacing.sm },
-  hero: { height: 360, borderRadius: BorderRadius.md, overflow: "hidden", ...ClayShadow },
+  hero: { borderRadius: BorderRadius.md, overflow: "hidden", ...ClayShadow },
+  expandBtn: { position: "absolute", top: Spacing.sm, right: Spacing.sm, width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", ...ClayShadow },
   heroLoading: { ...row, justifyContent: "center", gap: Spacing.sm, height: 120, borderRadius: BorderRadius.md },
   heroLoadingText: { ...Typography.body },
   transport: { marginHorizontal: Spacing.lg, marginTop: Spacing.sm },
+  listenLabel: { ...row, gap: Spacing.xs, marginBottom: Spacing.xs, marginLeft: Spacing.xs },
+  listenLabelText: { ...Typography.small, fontFamily: Fonts.heading, fontWeight: "600", letterSpacing: 1 },
   tools: { ...row, flexWrap: "wrap", gap: Spacing.sm, marginTop: Spacing.sm },
   toolsInset: { marginHorizontal: Spacing.lg, marginBottom: Spacing.sm },
   startPracticeBtn: { ...row, justifyContent: "center", gap: Spacing.sm, marginHorizontal: Spacing.lg, marginTop: Spacing.md, paddingVertical: Spacing.md, borderRadius: 50, minHeight: Spacing.buttonHeight, ...ClayShadow },

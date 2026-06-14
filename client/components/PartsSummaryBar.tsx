@@ -34,7 +34,8 @@ function PartsSummaryBarComponent({
 }: PartsSummaryBarProps): React.JSX.Element | null {
   const { colors } = useTheme();
   const label = useMemo(() => summarize(parts, visiblePartIds), [parts, visiblePartIds]);
-  if (parts.length === 0) return null;
+  // Nothing to choose for a single-part (or empty) score.
+  if (parts.length <= 1) return null;
 
   return (
     <Pressable
