@@ -22,6 +22,9 @@ export function ScoreFullscreenModal({
   visible, onClose, musicXml, positionMs, visiblePartIndices, isPlaying, onPlayPause,
 }: ScoreFullscreenModalProps): React.JSX.Element | null {
   const { colors } = useTheme();
+  // Unmount when closed: this hosts its own OSMD WebView, and fullscreen is an
+  // occasional action — keeping a second WebView alive idle costs more than the
+  // reload on open.
   if (!visible) return null;
 
   return (
@@ -61,6 +64,6 @@ const styles = StyleSheet.create({
   },
   playBtn: {
     position: "absolute", bottom: Spacing.xl, right: Spacing.lg,
-    width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center", zIndex: 10,
+    width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", zIndex: 10,
   },
 });

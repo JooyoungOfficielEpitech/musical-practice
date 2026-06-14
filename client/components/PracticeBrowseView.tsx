@@ -68,6 +68,8 @@ function PracticeBrowseViewComponent({
   const [partSheetVisible, setPartSheetVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [fullscreenVisible, setFullscreenVisible] = useState(false);
+  const [editBtnFocused, setEditBtnFocused] = useState(false);
+  const [deleteBtnFocused, setDeleteBtnFocused] = useState(false);
 
   // Hero ~42% of the viewport, clamped so it never crowds out the CTA or shrinks
   // to uselessness on small/large devices.
@@ -96,6 +98,26 @@ function PracticeBrowseViewComponent({
     handleScanSheet();
   }, [handleScanSheet]);
 
+  const handlePartSheetToggle = useCallback(() => {
+    setPartSheetVisible(true);
+  }, []);
+
+  const handleMetronomeToggle = useCallback(() => {
+    setMetronomeVisible(true);
+  }, []);
+
+  const handleAudioToggle = useCallback(() => {
+    setAudioVisible(true);
+  }, []);
+
+  const handleSettingsToggle = useCallback(() => {
+    setSettingsVisible(true);
+  }, []);
+
+  const handleFullscreenToggle = useCallback(() => {
+    setFullscreenVisible(true);
+  }, []);
+
   const startPracticeCta = (
     <Pressable onPress={handleStartPress} accessibilityLabel="Start practice session" accessibilityRole="button" accessibilityState={{ busy: isStartingPractice }}
       style={({ pressed }) => [styles.startPracticeBtn, { backgroundColor: isStartingPractice ? colors.textSecondary : colors.primaryDark, opacity: pressed && !isStartingPractice ? 0.9 : 1 }]}
@@ -118,12 +140,28 @@ function PracticeBrowseViewComponent({
           {!!sheet.artist && <Text style={[styles.subtitleText, { color: colors.textSecondary }]} numberOfLines={1}>{sheet.artist}</Text>}
         </View>
         <View style={styles.topBarRight}>
-          <Pressable onPress={() => setShowEdit(true)} accessibilityLabel="Edit score" accessibilityRole="button" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={({ pressed }) => [styles.actionBtn, { opacity: pressed ? 0.7 : 1 }]}>
-            <Ionicons name="create-outline" size={22} color={colors.text} />
-          </Pressable>
-          <Pressable onPress={handleDeletePress} accessibilityLabel="Delete score" accessibilityRole="button" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={({ pressed }) => [styles.actionBtn, { opacity: pressed ? 0.7 : 1 }]}>
-            <Ionicons name="trash-outline" size={20} color={colors.error} />
-          </Pressable>
+          <Pressable
+          onPress={() => setShowEdit(true)}
+          onFocus={() => setEditBtnFocused(true)}
+          onBlur={() => setEditBtnFocused(false)}
+          accessibilityLabel="Edit score"
+          accessibilityRole="button"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={({ pressed }) => [styles.actionBtn, { opacity: pressed ? 0.7 : 1, borderWidth: editBtnFocused ? 2 : 0, borderColor: editBtnFocused ? colors.primary : "transparent" }]}
+        >
+          <Ionicons name="create-outline" size={22} color={colors.text} />
+        </Pressable>
+        <Pressable
+          onPress={handleDeletePress}
+          onFocus={() => setDeleteBtnFocused(true)}
+          onBlur={() => setDeleteBtnFocused(false)}
+          accessibilityLabel="Delete score"
+          accessibilityRole="button"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={({ pressed }) => [styles.actionBtn, { opacity: pressed ? 0.7 : 1, borderWidth: deleteBtnFocused ? 2 : 0, borderColor: deleteBtnFocused ? colors.primary : "transparent" }]}
+        >
+          <Ionicons name="trash-outline" size={20} color={colors.error} />
+        </Pressable>
           {bestScore !== null && (
             <View style={[styles.bestBadge, { backgroundColor: colors.warningSubtle }]}>
               <Ionicons name="trophy" size={12} color={colors.warning} />
@@ -139,7 +177,7 @@ function PracticeBrowseViewComponent({
         {hasMusicXml ? (
           <>
             {/* Parts summary — opens the full part-check sheet */}
-            <PartsSummaryBar parts={partInfos} visiblePartIds={visiblePartIds} onPress={() => setPartSheetVisible(true)} />
+            <PartsSummaryBar parts={partInfos} visiblePartIds={visiblePartIds} onPress={handlePartSheetToggle} />
 
             {/* Score hero */}
             <View style={styles.heroWrap}>
@@ -157,7 +195,7 @@ function PracticeBrowseViewComponent({
                     onNotePress={editMode ? noteEditor.selectNote : handleNotePress}
                   />
                   <Pressable
-                    onPress={() => setFullscreenVisible(true)}
+                    onPress={handleFullscreenToggle}
                     accessibilityLabel="Expand score to fullscreen"
                     accessibilityRole="button"
                     hitSlop={8}
@@ -198,9 +236,9 @@ function PracticeBrowseViewComponent({
                 />
                 {/* Compact tools — frequent actions visible; edit/sound in settings */}
                 <View style={styles.tools}>
-                  <ToolChip icon="timer-outline" label="Metronome" onPress={() => setMetronomeVisible(true)} />
-                  {sheet.audioUri && <ToolChip icon="headset-outline" label="Audio" onPress={() => setAudioVisible(true)} />}
-                  <ToolChip icon="options-outline" label="Settings" active={editMode} onPress={() => setSettingsVisible(true)} />
+                  <ToolChip icon="timer-outline" label="Metronome" onPress={handleMetronomeToggle} />
+                  {sheet.audioUri && <ToolChip icon="headset-outline" label="Audio" onPress={handleAudioToggle} />}
+                  <ToolChip icon="options-outline" label="Settings" onPress={handleSettingsToggle} />
                 </View>
               </View>
             )}
@@ -225,8 +263,8 @@ function PracticeBrowseViewComponent({
             )}
             {omr.error && sheet.omrStatus !== "ready" && <Text style={[styles.scanErrorText, { color: colors.error }]}>{omr.error}</Text>}
             <View style={[styles.tools, styles.toolsInset]}>
-              <ToolChip icon="timer-outline" label="Metronome" onPress={() => setMetronomeVisible(true)} />
-              {sheet.audioUri && <ToolChip icon="headset-outline" label="Audio" onPress={() => setAudioVisible(true)} />}
+              <ToolChip icon="timer-outline" label="Metronome" onPress={handleMetronomeToggle} />
+              {sheet.audioUri && <ToolChip icon="headset-outline" label="Audio" onPress={handleAudioToggle} />}
             </View>
             {startPracticeCta}
           </>
@@ -286,7 +324,7 @@ const semibold = { ...Typography.label, fontFamily: "Nunito_600SemiBold" as cons
 const medium = { ...Typography.label, fontFamily: "Nunito_500Medium" as const, fontWeight: "500" as const };
 
 const toolStyles = StyleSheet.create({
-  chip: { ...row, gap: Spacing.xs, paddingVertical: Spacing.xs + 2, paddingHorizontal: Spacing.sm + 2, borderRadius: 50, borderWidth: 1, minHeight: 36 },
+  chip: { ...row, gap: Spacing.xs, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.sm + 2, borderRadius: 50, borderWidth: 1, minHeight: 44 },
   chipText: medium,
 });
 
@@ -304,7 +342,7 @@ const styles = StyleSheet.create({
   content: { paddingBottom: Spacing["2xl"] },
   heroWrap: { marginHorizontal: Spacing.lg, marginTop: Spacing.sm },
   hero: { borderRadius: BorderRadius.md, overflow: "hidden", ...ClayShadow },
-  expandBtn: { position: "absolute", top: Spacing.sm, right: Spacing.sm, width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", ...ClayShadow },
+  expandBtn: { position: "absolute", top: Spacing.sm, right: Spacing.sm, width: 44, height: 44, borderRadius: BorderRadius.full, alignItems: "center", justifyContent: "center", ...ClayShadow },
   heroLoading: { ...row, justifyContent: "center", gap: Spacing.sm, height: 120, borderRadius: BorderRadius.md },
   heroLoadingText: { ...Typography.body },
   transport: { marginHorizontal: Spacing.lg, marginTop: Spacing.sm },

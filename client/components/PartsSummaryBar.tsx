@@ -41,7 +41,8 @@ function PartsSummaryBarComponent({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`Parts: ${label}. Tap to choose parts.`}
+      accessibilityLabel={`Parts: ${label}`}
+      accessibilityHint="Tap to select which parts to practice"
       style={({ pressed }) => [
         styles.bar,
         { backgroundColor: colors.surface, borderColor: colors.borderLight, opacity: pressed ? 0.8 : 1 },

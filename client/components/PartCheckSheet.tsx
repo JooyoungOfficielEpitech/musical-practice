@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, View, Modal, Pressable, Text } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { PartCheckCard } from "@/components/PartCheckCard";
@@ -24,17 +25,16 @@ export function PartCheckSheet({
   partNoteCounts,
   visiblePartIds,
   onTogglePart,
-}: PartCheckSheetProps): React.JSX.Element | null {
+}: PartCheckSheetProps): React.JSX.Element {
   const { colors } = useTheme();
-  if (!visible) return null;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onDismiss} accessibilityViewIsModal>
       <Pressable style={styles.backdrop} onPress={onDismiss} accessibilityLabel="Dismiss" />
-      <View testID="part-check-sheet" style={[styles.sheet, { backgroundColor: colors.surface }]}>
+      <SafeAreaView testID="part-check-sheet" style={[styles.sheet, { backgroundColor: colors.surface }]} edges={["bottom"]}>
         <View style={styles.header}>
           <View style={[styles.handle, { backgroundColor: colors.borderLight }]} />
-          <Pressable onPress={onDismiss} accessibilityLabel="Close parts" accessibilityRole="button" hitSlop={12} style={styles.closeBtn}>
+          <Pressable onPress={onDismiss} accessibilityLabel="Close parts" accessibilityRole="button" hitSlop={8} style={styles.closeBtn}>
             <Ionicons name="close" size={22} color={colors.text} />
           </Pressable>
         </View>
@@ -51,7 +51,7 @@ export function PartCheckSheet({
         >
           <Text style={[styles.doneText, { color: colors.buttonText }]}>Done</Text>
         </Pressable>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 }
@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
   },
   header: { alignItems: "center", paddingTop: Spacing.sm, paddingBottom: Spacing.xs },
   handle: { width: 36, height: 4, borderRadius: 2 },
-  closeBtn: { position: "absolute", right: Spacing.lg, top: Spacing.sm, width: 36, height: 36, alignItems: "center", justifyContent: "center" },
+  closeBtn: { position: "absolute", right: Spacing.lg, top: Spacing.sm, width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   doneBtn: {
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.md,

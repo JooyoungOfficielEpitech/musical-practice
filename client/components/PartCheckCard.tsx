@@ -1,5 +1,6 @@
 import React, { useCallback } from "react";
 import { StyleSheet, Text, View, Pressable } from "react-native";
+import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Fonts, Typography, ClayShadowSmall } from "@/constants/theme";
@@ -84,7 +85,10 @@ const PartRow = React.memo(function PartRow({
 
   const handlePress = useCallback(() => {
     // Keep at least one part selected — ignore a tap that would clear the last.
-    if (isLastVisible) return;
+    if (isLastVisible) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      return;
+    }
     onTogglePart(part.id);
   }, [isLastVisible, onTogglePart, part.id]);
 
@@ -120,8 +124,9 @@ const PartRow = React.memo(function PartRow({
       onPress={handlePress}
       accessibilityRole="checkbox"
       accessibilityLabel={part.name}
+      accessibilityHint={isLastVisible ? "At least one part must be selected" : undefined}
       accessibilityState={{ checked: isVisible, disabled: isLastVisible }}
-      style={({ pressed }) => [styles.row, borderStyle, { opacity: pressed ? 0.7 : 1 }]}
+      style={({ pressed }) => [styles.row, borderStyle, { opacity: isLastVisible ? 0.6 : (pressed ? 0.7 : 1) }]}
     >
       {content}
     </Pressable>
