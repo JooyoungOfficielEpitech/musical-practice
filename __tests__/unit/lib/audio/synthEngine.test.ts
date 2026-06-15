@@ -8,6 +8,7 @@ import {
   getCurrentTime,
   setInstrumentMode,
 } from "../../../../client/lib/audio/synthEngine";
+import { getMasterGain } from "../../../../client/lib/audio/audioContext";
 
 // The mock is auto-resolved from __mocks__/react-native-audio-api.ts
 
@@ -32,7 +33,7 @@ describe("synthEngine", () => {
       expect(ctx1).toBe(ctx2);
     });
 
-    it("returns same AudioContext after stopAll (context is suspended, not closed)", async () => {
+    it("returns same AudioContext after stopAll (context stays running, not closed)", async () => {
       const ctx1 = getAudioContext();
       await stopAll();
       const ctx2 = getAudioContext();
@@ -73,15 +74,18 @@ describe("synthEngine", () => {
       expect(oscillator.frequency.setValueAtTime).toHaveBeenCalledWith(261.63, 0);
     });
 
-    it("connects oscillator to gain and gain to destination", () => {
+    it("routes oscillator -> note gain -> master bus -> destination", () => {
       const ctx = getAudioContext();
       playNote(440, 1.0, 0);
 
       const oscillator = (ctx.createOscillator as jest.Mock).mock.results[0].value;
-      const gainNode = (ctx.createGain as jest.Mock).mock.results[0].value;
+      const noteGain = (ctx.createGain as jest.Mock).mock.results[0].value;
+      const master = getMasterGain();
 
-      expect(oscillator.connect).toHaveBeenCalledWith(gainNode);
-      expect(gainNode.connect).toHaveBeenCalledWith(ctx.destination);
+      expect(oscillator.connect).toHaveBeenCalledWith(noteGain);
+      // note gain feeds the shared master bus, not the destination directly
+      expect(noteGain.connect).toHaveBeenCalledWith(master);
+      expect(master.connect).toHaveBeenCalledWith(ctx.destination);
     });
 
     it("starts and stops the oscillator at correct times", () => {
@@ -149,11 +153,33 @@ describe("synthEngine", () => {
   });
 
   describe("stopAll", () => {
-    it("suspends the audio context (keeps it alive)", async () => {
+    it("silences immediately by hard-stopping live notes instead of suspending", async () => {
       const ctx = getAudioContext();
+      // schedule a note far in the future so it is still 'live' at stop time
+      playNote(440, 1.0, 100);
+      const oscillator = (ctx.createOscillator as jest.Mock).mock.results[0].value;
+      (oscillator.stop as jest.Mock).mockClear();
+
       await stopAll();
-      expect(ctx.suspend).toHaveBeenCalled();
+
+      // the oscillator is force-stopped EARLY (at fade end ≈ now+0.012), not left to
+      // ring out to its scheduled note end of 101 — this is what makes stop immediate
+      expect(oscillator.stop).toHaveBeenCalledTimes(1);
+      expect(oscillator.stop.mock.calls[0][0]).toBeCloseTo(0.012, 5);
+      // the context is NOT suspended (that adds drain latency) and not closed
+      expect(ctx.suspend).not.toHaveBeenCalled();
       expect(ctx.close).not.toHaveBeenCalled();
+    });
+
+    it("fades the master bus to zero (declick)", async () => {
+      const ctx = getAudioContext();
+      playNote(440, 1.0, 100);
+      const master = getMasterGain();
+
+      await stopAll();
+
+      const ramps = (master.gain.linearRampToValueAtTime as jest.Mock).mock.calls;
+      expect(ramps.some((c) => c[0] === 0)).toBe(true);
     });
 
     it("is safe to call multiple times", async () => {

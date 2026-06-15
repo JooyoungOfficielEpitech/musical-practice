@@ -1,6 +1,6 @@
 import { AudioBuffer } from "react-native-audio-api";
 import type { NoteEvent } from "../../types/music";
-import { getAudioContext, resumeAudioContext, suspendAudioContext, closeAudioContext } from "./audioContext";
+import { getAudioContext, resumeAudioContext, suspendAudioContext, closeAudioContext, getMasterGain, registerSource, stopAllSources } from "./audioContext";
 import { createPianoNote } from "./pianoSamples";
 import { findClosestSample, playSample } from "./samplePlayer";
 
@@ -96,10 +96,11 @@ export function playNote(
   gainNode.gain.linearRampToValueAtTime(0, noteEnd);
 
   oscillator.connect(gainNode);
-  gainNode.connect(ctx.destination);
+  gainNode.connect(getMasterGain());
 
   oscillator.start(startTime);
   oscillator.stop(noteEnd);
+  registerSource(oscillator, noteEnd);
 }
 
 /**
@@ -217,11 +218,13 @@ export function scheduleNoteEvents(
   return endTime;
 }
 
-/** Stop all audio by suspending the context (keeps currentTime monotonic). */
+/**
+ * Stop all audio immediately: a short declick fade on the master bus + a hard
+ * stop on every live source. Replaces suspend(), which only froze the render
+ * thread and let the output buffer drain — an audible tail after Stop/Pause.
+ */
 export async function stopAll(): Promise<void> {
-  const ctx = getAudioContext();
-  console.log(`[SynthEngine] stopAll() — state=${ctx?.state ?? "null"}`);
-  await suspendAudioContext();
+  stopAllSources();
 }
 
 /** Close and destroy the AudioContext (only call on unmount). */

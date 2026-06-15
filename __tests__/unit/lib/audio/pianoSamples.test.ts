@@ -45,8 +45,13 @@ const mockCtx = {
   }),
 };
 
+const mockMasterGain = { connect: jest.fn(), gain: { value: 1 } };
+const mockRegisterSource = jest.fn();
+
 jest.mock("../../../../client/lib/audio/audioContext", () => ({
   getAudioContext: () => mockCtx,
+  getMasterGain: () => mockMasterGain,
+  registerSource: (...args: unknown[]) => mockRegisterSource(...args),
 }));
 
 beforeEach(() => {
@@ -123,6 +128,24 @@ describe("pianoSamples", () => {
       // Each oscillator connects to a harmonic gain node
       for (const osc of mockOscillators) {
         expect(osc.connect).toHaveBeenCalled();
+      }
+    });
+
+    it("feeds the per-note gain into the shared master bus (not destination directly)", () => {
+      createPianoNote(440, 1.0, 0, 80);
+
+      // the per-note gain (first gain created) connects to the master bus
+      expect(mockGainNodes[0].connect).toHaveBeenCalledWith(mockMasterGain);
+    });
+
+    it("registers every oscillator so it can be hard-stopped on stop()", () => {
+      createPianoNote(440, 1.0, 0, 80);
+
+      // one registration per harmonic oscillator
+      expect(mockRegisterSource).toHaveBeenCalledTimes(mockOscillators.length);
+      // registered with its note-end time (startTime + duration = 1.0)
+      for (const call of mockRegisterSource.mock.calls) {
+        expect(call[1]).toBeCloseTo(1.0, 5);
       }
     });
 

@@ -25,6 +25,13 @@ jest.mock("../../../client/lib/audio/synthEngine", () => ({
   setInstrumentSamples: (...args: any[]) => mockSetInstrumentSamples(...args),
 }));
 
+const mockResetMasterGain = jest.fn();
+const mockPruneEndedSources = jest.fn();
+jest.mock("../../../client/lib/audio/audioContext", () => ({
+  resetMasterGain: () => mockResetMasterGain(),
+  pruneEndedSources: () => mockPruneEndedSources(),
+}));
+
 const mockCreatePianoNote = jest.fn();
 jest.mock("../../../client/lib/audio/pianoSamples", () => ({
   createPianoNote: (...args: any[]) => mockCreatePianoNote(...args),
@@ -179,6 +186,25 @@ describe("useSynthPlayer", () => {
 
       expect(result.current.isPlaying).toBe(false);
       expect(mockResumeAudioContext).not.toHaveBeenCalled();
+    });
+
+    it("resets the master bus to full volume on a fresh start (after a stop fade)", async () => {
+      const { result } = renderHook(() => useSynthPlayer(SAMPLE_NOTES));
+
+      await act(async () => {
+        await result.current.play();
+      });
+      await act(async () => {
+        await result.current.stop();
+      });
+      mockResetMasterGain.mockClear();
+
+      await act(async () => {
+        await result.current.play();
+      });
+
+      // without this, notes scheduled after a stop fade would play silent
+      expect(mockResetMasterGain).toHaveBeenCalled();
     });
 
     it("sets error when resumeAudioContext throws", async () => {

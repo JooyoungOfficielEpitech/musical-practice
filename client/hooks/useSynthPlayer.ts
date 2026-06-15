@@ -11,6 +11,7 @@ import {
   setInstrumentMode,
   setInstrumentSamples,
 } from "../lib/audio/synthEngine";
+import { resetMasterGain, pruneEndedSources } from "../lib/audio/audioContext";
 import { createPianoNote } from "../lib/audio/pianoSamples";
 import {
   findClosestSample,
@@ -152,9 +153,11 @@ export function useSynthPlayer(
       let scheduledCount = 0;
       let skippedCount = 0;
 
-      // When starting fresh (not a rolling top-up), reset the index
+      // When starting fresh (not a rolling top-up), reset the index and restore
+      // the master bus to full volume (a prior stop() faded it to silence).
       if (!isResume) {
         lastScheduledIndexRef.current = 0;
+        resetMasterGain();
       }
 
       const windowEnd = offsetSec + SCHEDULE_AHEAD_SEC;
@@ -208,6 +211,8 @@ export function useSynthPlayer(
   /** Top up the rolling schedule with upcoming notes. */
   const topUpSchedule = useCallback(() => {
     if (!isPlayingRef.current || lastScheduledIndexRef.current >= notes.length) return;
+    // Drop already-finished sources so the registry stays bounded over a long piece.
+    pruneEndedSources();
     const elapsed = (Date.now() - playbackStartWallMs.current) / 1000;
     const currentSec = playbackOffsetSec.current + elapsed;
     scheduleFromOffset(currentSec, true);

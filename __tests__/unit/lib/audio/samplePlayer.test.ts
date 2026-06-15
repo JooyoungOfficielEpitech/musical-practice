@@ -27,8 +27,13 @@ const mockCtx = {
   })),
 };
 
+const mockMasterGain = { connect: jest.fn(), gain: { value: 1 } };
+const mockRegisterSource = jest.fn();
+
 jest.mock("../../../../client/lib/audio/audioContext", () => ({
   getAudioContext: () => mockCtx,
+  getMasterGain: () => mockMasterGain,
+  registerSource: (...args: unknown[]) => mockRegisterSource(...args),
 }));
 
 function createMockBuffer(): AudioBuffer {
@@ -133,14 +138,26 @@ describe("samplePlayer", () => {
       expect(source.start).toHaveBeenCalledWith(0.5, 0, 1.0);
     });
 
-    it("connects source -> gain -> destination", () => {
+    it("connects source -> gain -> master bus", () => {
       const buffer = createMockBuffer();
       playSample(buffer, 0, 1.0, 80, 1.0);
 
       const source = mockCtx.createBufferSource.mock.results[0].value;
       const gain = mockCtx.createGain.mock.results[0].value;
       expect(source.connect).toHaveBeenCalledWith(gain);
-      expect(gain.connect).toHaveBeenCalledWith(mockCtx.destination);
+      // gain feeds the shared master bus, not the destination directly
+      expect(gain.connect).toHaveBeenCalledWith(mockMasterGain);
+    });
+
+    it("registers the buffer source with its note-end time for hard-stop", () => {
+      const buffer = createMockBuffer();
+      playSample(buffer, 0.5, 1.0, 80, 1.0);
+
+      const source = mockCtx.createBufferSource.mock.results[0].value;
+      expect(mockRegisterSource).toHaveBeenCalled();
+      const [registered, endTime] = mockRegisterSource.mock.calls[0];
+      expect(registered).toBe(source);
+      expect(endTime).toBeCloseTo(1.5, 5); // startTime(0.5) + duration(1.0)
     });
 
     it("maps velocity 127 to gain 1.0", () => {

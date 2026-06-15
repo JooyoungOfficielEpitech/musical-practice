@@ -3,6 +3,8 @@ const createMockGainNode = () => ({
     value: 1,
     setValueAtTime: jest.fn(),
     linearRampToValueAtTime: jest.fn(),
+    cancelScheduledValues: jest.fn(),
+    cancelAndHoldAtTime: jest.fn(),
   },
   connect: jest.fn(),
   disconnect: jest.fn(),

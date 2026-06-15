@@ -1,6 +1,6 @@
 import { AudioBuffer } from "react-native-audio-api";
 import type { NoteEvent } from "../../types/music";
-import { getAudioContext } from "./audioContext";
+import { getAudioContext, getMasterGain, registerSource } from "./audioContext";
 
 /** Semitone ratio for pitch shifting: 2^(1/12) */
 const SEMITONE_RATIO = Math.pow(2, 1 / 12);
@@ -46,9 +46,10 @@ export function playSample(
   gainNode.gain.linearRampToValueAtTime(0, noteEnd);
 
   source.connect(gainNode);
-  gainNode.connect(ctx.destination);
+  gainNode.connect(getMasterGain());
 
   source.start(startTime, 0, duration);
+  registerSource(source, noteEnd);
 }
 
 /**

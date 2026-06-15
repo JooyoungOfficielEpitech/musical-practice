@@ -1,4 +1,4 @@
-import { getAudioContext } from "./audioContext";
+import { getAudioContext, getMasterGain, registerSource } from "./audioContext";
 
 /**
  * Built-in piano synthesizer using additive synthesis.
@@ -35,12 +35,13 @@ export function createPianoNote(
 ): void {
   const ctx = getAudioContext();
 
-  // Master gain for velocity control
-  const masterGain = ctx.createGain();
+  // Per-note gain for velocity + envelope; feeds the shared master bus so a
+  // single fade can silence it instantly on Stop/Pause.
+  const noteGain = ctx.createGain();
   const gain = Math.max(0, Math.min(1, velocity / 127)) * 0.4;
-  masterGain.connect(ctx.destination);
+  noteGain.connect(getMasterGain());
 
-  // Attack and decay envelope on master
+  // Attack and decay envelope on the per-note gain
   const attackTime = 0.005; // Very fast attack (piano hammer strike)
   const decayTime = Math.min(duration * 0.3, 0.3); // Decay to sustain level
   const sustainLevel = 0.6; // Sustain at 60% of peak
@@ -51,14 +52,14 @@ export function createPianoNote(
   const releaseStart = startTime + duration - releaseTime;
   const noteEnd = startTime + duration;
 
-  masterGain.gain.setValueAtTime(0, startTime);
-  masterGain.gain.linearRampToValueAtTime(gain, attackEnd);
-  masterGain.gain.linearRampToValueAtTime(gain * sustainLevel, decayEnd);
+  noteGain.gain.setValueAtTime(0, startTime);
+  noteGain.gain.linearRampToValueAtTime(gain, attackEnd);
+  noteGain.gain.linearRampToValueAtTime(gain * sustainLevel, decayEnd);
 
   if (releaseStart > decayEnd) {
-    masterGain.gain.setValueAtTime(gain * sustainLevel, releaseStart);
+    noteGain.gain.setValueAtTime(gain * sustainLevel, releaseStart);
   }
-  masterGain.gain.linearRampToValueAtTime(0, noteEnd);
+  noteGain.gain.linearRampToValueAtTime(0, noteEnd);
 
   // Create oscillators for each harmonic
   for (const [harmonic, amplitude] of PIANO_HARMONICS) {
@@ -94,10 +95,11 @@ export function createPianoNote(
     harmonicGain.gain.linearRampToValueAtTime(0, noteEnd);
 
     oscillator.connect(harmonicGain);
-    harmonicGain.connect(masterGain);
+    harmonicGain.connect(noteGain);
 
     oscillator.start(startTime);
     oscillator.stop(noteEnd);
+    registerSource(oscillator, noteEnd);
   }
 }
 
