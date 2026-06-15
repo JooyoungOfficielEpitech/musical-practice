@@ -35,6 +35,7 @@ export interface UseMultiOmrJobsResult {
   overallStatus: MultiJobStatus;
   jobs: SectionJobState[];
   error: string | null;
+  isSubmitting: boolean;
   submitAll: (
     pdfB64: string,
     sections: SectionInput[],
@@ -50,6 +51,7 @@ export function useMultiOmrJobs(): UseMultiOmrJobsResult {
   const [overallStatus, setOverallStatus] = useState<MultiJobStatus>("idle");
   const [jobs, setJobs] = useState<SectionJobState[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   type Channel = ReturnType<NonNullable<typeof supabase>["channel"]>;
   const channelsRef = useRef<Channel[]>([]);
@@ -110,6 +112,10 @@ export function useMultiOmrJobs(): UseMultiOmrJobsResult {
       sections: SectionInput[],
       onJobDone: (index: number, musicXmlUri: string) => Promise<void>,
     ) => {
+      // Guard against double-tap: if already submitting, return early
+      if (isSubmitting) return;
+
+      setIsSubmitting(true);
       submitContextRef.current = { pdfB64, sections, onJobDone };
       setOverallStatus("uploading");
       setJobs(sections.map((s) => ({
@@ -138,10 +144,12 @@ export function useMultiOmrJobs(): UseMultiOmrJobsResult {
           setError(message);
           setJobs((prev) => prev.map((j) => ({ ...j, status: "failed" as const, error: message })));
           setOverallStatus("failed");
+        } finally {
+          setIsSubmitting(false);
         }
       })();
     },
-    [_updateJob, _subscribeJob],
+    [_updateJob, _subscribeJob, isSubmitting],
   );
 
   const retry = useCallback(
@@ -187,7 +195,8 @@ export function useMultiOmrJobs(): UseMultiOmrJobsResult {
     setOverallStatus("idle");
     setJobs([]);
     setError(null);
+    setIsSubmitting(false);
   }, [_unsubscribeAll]);
 
-  return { overallStatus, jobs, error, submitAll, retry, reset };
+  return { overallStatus, jobs, error, isSubmitting, submitAll, retry, reset };
 }

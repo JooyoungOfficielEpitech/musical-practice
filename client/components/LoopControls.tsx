@@ -57,7 +57,8 @@ export function LoopControls({
       <View style={styles.row}>
         <Pressable
           onPress={handleCaptureA}
-          accessibilityLabel="Set loop start"
+          accessibilityLabel={`Set loop start. Current start: ${loopPointA !== null ? formatTime(loopPointA) : 'not set'}`}
+          accessibilityHint="Tap at the beginning of the section you want to loop"
           accessibilityRole="button"
           style={({ pressed }) => [
             styles.button,
@@ -88,7 +89,8 @@ export function LoopControls({
 
         <Pressable
           onPress={handleCaptureB}
-          accessibilityLabel="Set loop end"
+          accessibilityLabel={`Set loop end. Current end: ${loopPointB !== null ? formatTime(loopPointB) : 'not set'}`}
+          accessibilityHint="Tap at the end of the section you want to loop"
           accessibilityRole="button"
           style={({ pressed }) => [
             styles.button,
@@ -120,9 +122,10 @@ export function LoopControls({
         <Pressable
           onPress={handleApply}
           disabled={!canApply}
-          accessibilityLabel="toggle loop"
+          accessibilityLabel={`A-B loop. ${isLoopActive ? 'Loop enabled' : 'Loop disabled'}`}
+          accessibilityHint="Tap to loop between A and B points"
           accessibilityRole="switch"
-          accessibilityState={{ checked: isLoopActive }}
+          accessibilityState={{ checked: isLoopActive, disabled: !canApply }}
           style={({ pressed }) => [
             styles.button,
             {
@@ -140,7 +143,8 @@ export function LoopControls({
 
         <Pressable
           onPress={onClear}
-          accessibilityLabel="Clear loop"
+          accessibilityLabel="Clear loop points"
+          accessibilityHint="Tap to remove loop markers"
           accessibilityRole="button"
           style={({ pressed }) => [
             styles.button,

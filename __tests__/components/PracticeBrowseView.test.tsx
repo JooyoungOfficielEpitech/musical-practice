@@ -1,5 +1,5 @@
 import React from "react";
-import { render } from "@testing-library/react-native";
+import { render, fireEvent } from "@testing-library/react-native";
 import { PracticeBrowseView } from "../../client/components/PracticeBrowseView";
 
 jest.mock("../../client/hooks/useTheme", () => ({
@@ -91,6 +91,7 @@ const baseState = {
   sessionResult: null, setSessionResult: jest.fn(),
   audioMode: "reference" as const, setAudioMode: jest.fn(),
   musicXmlContent: null, musicXmlLoading: false, hasMusicXml: false,
+  musicXmlLoadError: null, audioLoadError: null, partsDeselectedError: null,
   showInstrumentPicker: false, setShowInstrumentPicker: jest.fn(),
   editMode: false, setEditMode: jest.fn(),
   partInfos: [], partNoteCounts: {}, visiblePartIds: new Set<string>(), togglePartVisibility: jest.fn(),
@@ -158,5 +159,35 @@ describe("PracticeBrowseView — score hero layout", () => {
     expect(getByLabelText("Play synth")).toBeTruthy();
     expect(queryByText("Auto-Play")).toBeNull();
     expect(queryByText("Score Preview")).toBeNull();
+  });
+});
+
+// ─── Mode indicator (Issue: unclear-listen-vs-practice-modes) ────────────────
+describe("PracticeBrowseView — mode indicator (LISTEN & REVIEW clarity)", () => {
+  it("displays 'LISTEN & REVIEW' label above score title", () => {
+    const { getByText } = render(<PracticeBrowseView {...baseProps} />);
+    expect(getByText("LISTEN & REVIEW")).toBeTruthy();
+  });
+
+  it("displays mode label above title in proper hierarchy", () => {
+    const { getByText } = render(<PracticeBrowseView {...baseProps} />);
+    // Mode label should exist and be separate from title
+    expect(getByText("LISTEN & REVIEW")).toBeTruthy();
+    expect(getByText("La Traviata")).toBeTruthy();
+  });
+});
+
+// ─── Back button affordance (Issue: missing-score-detail-back-button) ────────
+describe("PracticeBrowseView — back button affordance", () => {
+  it("back button has clear accessibility label referencing library", () => {
+    const { getByLabelText } = render(<PracticeBrowseView {...baseProps} />);
+    expect(getByLabelText("Go back to library")).toBeTruthy();
+  });
+
+  it("back button calls onGoBack when pressed", () => {
+    const onGoBack = jest.fn();
+    const { getByLabelText } = render(<PracticeBrowseView {...baseProps} onGoBack={onGoBack} />);
+    fireEvent.press(getByLabelText("Go back to library"));
+    expect(onGoBack).toHaveBeenCalledTimes(1);
   });
 });

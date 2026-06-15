@@ -97,9 +97,14 @@ export const PracticeBottomBar = memo(function PracticeBottomBar({
       ]}
     >
       {/* Timer */}
-      <Text style={[styles.timer, { color: colors.text }]}>
-        {formatTime(seconds)}
-      </Text>
+      <View
+        accessibilityLiveRegion="polite"
+        accessibilityLabel={`Session timer, currently at ${formatTime(seconds)}`}
+      >
+        <Text style={[styles.timer, { color: colors.text }]}>
+          {formatTime(seconds)}
+        </Text>
+      </View>
 
       {/* Play/Pause */}
       <Pressable

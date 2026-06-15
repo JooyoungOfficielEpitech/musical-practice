@@ -359,69 +359,80 @@ describe("MusicalStaff", () => {
     });
 
     it("increases high octave", () => {
-      const { getByLabelText, getByText } = render(
+      const { getAllByRole, getByText } = render(
         <MusicalStaff isListening={false} currentPitch={null} accuracy={0} />,
       );
-      fireEvent.press(getByLabelText("Increase high octave"));
+      const buttons = getAllByRole("button");
+      // Fourth button is "Increase high"
+      fireEvent.press(buttons[3]);
       expect(getByText("6")).toBeTruthy();
     });
 
     it("decreases low octave", () => {
-      const { getByLabelText, getByText } = render(
+      const { getAllByRole, getByText } = render(
         <MusicalStaff isListening={false} currentPitch={null} accuracy={0} />,
       );
-      fireEvent.press(getByLabelText("Decrease low octave"));
+      const buttons = getAllByRole("button");
+      // First button is "Decrease low"
+      fireEvent.press(buttons[0]);
       expect(getByText("2")).toBeTruthy();
     });
 
     it("increases low octave (narrows range)", () => {
-      const { getByLabelText, getByText } = render(
+      const { getAllByRole, getByText } = render(
         <MusicalStaff isListening={false} currentPitch={null} accuracy={0} />,
       );
-      fireEvent.press(getByLabelText("Increase low octave"));
+      const buttons = getAllByRole("button");
+      // First button with "Increase" in low range is the second button
+      fireEvent.press(buttons[1]);
       expect(getByText("4")).toBeTruthy();
     });
 
     it("decreases high octave (narrows range)", () => {
-      const { getByLabelText, getByText } = render(
+      const { getAllByRole, getByText } = render(
         <MusicalStaff isListening={false} currentPitch={null} accuracy={0} />,
       );
-      fireEvent.press(getByLabelText("Decrease high octave"));
+      const buttons = getAllByRole("button");
+      // Third button is "Decrease high"
+      fireEvent.press(buttons[2]);
       expect(getByText("4")).toBeTruthy();
     });
 
     it("prevents low octave going below 1", () => {
-      const { getByLabelText, getByText } = render(
+      const { getAllByRole, getByText } = render(
         <MusicalStaff isListening={false} currentPitch={null} accuracy={0} />,
       );
-      // Default low = 3, press left twice to go to 1
-      fireEvent.press(getByLabelText("Decrease low octave"));
-      fireEvent.press(getByLabelText("Decrease low octave"));
+      const buttons = getAllByRole("button");
+      // First button is "Decrease low"
+      fireEvent.press(buttons[0]);
+      fireEvent.press(buttons[0]);
       // Should stop at 1
-      fireEvent.press(getByLabelText("Decrease low octave"));
+      fireEvent.press(buttons[0]);
       expect(getByText("1")).toBeTruthy();
     });
 
     it("prevents high octave going above 8", () => {
-      const { getByLabelText, getByText } = render(
+      const { getAllByRole, getByText } = render(
         <MusicalStaff isListening={false} currentPitch={null} accuracy={0} />,
       );
-      // Default high = 5, press right 3 times to reach 8
-      fireEvent.press(getByLabelText("Increase high octave"));
-      fireEvent.press(getByLabelText("Increase high octave"));
-      fireEvent.press(getByLabelText("Increase high octave"));
+      const buttons = getAllByRole("button");
+      // Fourth button is "Increase high"
+      fireEvent.press(buttons[3]);
+      fireEvent.press(buttons[3]);
+      fireEvent.press(buttons[3]);
       // Should stop at 8
-      fireEvent.press(getByLabelText("Increase high octave"));
+      fireEvent.press(buttons[3]);
       expect(getByText("8")).toBeTruthy();
     });
 
     it("prevents low >= high (must keep at least 1 octave gap)", () => {
-      const { getByLabelText, getByText } = render(
+      const { getAllByRole, getByText } = render(
         <MusicalStaff isListening={false} currentPitch={null} accuracy={0} />,
       );
+      const buttons = getAllByRole("button");
       // Default: 3-5. Increase low to 4 (max allowed = high - 1 = 4)
-      fireEvent.press(getByLabelText("Increase low octave"));
-      fireEvent.press(getByLabelText("Increase low octave")); // should be blocked
+      fireEvent.press(buttons[1]);
+      fireEvent.press(buttons[1]); // should be blocked
       expect(getByText("4")).toBeTruthy(); // low stays 4
       expect(getByText("5")).toBeTruthy(); // high stays 5
     });

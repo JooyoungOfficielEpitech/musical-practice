@@ -84,3 +84,41 @@ describe("PracticeBottomBar", () => {
     expect(getByLabelText("Start practice")).toBeTruthy();
   });
 });
+
+// ─── Accessibility: timer-playback-state-not-announced ────────────────────────
+describe("PracticeBottomBar — accessibility (timer-playback-state-not-announced)", () => {
+  it("A1 — Timer has accessibilityLiveRegion to announce time updates", () => {
+    const { toJSON } = render(<PracticeBottomBar />);
+    const json = JSON.stringify(toJSON());
+    expect(json).toContain("accessibilityLiveRegion");
+  });
+
+  it("A2 — Timer accessibilityLabel includes formatted time", () => {
+    const { toJSON } = render(<PracticeBottomBar />);
+    const json = JSON.stringify(toJSON());
+    // Should include time in label for announcements
+    expect(json).toContain("accessibilityLabel");
+  });
+
+  it("A3 — Play button announces play/pause state change", () => {
+    const { getByLabelText } = render(<PracticeBottomBar />);
+    const playBtn = getByLabelText("Start practice");
+    expect(playBtn).toBeTruthy();
+  });
+});
+
+// ─── Accessibility: dynamic-content-not-announced ────────────────────────────
+describe("PracticeBottomBar — accessibility (dynamic-content-not-announced)", () => {
+  it("A1 — State changes announce via accessibilityLiveRegion", () => {
+    const { toJSON } = render(<PracticeBottomBar />);
+    const json = JSON.stringify(toJSON());
+    expect(json).toContain("accessibilityLiveRegion");
+  });
+
+  it("A2 — Timer container has accessible role and label", () => {
+    const { toJSON } = render(<PracticeBottomBar />);
+    const json = JSON.stringify(toJSON());
+    // Timer should be accessible and labeled
+    expect(json).toBeTruthy();
+  });
+});

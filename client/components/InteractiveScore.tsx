@@ -151,7 +151,12 @@ export const InteractiveScore = memo(function InteractiveScore({
   }, [visiblePartIndices, sendToWebView]);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
+    <View
+      style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}
+      accessibilityRole="image"
+      accessibilityLabel="Musical score"
+      accessibilityLiveRegion="polite"
+    >
       <WebView
         ref={webViewRef}
         source={{ html }}

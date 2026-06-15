@@ -14,7 +14,7 @@ export interface MetronomeBottomSheetProps {
 export function MetronomeBottomSheet({
   visible,
   onDismiss,
-  initialBpm,
+  initialBpm = 120,
 }: MetronomeBottomSheetProps): React.JSX.Element | null {
   if (!visible) return null;
 

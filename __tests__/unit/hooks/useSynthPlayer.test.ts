@@ -486,3 +486,87 @@ describe("useSynthPlayer — currentNoteIndex removal (Phase 2)", () => {
     expect((result.current as unknown as Record<string, unknown>).currentNoteIndex).toBeUndefined();
   });
 });
+
+// ─── Phase 3: AppState background pause (RED) ──────────────────────────────────
+// These tests FAIL without AppState listener implementation.
+
+describe("useSynthPlayer — AppState background pause", () => {
+  let mockAppStateRemove: jest.Mock;
+  let appStateCallback: ((state: string) => void) | null = null;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers();
+    mockCurrentTime = 0;
+    mockAppStateRemove = jest.fn();
+
+    // Capture the AppState callback so tests can trigger it
+    const mockAppState = require("react-native").AppState;
+    mockAppState.addEventListener.mockImplementation(
+      (_: string, cb: (state: string) => void) => {
+        appStateCallback = cb;
+        return { remove: mockAppStateRemove };
+      }
+    );
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it("3.1 — registers AppState listener on mount", () => {
+    const mockAppState = require("react-native").AppState;
+    mockAppState.addEventListener.mockClear();
+
+    renderHook(() => useSynthPlayer(SAMPLE_NOTES));
+
+    expect(mockAppState.addEventListener).toHaveBeenCalledWith(
+      "change",
+      expect.any(Function)
+    );
+  });
+
+  it("3.2 — cleans up AppState listener on unmount", () => {
+    const { unmount } = renderHook(() => useSynthPlayer(SAMPLE_NOTES));
+
+    unmount();
+
+    expect(mockAppStateRemove).toHaveBeenCalled();
+  });
+
+  it("3.3 — calls pause when app backgrounded while playing", async () => {
+    const { result } = renderHook(() => useSynthPlayer(SAMPLE_NOTES));
+
+    await act(async () => {
+      await result.current.play();
+    });
+
+    mockStopAll.mockClear();
+
+    // Trigger background event
+    act(() => {
+      appStateCallback?.("background");
+    });
+
+    // The pause() function is async and calls stopAll internally
+    // Give it a tick to complete
+    await act(async () => {
+      jest.advanceTimersByTime(1);
+    });
+
+    expect(mockStopAll).toHaveBeenCalled();
+  });
+
+  it("3.4 — ignores background event when not playing", () => {
+    renderHook(() => useSynthPlayer(SAMPLE_NOTES));
+
+    mockStopAll.mockClear();
+
+    // Trigger background while not playing
+    act(() => {
+      appStateCallback?.("background");
+    });
+
+    expect(mockStopAll).not.toHaveBeenCalled();
+  });
+});

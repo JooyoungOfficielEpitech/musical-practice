@@ -22,6 +22,16 @@ interface OnboardingPage {
 
 const PAGES: OnboardingPage[] = [
   {
+    icon: "document-text-outline",
+    title: "Import Sheet Music",
+    description: "Upload a PDF of any score. See it instantly in your Library. Choose any score to practice.",
+  },
+  {
+    icon: "play-circle-outline",
+    title: "Practice with Playback",
+    description: "Use playback, metronome, and vocal pitch feedback all in one place. Adjust tempo, select voice parts, and loop sections.",
+  },
+  {
     icon: "mic-outline",
     title: "Real-time Pitch Monitor",
     description: "See your vocal pitch accuracy in real-time as you sing. Know exactly when you're sharp, flat, or on pitch.",
@@ -30,11 +40,6 @@ const PAGES: OnboardingPage[] = [
     icon: "analytics-outline",
     title: "Track Your Progress",
     description: "Build daily practice streaks, track your accuracy over time, and watch your vocal skills improve week by week.",
-  },
-  {
-    icon: "musical-notes-outline",
-    title: "Your Practice Companion",
-    description: "Store sheet music, use the metronome, record sessions, and review your performance. Everything you need in one app.",
   },
 ];
 

@@ -30,10 +30,10 @@ describe("LoopControls", () => {
 
   it("renders 4 buttons: Set A, Set B, Loop toggle, Clear", () => {
     const { getByLabelText } = render(<LoopControls {...defaultProps} />);
-    expect(getByLabelText("Set loop start")).toBeTruthy();
-    expect(getByLabelText("Set loop end")).toBeTruthy();
-    expect(getByLabelText(/toggle loop/i)).toBeTruthy();
-    expect(getByLabelText("Clear loop")).toBeTruthy();
+    expect(getByLabelText(/Set loop start/)).toBeTruthy();
+    expect(getByLabelText(/Set loop end/)).toBeTruthy();
+    expect(getByLabelText(/A-B loop/)).toBeTruthy();
+    expect(getByLabelText(/Clear loop/)).toBeTruthy();
   });
 
   it("displays current position text near A/B buttons when no points set", () => {
@@ -48,7 +48,7 @@ describe("LoopControls", () => {
     const { getByLabelText } = render(
       <LoopControls {...defaultProps} onCaptureA={onCaptureA} />
     );
-    fireEvent.press(getByLabelText("Set loop start"));
+    fireEvent.press(getByLabelText(/Set loop start/));
     expect(onCaptureA).toHaveBeenCalledWith(5000);
   });
 
@@ -57,7 +57,7 @@ describe("LoopControls", () => {
     const { getByLabelText } = render(
       <LoopControls {...defaultProps} onCaptureB={onCaptureB} />
     );
-    fireEvent.press(getByLabelText("Set loop end"));
+    fireEvent.press(getByLabelText(/Set loop end/));
     expect(onCaptureB).toHaveBeenCalledWith(5000);
   });
 
@@ -66,7 +66,7 @@ describe("LoopControls", () => {
     const { getByLabelText } = render(
       <LoopControls {...defaultProps} onClear={onClear} />
     );
-    fireEvent.press(getByLabelText("Clear loop"));
+    fireEvent.press(getByLabelText(/Clear loop/));
     expect(onClear).toHaveBeenCalled();
   });
 
@@ -74,7 +74,7 @@ describe("LoopControls", () => {
     const { getByLabelText } = render(
       <LoopControls {...defaultProps} loopPointA={3000} />
     );
-    const setABtn = getByLabelText("Set loop start");
+    const setABtn = getByLabelText(/Set loop start/);
     // Button should have primary color style when active
     expect(setABtn).toBeTruthy();
   });
@@ -83,7 +83,7 @@ describe("LoopControls", () => {
     const { getByLabelText } = render(
       <LoopControls {...defaultProps} loopPointB={7000} />
     );
-    const setBBtn = getByLabelText("Set loop end");
+    const setBBtn = getByLabelText(/Set loop end/);
     expect(setBBtn).toBeTruthy();
   });
 
@@ -91,7 +91,7 @@ describe("LoopControls", () => {
     const { getByLabelText } = render(
       <LoopControls {...defaultProps} isLoopActive={true} />
     );
-    const loopToggle = getByLabelText(/toggle loop/i);
+    const loopToggle = getByLabelText(/A-B loop/);
     expect(loopToggle).toBeTruthy();
   });
 
@@ -105,7 +105,7 @@ describe("LoopControls", () => {
         onApply={onApply}
       />
     );
-    fireEvent.press(getByLabelText(/toggle loop/i));
+    fireEvent.press(getByLabelText(/A-B loop/));
     expect(onApply).toHaveBeenCalled();
   });
 
@@ -114,7 +114,7 @@ describe("LoopControls", () => {
     const { getByLabelText, queryByLabelText } = render(
       <LoopControls {...defaultProps} loopPointA={3000} onApply={onApply} />
     );
-    const loopToggle = queryByLabelText(/toggle loop/i);
+    const loopToggle = queryByLabelText(/A-B loop/);
     // Apply button should be disabled or not interactive
     expect(loopToggle).toBeTruthy();
   });
@@ -124,7 +124,7 @@ describe("LoopControls", () => {
     const { getByLabelText, queryByLabelText } = render(
       <LoopControls {...defaultProps} loopPointB={7000} onApply={onApply} />
     );
-    const loopToggle = queryByLabelText(/toggle loop/i);
+    const loopToggle = queryByLabelText(/A-B loop/);
     expect(loopToggle).toBeTruthy();
   });
 });

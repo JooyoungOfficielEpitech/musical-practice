@@ -170,11 +170,12 @@ function PracticeBrowseViewComponent({
   return (
     <>
       <View style={styles.topBar}>
-        <Pressable onPress={onGoBack} accessibilityLabel="Go back" accessibilityRole="button" hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        <Pressable onPress={onGoBack} accessibilityLabel="Go back to library" accessibilityRole="button" hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           style={({ pressed }) => [styles.backBtn, { backgroundColor: colors.surface, opacity: pressed ? 0.7 : 1 }]}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </Pressable>
         <View style={styles.topBarTitle}>
+          <Text style={[styles.modeLabel, { color: colors.textSecondary }]}>LISTEN & REVIEW</Text>
           <Text style={[styles.titleText, { color: colors.text }]} numberOfLines={1}>{sheet.title}</Text>
           {!!sheet.artist && <Text style={[styles.subtitleText, { color: colors.textSecondary }]} numberOfLines={1}>{sheet.artist}</Text>}
         </View>
@@ -384,6 +385,7 @@ const styles = StyleSheet.create({
   topBar: { ...row, height: 56, paddingHorizontal: Spacing.lg, gap: Spacing.sm + 2 },
   backBtn: { width: 44, height: 44, borderRadius: BorderRadius.sm, alignItems: "center", justifyContent: "center" },
   topBarTitle: { flex: 1 },
+  modeLabel: { ...Typography.small, fontFamily: Fonts.heading, fontWeight: "600", letterSpacing: 1, marginBottom: Spacing.xs },
   titleText: { ...Typography.subtitle, fontFamily: Fonts.heading, fontSize: 18 },
   subtitleText: { ...Typography.small },
   topBarRight: { ...row, gap: Spacing.xs },

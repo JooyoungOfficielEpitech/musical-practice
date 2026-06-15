@@ -101,62 +101,66 @@ export const MusicalStaff = memo(function MusicalStaff({
   }
 
   const octaveSwitcher = !compact ? (
-    <View style={styles.octaveRow}>
-      <Pressable
-        onPress={decreaseLow}
-        accessibilityLabel="Decrease low octave"
-        accessibilityRole="button"
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        style={({ pressed }) => [
-          styles.octaveBtn,
-          { backgroundColor: colors.primaryLight, opacity: lowOctave <= MIN_OCTAVE ? 0.3 : pressed ? 0.7 : 1 },
-        ]}
-        disabled={lowOctave <= MIN_OCTAVE}
-      >
-        <Ionicons name="chevron-back" size={16} color={colors.primary} />
-      </Pressable>
-      <Text style={[styles.octaveValue, { color: colors.primary }]}>{lowOctave}</Text>
-      <Pressable
-        onPress={increaseLow}
-        accessibilityLabel="Increase low octave"
-        accessibilityRole="button"
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        style={({ pressed }) => [
-          styles.octaveBtn,
-          { backgroundColor: colors.primaryLight, opacity: lowOctave >= highOctave - 1 ? 0.3 : pressed ? 0.7 : 1 },
-        ]}
-        disabled={lowOctave >= highOctave - 1}
-      >
-        <Ionicons name="chevron-forward" size={16} color={colors.primary} />
-      </Pressable>
-      <Text style={[styles.octaveLabel, { color: colors.textSecondary }]}>Octave</Text>
-      <Pressable
-        onPress={decreaseHigh}
-        accessibilityLabel="Decrease high octave"
-        accessibilityRole="button"
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        style={({ pressed }) => [
-          styles.octaveBtn,
-          { backgroundColor: colors.primaryLight, opacity: highOctave <= lowOctave + 1 ? 0.3 : pressed ? 0.7 : 1 },
-        ]}
-        disabled={highOctave <= lowOctave + 1}
-      >
-        <Ionicons name="chevron-back" size={16} color={colors.primary} />
-      </Pressable>
-      <Text style={[styles.octaveValue, { color: colors.primary }]}>{highOctave}</Text>
-      <Pressable
-        onPress={increaseHigh}
-        accessibilityLabel="Increase high octave"
-        accessibilityRole="button"
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        style={({ pressed }) => [
-          styles.octaveBtn,
-          { backgroundColor: colors.primaryLight, opacity: highOctave >= MAX_OCTAVE ? 0.3 : pressed ? 0.7 : 1 },
-        ]}
-        disabled={highOctave >= MAX_OCTAVE}
-      >
-        <Ionicons name="chevron-forward" size={16} color={colors.primary} />
-      </Pressable>
+    <View>
+      <Text style={[styles.octaveLabel, { color: colors.textSecondary }]} accessibilityRole="header">
+        Singing Range
+      </Text>
+      <View style={styles.octaveRow}>
+        <Pressable
+          onPress={decreaseLow}
+          accessibilityLabel={`Decrease low octave. Current range: octave ${lowOctave} to ${highOctave}`}
+          accessibilityHint="Double tap to decrease"
+          accessibilityRole="button"
+          style={({ pressed }) => [
+            styles.octaveBtn,
+            { backgroundColor: colors.primaryLight, opacity: lowOctave <= MIN_OCTAVE ? 0.3 : pressed ? 0.7 : 1 },
+          ]}
+          disabled={lowOctave <= MIN_OCTAVE}
+        >
+          <Ionicons name="chevron-back" size={18} color={colors.primary} />
+        </Pressable>
+        <Text style={[styles.octaveValue, { color: colors.primary }]}>{lowOctave}</Text>
+        <Pressable
+          onPress={increaseLow}
+          accessibilityLabel={`Increase low octave. Current range: octave ${lowOctave} to ${highOctave}`}
+          accessibilityHint="Double tap to increase"
+          accessibilityRole="button"
+          style={({ pressed }) => [
+            styles.octaveBtn,
+            { backgroundColor: colors.primaryLight, opacity: lowOctave >= highOctave - 1 ? 0.3 : pressed ? 0.7 : 1 },
+          ]}
+          disabled={lowOctave >= highOctave - 1}
+        >
+          <Ionicons name="chevron-forward" size={18} color={colors.primary} />
+        </Pressable>
+        <Text style={[styles.octaveValue, { color: colors.primary }]}>{highOctave}</Text>
+        <Pressable
+          onPress={decreaseHigh}
+          accessibilityLabel={`Decrease high octave. Current range: octave ${lowOctave} to ${highOctave}`}
+          accessibilityHint="Double tap to decrease"
+          accessibilityRole="button"
+          style={({ pressed }) => [
+            styles.octaveBtn,
+            { backgroundColor: colors.primaryLight, opacity: highOctave <= lowOctave + 1 ? 0.3 : pressed ? 0.7 : 1 },
+          ]}
+          disabled={highOctave <= lowOctave + 1}
+        >
+          <Ionicons name="chevron-back" size={18} color={colors.primary} />
+        </Pressable>
+        <Pressable
+          onPress={increaseHigh}
+          accessibilityLabel={`Increase high octave. Current range: octave ${lowOctave} to ${highOctave}`}
+          accessibilityHint="Double tap to increase"
+          accessibilityRole="button"
+          style={({ pressed }) => [
+            styles.octaveBtn,
+            { backgroundColor: colors.primaryLight, opacity: highOctave >= MAX_OCTAVE ? 0.3 : pressed ? 0.7 : 1 },
+          ]}
+          disabled={highOctave >= MAX_OCTAVE}
+        >
+          <Ionicons name="chevron-forward" size={18} color={colors.primary} />
+        </Pressable>
+      </View>
     </View>
   ) : null;
 
@@ -372,12 +376,14 @@ const styles = StyleSheet.create({
   octaveRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: Spacing.sm,
+    marginTop: Spacing.sm,
   },
   octaveBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
   },

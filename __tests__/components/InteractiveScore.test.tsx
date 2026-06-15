@@ -252,3 +252,31 @@ describe("InteractiveScore — score reader bug fixes (Phase 1)", () => {
     expect(json).toContain("currentStep");
   });
 });
+
+// ─── Accessibility: score-viewer-not-accessible ────────────────────────────────
+describe("InteractiveScore — accessibility (score-viewer-not-accessible)", () => {
+  it("A1 — WebView container has accessibilityRole='image'", () => {
+    const { toJSON } = render(
+      <InteractiveScore musicXml={testMusicXml} />
+    );
+    const json = JSON.stringify(toJSON());
+    expect(json).toContain("accessibilityRole");
+    expect(json).toContain("image");
+  });
+
+  it("A2 — WebView container has accessibilityLabel", () => {
+    const { toJSON } = render(
+      <InteractiveScore musicXml={testMusicXml} />
+    );
+    const json = JSON.stringify(toJSON());
+    expect(json).toContain("accessibilityLabel");
+  });
+
+  it("A3 — WebView container has accessibilityLiveRegion to announce cursor changes", () => {
+    const { toJSON } = render(
+      <InteractiveScore musicXml={testMusicXml} positionMs={1000} />
+    );
+    const json = JSON.stringify(toJSON());
+    expect(json).toContain("accessibilityLiveRegion");
+  });
+});

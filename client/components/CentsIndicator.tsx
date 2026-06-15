@@ -39,6 +39,8 @@ export const CentsIndicator = memo(function CentsIndicator({
   const centsAbs = Math.abs(cents);
   const dotColor =
     centsAbs <= 10 ? colors.success : centsAbs <= 25 ? colors.warning : colors.error;
+  const tuningLabel =
+    centsAbs <= 10 ? "On Pitch" : cents > 0 ? "Sharp" : "Flat";
 
   // Zone widths proportional to total width (ratios from original 220px)
   const zoneRed = Math.round(trackWidth * 0.1364);
@@ -52,14 +54,19 @@ export const CentsIndicator = memo(function CentsIndicator({
         min: -maxCents,
         max: maxCents,
         now: Math.round(cents),
-        text: `${cents > 0 ? "+" : ""}${Math.round(cents)} cents`,
+        text: `${tuningLabel}: ${cents > 0 ? "+" : ""}${Math.round(cents)} cents`,
       }}
     >
       <View style={[styles.labels, { width: trackWidth }]}>
         <Text style={[styles.label, { color: colors.textSecondary }]}>Flat</Text>
-        <Text style={[styles.centsValue, { color: dotColor }]}>
-          {cents > 0 ? "+" : ""}{Math.round(cents)}¢
-        </Text>
+        <View style={styles.centerValueWrap}>
+          <Text style={[styles.centsValue, { color: dotColor }]}>
+            {cents > 0 ? "+" : ""}{Math.round(cents)}¢
+          </Text>
+          <Text style={[styles.tuningLabel, { color: dotColor }]}>
+            {tuningLabel}
+          </Text>
+        </View>
         <Text style={[styles.label, { color: colors.textSecondary }]}>Sharp</Text>
       </View>
       <View style={[styles.trackContainer, { width: trackWidth }]}>
@@ -97,7 +104,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   label: { ...Typography.label, fontFamily: Fonts.body },
+  centerValueWrap: {
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
   centsValue: { ...Typography.small, fontFamily: Fonts.bodySemiBold, fontWeight: "600" },
+  tuningLabel: { ...Typography.label, fontFamily: Fonts.body },
   trackContainer: {
     height: 24,
     alignItems: "center",

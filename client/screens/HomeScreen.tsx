@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -39,6 +39,7 @@ export default function HomeScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const { sheets, sessions, stats, loading, refreshData } = usePractice();
+  const [focusedButton, setFocusedButton] = useState<string | null>(null);
 
   const recentSheets = sheets.slice(0, 5);
   const todaySessions = sessions.filter(
@@ -66,9 +67,19 @@ export default function HomeScreen() {
         </View>
         <Pressable
           onPress={() => navigation.navigate("Profile")}
+          onFocus={() => setFocusedButton("profile")}
+          onBlur={() => setFocusedButton(null)}
           accessibilityLabel="Go to profile"
           accessibilityRole="button"
-          style={({ pressed }) => [styles.avatarBtn, { opacity: pressed ? 0.8 : 1 }]}
+          style={({ pressed }) => [
+            styles.avatarBtn,
+            {
+              opacity: pressed ? 0.8 : 1,
+              borderWidth: focusedButton === "profile" ? 2 : 0,
+              borderColor: focusedButton === "profile" ? colors.primary : "transparent",
+              borderRadius: 20,
+            },
+          ]}
         >
           <Ionicons name="person-circle" size={38} color={colors.primary} />
         </Pressable>
@@ -83,19 +94,26 @@ export default function HomeScreen() {
       <View style={styles.quickStartSection}>
         <Pressable
           onPress={() => navigation.navigate("Practice")}
-          accessibilityLabel="Start quick practice"
+          onFocus={() => setFocusedButton("warmup")}
+          onBlur={() => setFocusedButton(null)}
+          accessibilityLabel="Start warm-up"
           accessibilityRole="button"
           style={({ pressed }) => [
             styles.quickStartBtn,
-            { backgroundColor: colors.primaryDark, transform: [{ scale: pressed ? 0.98 : 1 }] },
+            {
+              backgroundColor: colors.primaryDark,
+              transform: [{ scale: pressed ? 0.98 : 1 }],
+              borderWidth: focusedButton === "warmup" ? 2 : 0,
+              borderColor: focusedButton === "warmup" ? colors.primary : "transparent",
+            },
           ]}
         >
           <View style={[styles.quickStartIcon, { backgroundColor: colors.overlayLight }]}>
             <Ionicons name="play-circle" size={32} color={colors.buttonText} />
           </View>
           <View style={styles.quickStartText}>
-            <Text style={[styles.quickStartTitle, { color: colors.buttonText }]}>Quick Practice</Text>
-            <Text style={[styles.quickStartSub, { color: colors.overlayText }]}>Start with metronome</Text>
+            <Text style={[styles.quickStartTitle, { color: colors.buttonText }]}>Warm-up</Text>
+            <Text style={[styles.quickStartSub, { color: colors.overlayText }]}>Practice pitch without a score</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.buttonText} />
         </Pressable>
@@ -120,9 +138,9 @@ export default function HomeScreen() {
           <EmptyState
             icon="document-text-outline"
             title="No scores yet"
-            message="Upload your first sheet music to start practicing"
-            actionLabel="Import PDF"
-            onAction={() => navigation.navigate("PdfImport")}
+            message="Upload your first score to start practicing"
+            actionLabel="Go to Library"
+            onAction={() => navigation.navigate("Library")}
           />
         ) : (
           <FlatList

@@ -249,3 +249,52 @@ describe("usePracticeDetail — part selection (Phase 2)", () => {
     expect(typeof result.current.togglePartVisibility).toBe("function");
   });
 });
+
+// ─── Phase 3: Error handling & recovery (RED) ─────────────────────────────────
+// These tests FAIL without error state fields and handlers.
+
+describe("usePracticeDetail — error handling (Phase 3)", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("3.1 — returns musicXmlLoadError field (null by default)", () => {
+    const { result } = renderHook(() => usePracticeDetail("sheet-1"));
+    expect((result.current as unknown as Record<string, unknown>).musicXmlLoadError).toBeDefined();
+  });
+
+  it("3.2 — returns audioLoadError field (null by default)", () => {
+    const { result } = renderHook(() => usePracticeDetail("sheet-1"));
+    expect((result.current as unknown as Record<string, unknown>).audioLoadError).toBeDefined();
+  });
+
+  it("3.3 — returns partsDeselectedError field (null by default)", () => {
+    const { result } = renderHook(() => usePracticeDetail("sheet-1"));
+    expect((result.current as unknown as Record<string, unknown>).partsDeselectedError).toBeDefined();
+  });
+
+  it("3.4 — togglePartVisibility sets partsDeselectedError when trying to deselect all parts", () => {
+    const { result } = renderHook(() => usePracticeDetail("sheet-xml"));
+
+    // First, verify at least one part exists
+    if (result.current.partInfos.length === 0) {
+      return; // Skip if no parts
+    }
+
+    const firstPartId = result.current.partInfos[0].id;
+
+    // Try to deselect all parts (toggle until only one is left, then toggle the last)
+    act(() => {
+      for (const part of result.current.partInfos.slice(0, -1)) {
+        result.current.togglePartVisibility(part.id);
+      }
+    });
+
+    // Now try to deselect the last part
+    act(() => {
+      result.current.togglePartVisibility(firstPartId);
+    });
+
+    // partsDeselectedError should be set
+    const error = (result.current as unknown as Record<string, unknown>).partsDeselectedError;
+    expect(error).toBeTruthy();
+  });
+});

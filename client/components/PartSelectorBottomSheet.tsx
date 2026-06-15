@@ -89,6 +89,9 @@ function SheetContent({ onDismiss, children }: SheetContentProps): React.JSX.Ele
           <Ionicons name="close" size={22} color={colors.text} />
         </Pressable>
       </View>
+      <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+        This song has multiple voice parts. Select which part(s) to show.
+      </Text>
       {children}
     </View>
   );
@@ -100,26 +103,43 @@ interface PartRowProps {
   onToggle: () => void;
 }
 
+function getVoiceDescription(name: string): string {
+  const upper = name.toUpperCase();
+  if (upper.includes("SOPRANO")) return "(Highest)";
+  if (upper.includes("ALTO")) return "(High)";
+  if (upper.includes("TENOR")) return "(Low)";
+  if (upper.includes("BASS")) return "(Lowest)";
+  return "";
+}
+
 const PartRow = React.memo(function PartRow({
   part,
   isVisible,
   onToggle,
 }: PartRowProps): React.JSX.Element {
   const { colors } = useTheme();
+  const voiceDesc = getVoiceDescription(part.name);
   return (
     <Pressable
       onPress={onToggle}
       accessibilityRole="checkbox"
-      accessibilityLabel={part.name}
+      accessibilityLabel={`${part.name} ${voiceDesc}`}
       accessibilityState={{ checked: isVisible }}
       style={({ pressed }) => [
         styles.row,
         { borderBottomColor: colors.borderLight, opacity: pressed ? 0.7 : 1 },
       ]}
     >
-      <Text style={[styles.partName, { color: colors.text }]} numberOfLines={1}>
-        {part.name}
-      </Text>
+      <View style={styles.partCol}>
+        <Text style={[styles.partName, { color: colors.text }]} numberOfLines={1}>
+          {part.name}
+        </Text>
+        {voiceDesc && (
+          <Text style={[styles.voiceDesc, { color: colors.textSecondary }]} numberOfLines={1}>
+            {voiceDesc}
+          </Text>
+        )}
+      </View>
       <Ionicons
         testID={`icon-${part.id}`}
         name={isVisible ? "checkmark-circle" : "ellipse-outline"}
@@ -199,6 +219,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  subtitle: {
+    fontSize: 13,
+    fontFamily: Fonts.body,
+    marginHorizontal: Spacing.sm,
+    marginBottom: Spacing.md,
+    lineHeight: 18,
+  },
   list: {
     maxHeight: 320,
   },
@@ -209,11 +236,18 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  partName: {
+  partCol: {
     flex: 1,
+    marginRight: Spacing.sm,
+  },
+  partName: {
     fontSize: 15,
     fontFamily: Fonts.body,
-    marginRight: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  voiceDesc: {
+    fontSize: 12,
+    fontFamily: Fonts.body,
   },
   singlePartText: {
     fontSize: 14,

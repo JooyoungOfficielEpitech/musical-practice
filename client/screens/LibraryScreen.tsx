@@ -25,6 +25,7 @@ import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 import type { RootStackParamList } from "@/types/navigation";
 import { getLastSession } from "@/lib/practiceCardUtils";
 import type { SheetMusic } from "@/lib/storage";
+import { fuzzySearchFilter } from "@/lib/fuzzySearch";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -43,10 +44,7 @@ export default function LibraryScreen() {
   const [showAddModal, setShowAddModal] = useState(false);
   const filtered = useMemo(() => sheets.filter((s) => {
     const matchFolder = activeFolder === "All" || s.folder === activeFolder;
-    const matchSearch =
-      !search ||
-      s.title.toLowerCase().includes(search.toLowerCase()) ||
-      s.artist.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = fuzzySearchFilter(s, search);
     return matchFolder && matchSearch;
   }), [sheets, activeFolder, search]);
 
@@ -140,42 +138,44 @@ export default function LibraryScreen() {
         </View>
       </View>
 
-      <FlatList
-        data={FOLDERS}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.folderList}
-        contentContainerStyle={styles.folderContent}
-        scrollEnabled={FOLDERS.length > 0}
-        keyExtractor={(item) => item}
-        renderItem={({ item }: { item: string }) => (
-          <Pressable
-            onPress={() => {
-              setActiveFolder(item);
-              if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }}
-            accessibilityLabel={`Filter by ${item}`}
-            accessibilityRole="button"
-            accessibilityState={{ selected: activeFolder === item }}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={[
-              styles.folderChip,
-              { backgroundColor: colors.surface, borderColor: colors.borderLight },
-              activeFolder === item && { backgroundColor: colors.primaryDark, borderColor: colors.primaryDark },
-            ]}
-          >
-            <Text
+      {filtered.length > 0 && (
+        <FlatList
+          data={FOLDERS}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.folderList}
+          contentContainerStyle={styles.folderContent}
+          scrollEnabled={FOLDERS.length > 0}
+          keyExtractor={(item) => item}
+          renderItem={({ item }: { item: string }) => (
+            <Pressable
+              onPress={() => {
+                setActiveFolder(item);
+                if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }}
+              accessibilityLabel={`Filter by ${item}`}
+              accessibilityRole="button"
+              accessibilityState={{ selected: activeFolder === item }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={[
-                styles.folderText,
-                { color: colors.textSecondary },
-                activeFolder === item && { color: colors.buttonText },
+                styles.folderChip,
+                { backgroundColor: colors.surface, borderColor: colors.borderLight },
+                activeFolder === item && { backgroundColor: colors.primaryDark, borderColor: colors.primaryDark },
               ]}
             >
-              {item}
-            </Text>
-          </Pressable>
-        )}
-      />
+              <Text
+                style={[
+                  styles.folderText,
+                  { color: colors.textSecondary },
+                  activeFolder === item && { color: colors.buttonText },
+                ]}
+              >
+                {item}
+              </Text>
+            </Pressable>
+          )}
+        />
+      )}
 
       <FlatList
         data={filtered}
@@ -187,7 +187,7 @@ export default function LibraryScreen() {
           <EmptyState
             icon="musical-notes-outline"
             title="No scores found"
-            message={search ? "Try a different search" : "Import a PDF to start practicing"}
+            message={search ? "Try a different search" : "Import a score to start practicing"}
             actionLabel={!search ? "Import PDF" : undefined}
             onAction={!search ? () => navigation.navigate("PdfImport") : undefined}
           />

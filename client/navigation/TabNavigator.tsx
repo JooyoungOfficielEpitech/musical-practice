@@ -63,6 +63,7 @@ export function TabNavigator() {
         name="Practice"
         component={PracticeScreen}
         options={{
+          tabBarLabel: "Warm-up",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? "play-circle" : "play-circle-outline"} size={24} color={color} />
           ),

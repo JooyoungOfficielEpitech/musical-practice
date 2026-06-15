@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { AppState } from "react-native";
 import type { NoteEvent } from "../types/music";
 import type { InstrumentMode } from "../lib/audio/synthEngine";
 import {
@@ -471,6 +472,19 @@ export function useSynthPlayer(
   useEffect(() => {
     setInstrumentMode(resolveMode(initialInstrument));
   }, [initialInstrument, resolveMode]);
+
+  // Pause playback when app backgrounds
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state !== "active" && isPlayingRef.current) {
+        pause();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [pause]);
 
   // Cleanup on unmount — destroy AudioContext here (the only place it should be closed)
   useEffect(() => {

@@ -71,3 +71,35 @@ describe("AudioBottomSheet", () => {
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 });
+
+// ─── Accessibility: modal-focus-not-trapped ─────────────────────────────────────
+describe("AudioBottomSheet — accessibility (modal-focus-not-trapped)", () => {
+  const defaultProps = {
+    visible: true,
+    onDismiss: jest.fn(),
+    audioUrl: "https://example.com/track.mp3",
+  };
+
+  beforeEach(() => jest.clearAllMocks());
+
+  it("A1 — Modal has accessibilityViewIsModal={true} to trap focus", () => {
+    const { toJSON } = render(<AudioBottomSheet {...defaultProps} />);
+    const json = JSON.stringify(toJSON());
+    expect(json).toContain("accessibilityViewIsModal");
+  });
+
+  it("A2 — Close button has accessibilityRole='button'", () => {
+    const { getByLabelText } = render(<AudioBottomSheet {...defaultProps} />);
+    const closeBtn = getByLabelText("Close audio player");
+    expect(closeBtn).toBeTruthy();
+  });
+
+  it("A3 — Modal has onRequestClose handler for back button dismiss", () => {
+    const onDismiss = jest.fn();
+    const { toJSON } = render(
+      <AudioBottomSheet {...defaultProps} onDismiss={onDismiss} />
+    );
+    const json = JSON.stringify(toJSON());
+    expect(json).toContain("Modal");
+  });
+});

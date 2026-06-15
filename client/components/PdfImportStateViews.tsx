@@ -51,6 +51,7 @@ export function SuccessView({ onViewLibrary }: SuccessViewProps): React.JSX.Elem
 interface ErrorViewProps {
   errorMsg: string;
   isUploadError: boolean;
+  isTimeoutError?: boolean;
   onRetry: () => void;
   onCancel: () => void;
 }
@@ -58,13 +59,17 @@ interface ErrorViewProps {
 export function ErrorView({
   errorMsg,
   isUploadError,
+  isTimeoutError = false,
   onRetry,
   onCancel,
 }: ErrorViewProps): React.JSX.Element {
   const { colors } = useTheme();
-  const errorContextMsg = isUploadError
-    ? "Please try uploading again"
-    : "Some sections failed. You can retry them individually below, or try the entire process again.";
+  let errorContextMsg = "Some sections failed. You can retry them individually below, or try the entire process again.";
+  if (isUploadError && !isTimeoutError) {
+    errorContextMsg = "Please try uploading again";
+  } else if (isTimeoutError) {
+    errorContextMsg = "The upload took too long. Check your connection and try again.";
+  }
 
   return (
     <SafeAreaView

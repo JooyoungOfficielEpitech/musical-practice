@@ -336,12 +336,12 @@ describe("PracticeDetailScreen", () => {
 
   it("shows back button", () => {
     const { getByLabelText } = render(<PracticeDetailScreen />);
-    expect(getByLabelText("Go back")).toBeTruthy();
+    expect(getByLabelText(/Go back to library/)).toBeTruthy();
   });
 
   it("navigates back when back button pressed", () => {
     const { getByLabelText } = render(<PracticeDetailScreen />);
-    fireEvent.press(getByLabelText("Go back"));
+    fireEvent.press(getByLabelText(/Go back to library/));
     expect(mockGoBack).toHaveBeenCalled();
   });
 

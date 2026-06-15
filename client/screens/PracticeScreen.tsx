@@ -8,6 +8,7 @@ import {
   Platform,
   LayoutAnimation,
   UIManager,
+  AccessibilityInfo,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -42,6 +43,7 @@ export default function PracticeScreen() {
   const tipsLoaded = useRef(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const pendingNavAction = useRef<any>(null);
+  const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false);
   const [sessionResult, setSessionResult] = useState<{
     duration: number;
     accuracy: number;
@@ -53,6 +55,7 @@ export default function PracticeScreen() {
       if (val !== null) setShowTips(val === "true");
       tipsLoaded.current = true;
     });
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotionEnabled);
   }, []);
 
   const { isListening, currentPitch, error: pitchError, startListening, stopListening } = usePitchDetection();
@@ -80,9 +83,11 @@ export default function PracticeScreen() {
   const [showMetronome, setShowMetronome] = useState(false);
 
   const toggleMetronome = useCallback(() => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (!reduceMotionEnabled) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    }
     setShowMetronome((prev) => !prev);
-  }, []);
+  }, [reduceMotionEnabled]);
 
   const handleTimerStart = useCallback(async (): Promise<boolean> => {
     if (!isGranted) {
@@ -146,7 +151,10 @@ export default function PracticeScreen() {
           <View style={[styles.cardIconWrap, { backgroundColor: colors.primaryLight }]}>
             <Ionicons name="mic-outline" size={20} color={colors.primary} />
           </View>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Pitch Check</Text>
+          <View style={styles.cardTitleWrap}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Pitch Tuner</Text>
+            <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>Listen and match your voice to the target pitch</Text>
+          </View>
         </View>
         <MusicalStaff
           isListening={isListening}
@@ -192,7 +200,9 @@ export default function PracticeScreen() {
 
       <Pressable
         onPress={() => {
-          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          if (!reduceMotionEnabled) {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          }
           setShowTips((prev) => {
             const next = !prev;
             AsyncStorage.setItem("@musicalpractice/showTips", String(next));
@@ -265,9 +275,11 @@ const styles = StyleSheet.create({
   lastScoreBadge: { flexDirection: "row", alignItems: "center", gap: Spacing.xs, paddingHorizontal: Spacing.sm + 2, paddingVertical: 5, borderRadius: BorderRadius.sm },
   lastScoreText: { ...Typography.small, fontFamily: "Nunito_600SemiBold", fontWeight: "600" },
   card: { marginHorizontal: Spacing.xl, borderRadius: BorderRadius.md, padding: Spacing.xl, marginBottom: Spacing.lg },
-  cardHeader: { flexDirection: "row", alignItems: "center", gap: Spacing.sm + 2, marginBottom: Spacing.lg },
-  cardIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  cardHeader: { flexDirection: "row", alignItems: "flex-start", gap: Spacing.sm + 2, marginBottom: Spacing.lg },
+  cardIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center", marginTop: 2 },
+  cardTitleWrap: { flex: 1 },
   cardTitle: { ...Typography.subtitle },
+  cardSubtitle: { ...Typography.small, marginTop: Spacing.xs },
   centsWrap: { marginTop: Spacing.md, alignItems: "center" },
   timerWrap: { marginTop: Spacing.xl, paddingTop: Spacing.lg, borderTopWidth: StyleSheet.hairlineWidth },
   metronomeToggle: {

@@ -26,6 +26,7 @@ export function AudioBottomSheet({
       transparent
       animationType="slide"
       onRequestClose={onDismiss}
+      accessibilityViewIsModal={true}
     >
       <Pressable style={styles.backdrop} onPress={onDismiss} />
       <View

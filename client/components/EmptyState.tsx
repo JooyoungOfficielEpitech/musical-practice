@@ -40,7 +40,7 @@ export function EmptyState({ icon, title, message, actionLabel, onAction }: Empt
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: "center", justifyContent: "center", padding: Spacing["5xl"], gap: Spacing.sm },
+  container: { padding: Spacing["5xl"], gap: Spacing.md, alignItems: "center" },
   iconWrap: {
     width: 72,
     height: 72,

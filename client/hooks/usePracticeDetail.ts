@@ -32,6 +32,9 @@ export interface PracticeDetailState {
   sessionResult: SessionResult | null; setSessionResult: (r: SessionResult | null) => void;
   audioMode: AudioMode; setAudioMode: (mode: AudioMode) => void;
   musicXmlContent: string | null; musicXmlLoading: boolean; hasMusicXml: boolean;
+  musicXmlLoadError: string | null;
+  audioLoadError: string | null;
+  partsDeselectedError: string | null;
   showInstrumentPicker: boolean; setShowInstrumentPicker: (v: boolean) => void;
   editMode: boolean; setEditMode: React.Dispatch<React.SetStateAction<boolean>>;
   partInfos: PartInfo[];
@@ -77,6 +80,9 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
   const [musicXmlContent, setMusicXmlContent] = useState<string | null>(null);
   const [noteSequence, setNoteSequence] = useState<NoteSequence>([]);
   const [musicXmlLoading, setMusicXmlLoading] = useState(false);
+  const [musicXmlLoadError, setMusicXmlLoadError] = useState<string | null>(null);
+  const [audioLoadError, setAudioLoadError] = useState<string | null>(null);
+  const [partsDeselectedError, setPartsDeselectedError] = useState<string | null>(null);
   const [showInstrumentPicker, setShowInstrumentPicker] = useState(false);
   const [editMode, setEditMode] = useState(true);
 
@@ -99,7 +105,11 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
     const next = new Set(visiblePartIds);
     if (next.has(partId)) { next.delete(partId); } else { next.add(partId); }
     // Never leave a score with zero audible parts.
-    if (next.size === 0) return;
+    if (next.size === 0) {
+      setPartsDeselectedError("At least one part must be selected");
+      return;
+    }
+    setPartsDeselectedError(null);
     setVisiblePartIds(next);
     if (sheet) persistPartSelection(sheet.id, [...next]).catch(() => {});
   }, [visiblePartIds, sheet, persistPartSelection]);
@@ -128,9 +138,10 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
   useEffect(() => { isRecordingRef.current = isRecording; }, [isRecording]);
 
   useEffect(() => {
-    if (!sheet?.musicXmlUri) { setMusicXmlContent(null); setNoteSequence([]); return; }
+    if (!sheet?.musicXmlUri) { setMusicXmlContent(null); setNoteSequence([]); setMusicXmlLoadError(null); return; }
     let cancelled = false;
     setMusicXmlLoading(true);
+    setMusicXmlLoadError(null);
     (async () => {
       try {
         const { File } = await import("expo-file-system");
@@ -144,7 +155,15 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
         setPartNoteCounts(countNotesByPart(parsed.notePartIndices, parsed.parts));
         notePartIndicesRef.current = parsed.notePartIndices;
         setVisiblePartIds(resolveInitialVisibleParts(parsed.parts, sheet.selectedPartIds));
-      } catch { if (!cancelled) { setMusicXmlContent(null); setNoteSequence([]); } }
+        setMusicXmlLoadError(null);
+      } catch (e) {
+        if (!cancelled) {
+          setMusicXmlContent(null);
+          setNoteSequence([]);
+          const msg = e instanceof Error ? e.message : "Failed to load music notation";
+          setMusicXmlLoadError(msg);
+        }
+      }
       finally { if (!cancelled) setMusicXmlLoading(false); }
     })();
     return () => { cancelled = true; };
@@ -154,7 +173,13 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
 
 
   useEffect(() => {
-    if (sheet?.audioUri) audioPlayer.loadSound(resolveExistingUri(sheet.audioUri));
+    setAudioLoadError(null);
+    if (sheet?.audioUri) {
+      audioPlayer.loadSound(resolveExistingUri(sheet.audioUri)).catch((e) => {
+        const msg = e instanceof Error ? e.message : "Failed to load reference audio";
+        setAudioLoadError(msg);
+      });
+    }
     return () => { audioPlayer.unload(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheet?.audioUri]);
@@ -255,7 +280,8 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
     currentBpm, setCurrentBpm, showMetronome, showEdit, setShowEdit,
     isPracticing, isStartingPractice, showDeleteConfirm, setShowDeleteConfirm,
     sessionResult, setSessionResult, audioMode, setAudioMode,
-    musicXmlContent, musicXmlLoading, hasMusicXml, noteSequence,
+    musicXmlContent, musicXmlLoading, hasMusicXml, musicXmlLoadError, audioLoadError, partsDeselectedError,
+    noteSequence,
     showInstrumentPicker, setShowInstrumentPicker, editMode, setEditMode,
     partInfos, partNoteCounts, visiblePartIds, togglePartVisibility,
     sheetSessions, bestScore, sheetRecordings,

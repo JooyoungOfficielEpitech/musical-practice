@@ -80,7 +80,11 @@ export function subscribeOmrJob(
           `Recognition complete for ${deps.sectionTitle(index)}`,
         );
       } catch (err) {
-        const error = err instanceof Error ? err.message : "Download failed";
+        // Distinguish download vs file-write errors for better user messaging
+        const errorMsg = err instanceof Error ? err.message : "Download failed";
+        const error = errorMsg.includes("Failed to read") || errorMsg.includes("Failed to write")
+          ? `File write failed: ${errorMsg}`
+          : `Network: ${errorMsg}`;
         deps.settleJob(index, { status: "failed", error });
         AccessibilityInfo.announceForAccessibility(
           `Recognition failed for ${deps.sectionTitle(index)}: ${error}`,

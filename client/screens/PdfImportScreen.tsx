@@ -36,13 +36,13 @@ export default function PdfImportScreen() {
     }
   }, [state, error, navigation]);
 
-  // Upload timeout handler (30s)
+  // Upload timeout handler: show warning at 30s
   useEffect(() => {
-    if (state === "uploading" && !showUploadTimeout) {
+    if ((state === "uploading" || multiOmrJobs.overallStatus === "uploading") && !showUploadTimeout) {
       const timeoutId = setTimeout(() => {
         setShowUploadTimeout(true);
         AccessibilityInfo.announceForAccessibility(
-          "Upload is taking longer than expected",
+          "Upload is taking longer than expected. You can cancel and try again.",
         );
       }, 30000);
       setUploadTimeoutId(timeoutId);
@@ -50,10 +50,10 @@ export default function PdfImportScreen() {
         clearTimeout(timeoutId);
       };
     }
-  }, [state, showUploadTimeout]);
+  }, [state, multiOmrJobs.overallStatus, showUploadTimeout]);
 
   const handleStartProcessing = useCallback(() => {
-    if (!pdfB64 || sectionTitles.length === 0) return;
+    if (!pdfB64 || sectionTitles.length === 0 || multiOmrJobs.isSubmitting) return;
     const sections = sectionTitles.map((title) => ({
       pageRange: undefined,
       title,
@@ -128,12 +128,14 @@ export default function PdfImportScreen() {
   // ── Error ────────────────────────────────────────────────────────────────
   if (state === "error" || multiOmrJobs.overallStatus === "failed") {
     const errorMsg = error ?? multiOmrJobs.error ?? "Something went wrong";
-    const isUploadError = state === "error" && !error?.includes("OMR");
+    const isUploadError = state === "error" || errorMsg.includes("Upload");
+    const isTimeoutError = errorMsg.includes("did not complete") || errorMsg.includes("timeout");
 
     return (
       <ErrorView
         errorMsg={errorMsg}
         isUploadError={isUploadError}
+        isTimeoutError={isTimeoutError}
         onRetry={handleReset}
         onCancel={() => navigation.goBack()}
       />

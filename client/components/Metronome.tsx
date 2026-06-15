@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { StyleSheet, Text, View, Pressable, Platform, TextInput } from "react-native";
+import { StyleSheet, Text, View, Pressable, Platform, TextInput, AppState } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { createAudioPlayer } from "expo-audio";
@@ -92,6 +92,19 @@ export function Metronome({ initialBpm = 120, onBpmChange, compact }: MetronomeP
       setBeat(0);
     }
   }, [isPlaying, bpm, tick]);
+
+  // Pause metronome when app backgrounds
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state !== "active" && isPlaying) {
+        setIsPlaying(false);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [isPlaying]);
 
   const adjustBpm = (delta: number) => {
     setBpm((prev) => {
@@ -238,7 +251,7 @@ const styles = StyleSheet.create({
   beatDotCompact: { width: 10, height: 10, borderRadius: 5 },
   bpmRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
   bpmBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
-  bpmBtnSmall: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  bpmBtnSmall: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   bpmDisplay: { alignItems: "center", minWidth: 80 },
   bpmValue: { fontSize: 36, fontFamily: "Nunito_700Bold", fontWeight: "700" },
   bpmValueCompact: { fontSize: 24, fontFamily: "Nunito_700Bold", fontWeight: "700" },

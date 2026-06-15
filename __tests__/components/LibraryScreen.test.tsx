@@ -78,6 +78,44 @@ beforeEach(() => {
   Object.defineProperty(Platform, "OS", { value: "ios", configurable: true });
 });
 
+describe("LibraryScreen — filter visibility", () => {
+  it("hides genre filter chips when filtered.length === 0", () => {
+    mockUsePractice.mockReturnValue({
+      ...defaultPracticeContext,
+      sheets: [],
+    });
+
+    const { queryByText } = render(<LibraryScreen />);
+
+    // When library is empty, filter chips should not be rendered
+    expect(queryByText("All")).toBeNull();
+    expect(queryByText("Classical")).toBeNull();
+    expect(queryByText("Jazz")).toBeNull();
+  });
+
+  it("shows genre filter chips when filtered.length > 0", () => {
+    mockUsePractice.mockReturnValue({
+      ...defaultPracticeContext,
+      sheets: [
+        {
+          id: "1",
+          title: "Test Score",
+          artist: "Test Artist",
+          folder: "All",
+          createdAt: new Date().toISOString(),
+          favorite: false,
+        },
+      ],
+    });
+
+    const { getByText } = render(<LibraryScreen />);
+
+    // When library has content, filter chips should be visible
+    expect(getByText("All")).toBeDefined();
+    expect(getByText("Classical")).toBeDefined();
+  });
+});
+
 describe("LibraryScreen — + button entry point", () => {
   it("1. pressing + on iOS shows action sheet with Add Score and Import PDF", () => {
     const spy = jest.spyOn(ActionSheetIOS, "showActionSheetWithOptions").mockImplementation(() => {});

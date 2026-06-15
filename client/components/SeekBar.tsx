@@ -4,6 +4,14 @@ import { useTheme } from "@/hooks/useTheme";
 import { gestureXToMs, msToRatio } from "@/lib/audio/transportMath";
 import type { LoopRange } from "@/hooks/useSynthPlayer";
 
+/** Format milliseconds as MM:SS for accessibility announcements */
+function formatTimeLabel(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
 export interface SeekBarProps {
   positionMs: number;
   durationMs: number;
@@ -60,8 +68,10 @@ function SeekBarComponent({ positionMs, durationMs, loopRange, onSeek }: SeekBar
       onLayout={onLayout}
       hitSlop={{ top: 14, bottom: 14, left: 4, right: 4 }}
       accessibilityRole="adjustable"
-      accessibilityLabel="Playback position"
+      accessibilityLabel={`Seek to playback position, currently at ${formatTimeLabel(shownMs)} of ${formatTimeLabel(durationMs)}`}
+      accessibilityHint="Drag to scrub through the track"
       accessibilityValue={{ now: Math.round(progressRatio * 100), min: 0, max: 100 }}
+      accessibilityLiveRegion="assertive"
       style={styles.touch}
       {...responder.panHandlers}
     >

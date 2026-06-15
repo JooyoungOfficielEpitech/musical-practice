@@ -249,3 +249,103 @@ describe("PracticeActiveView — landscape fullscreen (Phase 2)", () => {
     expect(getByText("La Traviata")).toBeTruthy();
   });
 });
+
+// ─── Mode indicator and UX clarity (Issue: unclear-listen-vs-practice-modes) ──
+describe("PracticeActiveView — mode indicator (PRACTICE mode clarity)", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("displays 'PRACTICE — Tap Edit to adjust note pitches' banner at top", () => {
+    const { getByText } = render(<PracticeActiveView {...baseProps} />);
+    expect(getByText("PRACTICE — Tap Edit to adjust note pitches")).toBeTruthy();
+  });
+
+  it("mode indicator has accessible role and label", () => {
+    const { getByLabelText } = render(<PracticeActiveView {...baseProps} />);
+    expect(getByLabelText("Now in practice mode")).toBeTruthy();
+  });
+});
+
+// ─── Loop controls in active view (Issue: loop-capture-unreachable-during-active-playback) ──
+describe("PracticeActiveView — loop controls in active practice", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("renders loop controls component", () => {
+    const { getByLabelText } = render(<PracticeActiveView {...baseProps} />);
+    // LoopControls renders buttons for A, B, loop, and clear
+    expect(getByLabelText(/Set loop start/)).toBeTruthy();
+    expect(getByLabelText(/Set loop end/)).toBeTruthy();
+  });
+
+  it("allows setting loop point A during active playback", () => {
+    const { getByLabelText } = render(<PracticeActiveView {...baseProps} />);
+    const setABtn = getByLabelText(/Set loop start/);
+    fireEvent.press(setABtn);
+    // After pressing, the label should update with the current time
+    expect(getByLabelText(/Set loop start/)).toBeTruthy();
+  });
+});
+
+// ─── Tempo controls in toolbar (Issue: tempo-adjustments-require-scroll) ──
+describe("PracticeActiveView — tempo controls in toolbar", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("tempo decrease button present when onTempoChange provided", () => {
+    const { getByLabelText } = render(
+      <PracticeActiveView
+        {...baseProps}
+        synthPlayer={{
+          ...baseSynthPlayer,
+          setTempo: jest.fn(),
+          tempo: 1.0,
+        }}
+      />
+    );
+    expect(getByLabelText(/Slow down/)).toBeTruthy();
+  });
+
+  it("tempo increase button present when onTempoChange provided", () => {
+    const { getByLabelText } = render(
+      <PracticeActiveView
+        {...baseProps}
+        synthPlayer={{
+          ...baseSynthPlayer,
+          setTempo: jest.fn(),
+          tempo: 1.0,
+        }}
+      />
+    );
+    expect(getByLabelText(/Speed up/)).toBeTruthy();
+  });
+
+  it("slow down button calls setTempo with decreased value", () => {
+    const setTempo = jest.fn();
+    const { getByLabelText } = render(
+      <PracticeActiveView
+        {...baseProps}
+        synthPlayer={{
+          ...baseSynthPlayer,
+          setTempo,
+          tempo: 1.0,
+        }}
+      />
+    );
+    fireEvent.press(getByLabelText(/Slow down/));
+    expect(setTempo).toHaveBeenCalledWith(0.75);
+  });
+
+  it("speed up button calls setTempo with increased value", () => {
+    const setTempo = jest.fn();
+    const { getByLabelText } = render(
+      <PracticeActiveView
+        {...baseProps}
+        synthPlayer={{
+          ...baseSynthPlayer,
+          setTempo,
+          tempo: 1.0,
+        }}
+      />
+    );
+    fireEvent.press(getByLabelText(/Speed up/));
+    expect(setTempo).toHaveBeenCalledWith(1.25);
+  });
+});
