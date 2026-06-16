@@ -22,6 +22,7 @@ from pipeline.postprocessor import postprocess as postprocess_musicxml
 from omr_io.xml_writer import combine_chars_to_xml_string
 from pipeline.alignment import align_and_flatten
 from pipeline.divisions_normalizer import normalize_divisions
+from pipeline.measure_grid import enforce_bar_grid
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 log = logging.getLogger("run_local")
@@ -142,6 +143,7 @@ def run(pdf_path: str, output_xml: str | None = None):
             return
 
         char_flat = normalize_divisions(char_flat)
+        char_flat = enforce_bar_grid(char_flat)
         print(f"      Characters in output: {list(char_flat.keys())}")
         combined_xml = combine_chars_to_xml_string(char_flat, title=title)
 

@@ -9,6 +9,7 @@ from omr_io.xml_writer import combine_chars_to_xml_string
 from omr_queue.errors import OmrQueueError
 from pipeline.alignment import align_and_flatten
 from pipeline.divisions_normalizer import normalize_divisions
+from pipeline.measure_grid import enforce_bar_grid
 from pipeline.staff_processor import process_single_staff
 
 logger = logging.getLogger(__name__)
@@ -141,5 +142,11 @@ def run_vocal_score_pipeline(
     # Collapse per-system divisions to one canonical value so consumers that
     # read divisions once per file interpret every measure consistently.
     char_flat = normalize_divisions(char_flat)
+
+    # Force every measure to exactly one bar so all parts share identical cumulative
+    # beats at every barline. Without this the app parser — which schedules each part
+    # independently with no cross-part barline resync — drifts Hermes against the
+    # ensemble whenever any part's measure has a wrong beat count.
+    char_flat = enforce_bar_grid(char_flat)
 
     return combine_chars_to_xml_string(char_flat, title=title)
