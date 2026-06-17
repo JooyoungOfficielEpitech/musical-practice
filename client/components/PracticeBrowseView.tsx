@@ -13,6 +13,7 @@ import { MetronomeBottomSheet } from "@/components/MetronomeBottomSheet";
 import { AudioBottomSheet } from "@/components/AudioBottomSheet";
 import { ScorePreviewEmpty } from "@/components/ScorePreviewEmpty";
 import { ScorePreviewControls } from "@/components/ScorePreviewControls";
+import { PitchStrip } from "@/components/PitchStrip";
 import { LoopControls } from "@/components/LoopControls";
 import { PartsSummaryBar } from "@/components/PartsSummaryBar";
 import { PartCheckSheet } from "@/components/PartCheckSheet";
@@ -86,6 +87,7 @@ function PracticeBrowseViewComponent({
     sheetRecordings, synthPlayer, noteEditor, omr, handleNotePress, handleSynthPlayPause,
     handleScanSheet, handleStartPractice, handleDeletePress,
     partInfos, partNoteCounts, visiblePartIds, togglePartVisibility,
+    isPracticing, isListening, currentPitch,
   } = state;
 
   const visiblePartIndices = useMemo(
@@ -175,7 +177,7 @@ function PracticeBrowseViewComponent({
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </Pressable>
         <View style={styles.topBarTitle}>
-          <Text style={[styles.modeLabel, { color: colors.textSecondary }]}>LISTEN & REVIEW</Text>
+          <Text style={[styles.modeLabel, { color: isPracticing ? colors.primary : colors.textSecondary }]}>{isPracticing ? "PRACTICE" : "LISTEN & REVIEW"}</Text>
           <Text style={[styles.titleText, { color: colors.text }]} numberOfLines={1}>{sheet.title}</Text>
           {!!sheet.artist && <Text style={[styles.subtitleText, { color: colors.textSecondary }]} numberOfLines={1}>{sheet.artist}</Text>}
         </View>
@@ -255,10 +257,12 @@ function PracticeBrowseViewComponent({
             {/* Transport — listen (synth) */}
             {musicXmlContent && (
               <View style={styles.transport}>
-                <View style={styles.listenLabel}>
-                  <Ionicons name="headset-outline" size={13} color={colors.textSecondary} />
-                  <Text style={[styles.listenLabelText, { color: colors.textSecondary }]}>LISTEN</Text>
-                </View>
+                {!isPracticing && (
+                  <View style={styles.listenLabel}>
+                    <Ionicons name="headset-outline" size={13} color={colors.textSecondary} />
+                    <Text style={[styles.listenLabelText, { color: colors.textSecondary }]}>LISTEN</Text>
+                  </View>
+                )}
                 <ScorePreviewControls
                   compact
                   isPlaying={synthPlayer.isPlaying}
@@ -296,9 +300,20 @@ function PracticeBrowseViewComponent({
               </View>
             )}
 
-            {/* Primary action */}
-            {startPracticeCta}
-            <Text style={[styles.caption, { color: colors.textSecondary }]}>Start Practice for live mic pitch feedback and session tracking.</Text>
+            {/* Live pitch feedback — shown in place while practicing (no screen swap) */}
+            {isPracticing && musicXmlContent && (
+              <View style={styles.pitchStripWrap}>
+                <PitchStrip isListening={isListening} currentPitch={currentPitch} />
+              </View>
+            )}
+
+            {/* Primary action — hidden during a live session (the session bar owns stop) */}
+            {!isPracticing && (
+              <>
+                {startPracticeCta}
+                <Text style={[styles.caption, { color: colors.textSecondary }]}>Start Practice for live mic pitch feedback and session tracking.</Text>
+              </>
+            )}
           </>
         ) : (
           <>
@@ -400,6 +415,7 @@ const styles = StyleSheet.create({
   heroLoading: { ...row, justifyContent: "center", gap: Spacing.sm, height: 120, borderRadius: BorderRadius.md },
   heroLoadingText: { ...Typography.body },
   transport: { marginHorizontal: Spacing.lg, marginTop: Spacing.sm },
+  pitchStripWrap: { marginHorizontal: Spacing.lg, marginTop: Spacing.sm },
   listenLabel: { ...row, gap: Spacing.xs, marginBottom: Spacing.xs, marginLeft: Spacing.xs },
   listenLabelText: { ...Typography.small, fontFamily: Fonts.heading, fontWeight: "600", letterSpacing: 1 },
   tools: { ...row, flexWrap: "wrap", gap: Spacing.sm, marginTop: Spacing.sm },

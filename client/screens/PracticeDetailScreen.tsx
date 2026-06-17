@@ -7,7 +7,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { useTheme } from "@/hooks/useTheme";
-import { PracticeActiveView } from "@/components/PracticeActiveView";
 import { PracticeBrowseView } from "@/components/PracticeBrowseView";
 import { PracticeBottomBar } from "@/components/PracticeBottomBar";
 import { SheetFormModal } from "@/components/SheetFormModal";
@@ -39,10 +38,8 @@ export default function PracticeDetailScreen() {
   const {
     isPracticing, showEdit, setShowEdit, showDeleteConfirm, setShowDeleteConfirm,
     sessionResult, setSessionResult, showInstrumentPicker, setShowInstrumentPicker,
-    editMode, setEditMode, synthPlayer, noteEditor, handleSessionStop, handleRunningChange,
-    handleDeleteConfirm, handleEdit, musicXmlContent, currentBpm,
-    isListening, currentPitch,
-    partInfos, visiblePartIds, togglePartVisibility,
+    editMode, synthPlayer, noteEditor, handleSessionStop, handleRunningChange,
+    handleDeleteConfirm, handleEdit,
   } = state;
 
   if (loading) {
@@ -76,35 +73,19 @@ export default function PracticeDetailScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.backgroundDefault, paddingTop: insets.top }]}>
-      {isPracticing && musicXmlContent ? (
-        <PracticeActiveView
-          title={sheet.title}
-          musicXml={musicXmlContent}
-          synthPlayer={synthPlayer}
-          noteEditor={noteEditor}
-          isListening={isListening}
-          currentPitch={currentPitch}
-          currentBpm={currentBpm}
-          audioUrl={sheet.audioUri}
-          onGoBack={() => navigation.goBack()}
-          editMode={editMode}
-          onToggleEditMode={() => setEditMode((v) => !v)}
-          parts={partInfos}
-          visiblePartIds={visiblePartIds}
-          onTogglePart={togglePartVisibility}
-        />
-      ) : (
-        <PracticeBrowseView
-          sheet={sheet}
-          state={state}
-          screenWidth={screenWidth}
-          loading={loading}
-          onRefresh={refreshData}
-          onGoBack={() => navigation.goBack()}
-          removeRecording={removeRecording}
-          renameRecording={renameRecording}
-        />
-      )}
+      {/* Single persistent score view: practice mode layers onto Browse (no view
+          swap), so the InteractiveScore/OSMD webview never unmounts and the score
+          doesn't flash-reload when starting practice. */}
+      <PracticeBrowseView
+        sheet={sheet}
+        state={state}
+        screenWidth={screenWidth}
+        loading={loading}
+        onRefresh={refreshData}
+        onGoBack={() => navigation.goBack()}
+        removeRecording={removeRecording}
+        renameRecording={renameRecording}
+      />
 
       {isPracticing && (
         <PracticeBottomBar

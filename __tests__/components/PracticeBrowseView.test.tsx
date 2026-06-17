@@ -177,6 +177,47 @@ describe("PracticeBrowseView — mode indicator (LISTEN & REVIEW clarity)", () =
   });
 });
 
+// ─── Unified practice mode (Issue: start-practice / preview separation) ──────
+describe("PracticeBrowseView — unified practice mode (no screen swap)", () => {
+  const practicingProps = {
+    ...baseProps,
+    sheet: { ...baseSheet, omrStatus: "ready" as const },
+    state: {
+      ...baseState,
+      hasMusicXml: true,
+      musicXmlContent: "<score/>",
+      isPracticing: true,
+      isListening: true,
+    },
+  };
+
+  it("shows the live pitch strip while practicing (score stays mounted in place)", () => {
+    const { queryByTestId } = render(<PracticeBrowseView {...practicingProps} />);
+    expect(queryByTestId("pitch-strip")).toBeTruthy();
+  });
+
+  it("hides the Start Practice CTA while practicing (the session bar owns stop)", () => {
+    const { queryByLabelText } = render(<PracticeBrowseView {...practicingProps} />);
+    expect(queryByLabelText("Start practice session")).toBeNull();
+  });
+
+  it("shows a PRACTICE mode label instead of LISTEN & REVIEW while practicing", () => {
+    const { getByText, queryByText } = render(<PracticeBrowseView {...practicingProps} />);
+    expect(getByText("PRACTICE")).toBeTruthy();
+    expect(queryByText("LISTEN & REVIEW")).toBeNull();
+  });
+
+  it("does NOT render the pitch strip when not practicing", () => {
+    const { queryByTestId } = render(
+      <PracticeBrowseView
+        {...baseProps}
+        state={{ ...baseState, hasMusicXml: true, musicXmlContent: "<score/>" }}
+      />
+    );
+    expect(queryByTestId("pitch-strip")).toBeNull();
+  });
+});
+
 // ─── Back button affordance (Issue: missing-score-detail-back-button) ────────
 describe("PracticeBrowseView — back button affordance", () => {
   it("back button has clear accessibility label referencing library", () => {
