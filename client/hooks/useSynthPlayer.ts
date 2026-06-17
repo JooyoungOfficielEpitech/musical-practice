@@ -12,7 +12,7 @@ import {
   setInstrumentMode,
   setInstrumentSamples,
 } from "../lib/audio/synthEngine";
-import { resetMasterGain, pruneEndedSources } from "../lib/audio/audioContext";
+import { resetMasterGain, pruneEndedSources, disconnectMasterBus } from "../lib/audio/audioContext";
 import { createPianoNote } from "../lib/audio/pianoSamples";
 import {
   findClosestSample,
@@ -342,6 +342,9 @@ export function useSynthPlayer(
 
     await stopAll();
     stopTimer();
+    // Sever the bus so notes scheduled ahead can't burst when the app foregrounds
+    // (this listener-driven pause is what runs on background). play() rebuilds it.
+    disconnectMasterBus();
     setIsPlaying(false);
   }, [stopTimer]);
 
@@ -350,6 +353,7 @@ export function useSynthPlayer(
     isPlayingRef.current = false;  // block timer immediately
     await stopAll();
     stopTimer();
+    disconnectMasterBus();
     setIsPlaying(false);
     setPositionMs(0);
     playbackOffsetSec.current = 0;

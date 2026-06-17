@@ -4,6 +4,7 @@ import {
   registerSource,
   resetMasterGain,
   stopAllSources,
+  disconnectMasterBus,
   pruneEndedSources,
   closeAudioContext,
 } from "../../../../client/lib/audio/audioContext";
@@ -116,6 +117,43 @@ describe("audioContext — master bus + source registry", () => {
       // actually cancelled before restoring volume — otherwise replay plays silent.
       expect(master.gain.cancelAndHoldAtTime).toHaveBeenCalled();
       expect(master.gain.setValueAtTime).toHaveBeenCalledWith(1, expect.any(Number));
+    });
+  });
+
+  describe("disconnectMasterBus", () => {
+    it("disconnects the bus from the output so resumed sources can't reach the speakers", () => {
+      getAudioContext();
+      const master = getMasterGain();
+
+      disconnectMasterBus();
+
+      expect(master.disconnect).toHaveBeenCalled();
+    });
+
+    it("rebuilds a fresh, reconnected bus on the next getMasterGain (so play() reconnects)", () => {
+      getAudioContext();
+      const first = getMasterGain();
+
+      disconnectMasterBus();
+      const second = getMasterGain();
+
+      expect(second).not.toBe(first);
+      expect(second.connect).toHaveBeenCalled();
+    });
+
+    it("clears the source registry so stale sources are not stopped after teardown", () => {
+      getAudioContext();
+      const a = makeSource();
+      registerSource(a, 5.0);
+
+      disconnectMasterBus();
+      stopAllSources();
+
+      expect(a.stop).not.toHaveBeenCalled();
+    });
+
+    it("does not throw when there is no master bus yet", () => {
+      expect(() => disconnectMasterBus()).not.toThrow();
     });
   });
 

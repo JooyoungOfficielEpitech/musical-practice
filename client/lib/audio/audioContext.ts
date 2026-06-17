@@ -114,6 +114,30 @@ export function stopAllSources(fadeSec: number = STOP_FADE_SEC): void {
   activeSources = [];
 }
 
+/**
+ * Sever the master bus from the output and drop it, so the next getMasterGain()
+ * rebuilds a fresh, reconnected bus.
+ *
+ * This is the fix for "burst-on-resume": notes are scheduled up to several seconds
+ * ahead at absolute ctx.currentTime values. When the app backgrounds, iOS suspends
+ * the AudioContext; on foreground it resumes and every past-due scheduled source
+ * fires at once. stop() does not reliably cancel sources that haven't started when
+ * the context is mid-suspend. Disconnecting the bus guarantees those sources have
+ * NO path to the speakers regardless of native scheduling — they play into a
+ * detached node and are garbage-collected when they end. play() rebuilds the bus.
+ */
+export function disconnectMasterBus(): void {
+  if (masterGain) {
+    try {
+      masterGain.disconnect();
+    } catch {
+      // already disconnected — harmless
+    }
+    masterGain = null;
+  }
+  activeSources = [];
+}
+
 /** Drop sources whose note has already ended, keeping the registry bounded. */
 export function pruneEndedSources(): void {
   const ctx = getAudioContext();

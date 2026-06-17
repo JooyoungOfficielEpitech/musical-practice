@@ -27,9 +27,11 @@ jest.mock("../../../client/lib/audio/synthEngine", () => ({
 
 const mockResetMasterGain = jest.fn();
 const mockPruneEndedSources = jest.fn();
+const mockDisconnectMasterBus = jest.fn();
 jest.mock("../../../client/lib/audio/audioContext", () => ({
   resetMasterGain: () => mockResetMasterGain(),
   pruneEndedSources: () => mockPruneEndedSources(),
+  disconnectMasterBus: () => mockDisconnectMasterBus(),
 }));
 
 const mockCreatePianoNote = jest.fn();
@@ -542,6 +544,7 @@ describe("useSynthPlayer — AppState background pause", () => {
     });
 
     mockStopAll.mockClear();
+    mockDisconnectMasterBus.mockClear();
 
     // Trigger background event
     act(() => {
@@ -555,6 +558,9 @@ describe("useSynthPlayer — AppState background pause", () => {
     });
 
     expect(mockStopAll).toHaveBeenCalled();
+    // Burst-on-resume guard: the master bus must be severed so notes scheduled
+    // ahead can't fire into the speakers when the app foregrounds.
+    expect(mockDisconnectMasterBus).toHaveBeenCalled();
   });
 
   it("3.4 — ignores background event when not playing", () => {
