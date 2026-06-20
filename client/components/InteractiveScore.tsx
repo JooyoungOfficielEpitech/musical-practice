@@ -52,7 +52,45 @@ function buildHtml(isDark: boolean): string {
     function sendMsg(m){window.ReactNativeWebView.postMessage(JSON.stringify(m));}
     console.log('[InteractiveScore:WebView] JS init ok, waiting for loadXml');
     function showErr(e){document.getElementById('error').style.display='block';document.getElementById('error').textContent=e;sendMsg({type:'error',message:e});}
-    function buildTimeTable(){timeTable=[];if(!osmd||!osmd.cursor)return;var bpm=(osmd.Sheet&&osmd.Sheet.DefaultStartTempoInBpm)||120;var secPerWholeNote=4*60/bpm;osmd.cursor.reset();while(!osmd.cursor.Iterator.EndReached){var ts=osmd.cursor.Iterator.currentTimeStamp;timeTable.push(ts.realValue*secPerWholeNote*1000);osmd.cursor.next();}osmd.cursor.reset();}
+    function buildTimeTable(){
+      timeTable=[];
+      if(!osmd||!osmd.cursor)return;
+      var bpm=(osmd.Sheet&&osmd.Sheet.DefaultStartTempoInBpm)||120;
+      var secPerWholeNote=4*60/bpm;
+      // Anchor each measure to a fixed bar length from its time signature — the
+      // SAME shared bar grid the audio player uses — so the cursor stays locked to
+      // the sound even when OMR produced a measure with the wrong beat count.
+      var measures=(osmd.Sheet&&osmd.Sheet.SourceMeasures)||[];
+      var ok=measures.length>0;
+      var gridMs=[0],measWhole=[],barWhole=1.0;
+      for(var i=0;i<measures.length;i++){
+        var sig=measures[i].ActiveTimeSignature;
+        if(sig&&sig.Numerator&&sig.Denominator){barWhole=sig.Numerator/sig.Denominator;}
+        var aw=measures[i].AbsoluteTimestamp;
+        if(aw&&typeof aw.RealValue==='number'){measWhole.push(aw.RealValue);}else{measWhole.push(0);ok=false;}
+        gridMs.push(gridMs[i]+barWhole*secPerWholeNote*1000);
+      }
+      var steps=[];
+      osmd.cursor.reset();
+      while(!osmd.cursor.Iterator.EndReached){
+        var it=osmd.cursor.Iterator;
+        var tw=(it.currentTimeStamp&&typeof it.currentTimeStamp.realValue==='number')?it.currentTimeStamp.realValue:0;
+        var mi=it.CurrentMeasureIndex;
+        if(typeof mi!=='number'||mi<0||mi>gridMs.length-2){ok=false;mi=Math.max(0,Math.min(mi||0,gridMs.length-2));}
+        var intra=tw-(measWhole[mi]||0);if(intra<0)intra=0;
+        var t=gridMs[mi]+intra*secPerWholeNote*1000;
+        if(mi+1<gridMs.length&&t>gridMs[mi+1])t=gridMs[mi+1];
+        if(!isFinite(t)){ok=false;t=tw*secPerWholeNote*1000;}
+        steps.push(t);
+        osmd.cursor.next();
+      }
+      osmd.cursor.reset();
+      if(ok){timeTable=steps;return;}
+      // Fallback: OSMD layout API not shaped as expected — plain per-step grid.
+      timeTable=[];osmd.cursor.reset();
+      while(!osmd.cursor.Iterator.EndReached){var ts=osmd.cursor.Iterator.currentTimeStamp;timeTable.push(((ts&&ts.realValue)||0)*secPerWholeNote*1000);osmd.cursor.next();}
+      osmd.cursor.reset();
+    }
     function stepCursor(step){if(!osmd||!osmd.cursor)return;if(step<currentStep){osmd.cursor.reset();currentStep=0;}while(currentStep<step&&!osmd.cursor.Iterator.EndReached){osmd.cursor.next();currentStep++;}osmd.cursor.show();var el=osmd.cursor.cursorElement;if(el){el.style.backgroundColor='rgba(37,99,235,0.12)';el.style.borderLeft='3px solid ${cursorColor}';el.style.opacity='1';el.scrollIntoView({behavior:'instant',block:'nearest'});}}
     function seekToMs(ms){if(!osmd||!osmd.cursor||timeTable.length===0)return;var lo=0,hi=timeTable.length-1,step=0;while(lo<=hi){var mid=(lo+hi)>>1;if(timeTable[mid]<=ms){step=mid;lo=mid+1;}else{hi=mid-1;}}if(step===currentStep)return;sendMsg({type:'debug',msg:'seek ms='+ms.toFixed(0)+' step='+step+' tbl='+timeTable[step].toFixed(0)+' prev='+currentStep});stepCursor(step);}
     function clickInit(){var sc=document.getElementById('score');if(!sc)return;sc.addEventListener('click',function(e){if(!osmd||!osmd.cursor)return;var cx=e.pageX,cy=e.pageY,best=-1,dist=Infinity;osmd.cursor.reset();var i=0;while(!osmd.cursor.Iterator.EndReached){var el=osmd.cursor.cursorElement;if(el){var r=el.getBoundingClientRect(),cX=r.left+r.width/2+window.scrollX,cY=r.top+r.height/2+window.scrollY,d=Math.sqrt(Math.pow(cx-cX,2)+Math.pow(cy-cY,2));if(d<dist){dist=d;best=i;}}osmd.cursor.next();i++;}if(best>=0&&dist<80){stepCursor(best);sendMsg({type:'notePress',noteIndex:best});}});}

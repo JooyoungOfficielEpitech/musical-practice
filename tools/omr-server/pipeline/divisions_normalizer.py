@@ -8,6 +8,7 @@ divisions differs from the first one it saw. Rescaling every duration to the
 LCM of all divisions makes the whole score share a single divisions, so a
 once-per-file reader stays correct and cross-part alignment is preserved.
 """
+from __future__ import annotations
 import copy
 import math
 import xml.etree.ElementTree as ET

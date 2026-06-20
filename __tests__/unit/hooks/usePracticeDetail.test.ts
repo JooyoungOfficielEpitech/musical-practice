@@ -61,39 +61,6 @@ jest.mock("../../../client/hooks/useAudioPlayer", () => ({
   }),
 }));
 
-jest.mock("../../../client/hooks/usePitchDetection", () => ({
-  usePitchDetection: () => ({
-    isListening: false,
-    currentPitch: null,
-    error: null,
-    startListening: jest.fn(),
-    stopListening: jest.fn(),
-  }),
-}));
-
-jest.mock("../../../client/hooks/usePitchAccuracy", () => ({
-  usePitchAccuracy: () => ({
-    sessionAccuracy: 0,
-    addReading: jest.fn(),
-    reset: jest.fn(),
-  }),
-}));
-
-jest.mock("../../../client/hooks/useAudioPermission", () => ({
-  useAudioPermission: () => ({
-    isGranted: true,
-    requestPermission: jest.fn().mockResolvedValue(true),
-  }),
-}));
-
-jest.mock("../../../client/hooks/useRecording", () => ({
-  useRecording: () => ({
-    isRecording: false,
-    startRecording: jest.fn(),
-    stopRecording: jest.fn().mockResolvedValue(undefined),
-    addAudioData: jest.fn(),
-  }),
-}));
 
 jest.mock("../../../client/hooks/useOmr", () => ({
   useOmr: () => ({
@@ -138,10 +105,8 @@ jest.mock("expo-haptics", () => ({
   NotificationFeedbackType: { Success: "success" },
 }));
 
-jest.mock("expo-av", () => ({
-  Audio: {
-    setAudioModeAsync: jest.fn().mockResolvedValue(undefined),
-  },
+jest.mock("expo-audio", () => ({
+  setAudioModeAsync: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock("react-native/Libraries/Utilities/Platform", () => ({
@@ -192,11 +157,6 @@ describe("usePracticeDetail — initial state", () => {
     expect(result.current.showDeleteConfirm).toBe(false);
     act(() => { result.current.handleDeletePress(); });
     expect(result.current.showDeleteConfirm).toBe(true);
-  });
-
-  it("1.5 — bestScore is null when no sessions exist", () => {
-    const { result } = renderHook(() => usePracticeDetail("sheet-1"));
-    expect(result.current.bestScore).toBeNull();
   });
 });
 

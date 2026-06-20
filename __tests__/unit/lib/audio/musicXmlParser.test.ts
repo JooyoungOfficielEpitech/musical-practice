@@ -868,6 +868,109 @@ describe("musicXmlParser", () => {
   });
 });
 
+// ─── Cross-part bar-grid alignment (drift fix) ──────────────────────────────
+// Real OMR output has measures whose beat-count is slightly wrong (e.g. a part
+// missing a beat). The player must anchor every measure of every part to ONE
+// shared bar grid so a single bad measure can't permanently shift a part —
+// otherwise "Hermes" drifts seconds away from the ensemble over a long piece.
+
+/** Build a 2-part score where each part's measures may have a custom beat count. */
+function twoPartScore(partAMeasures: string[], partBMeasures: string[]): string {
+  const mk = (ms: string[]) =>
+    ms
+      .map(
+        (notes, i) =>
+          `<measure number="${i + 1}">${
+            i === 0
+              ? '<attributes><divisions>1</divisions><key><fifths>0</fifths></key><time><beats>4</beats><beat-type>4</beat-type></time></attributes><direction><sound tempo="120"/></direction>'
+              : ""
+          }${notes}</measure>`,
+      )
+      .join("");
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="3.1">
+  <part-list>
+    <score-part id="P1"><part-name>Ensemble</part-name></score-part>
+    <score-part id="P2"><part-name>Herm.</part-name></score-part>
+  </part-list>
+  <part id="P1">${mk(partAMeasures)}</part>
+  <part id="P2">${mk(partBMeasures)}</part>
+</score-partwise>`;
+}
+
+const Q = (step: string, oct = 4) =>
+  `<note><pitch><step>${step}</step><octave>${oct}</octave></pitch><duration>1</duration><type>quarter</type></note>`;
+
+describe("parseMusicXml — cross-part bar-grid alignment", () => {
+  it("a part missing a beat does NOT shift its later measures off the grid", () => {
+    // Part A: two full 4/4 bars. Part B: bar 1 has only 3 beats (OMR dropped one),
+    // bar 2 is full. Bar 2 of BOTH parts must start at the same time (2.0s @120).
+    const xml = twoPartScore(
+      [Q("C") + Q("C") + Q("G") + Q("G"), Q("E")],
+      [Q("C") + Q("C") + Q("G"), Q("E", 5)], // bar 1 short by one beat
+    );
+    const { notes, notePartIndices, parts } = parseMusicXml(xml);
+    const hermIdx = parts.findIndex((p) => p.name === "Herm.");
+    const ensIdx = parts.findIndex((p) => p.name === "Ensemble");
+    const bar2Herm = notes.find((n, i) => notePartIndices[i] === hermIdx && n.pitch === "E5")!;
+    const bar2Ens = notes.find((n, i) => notePartIndices[i] === ensIdx && n.pitch === "E4")!;
+    expect(bar2Herm).toBeDefined();
+    expect(bar2Ens).toBeDefined();
+    // Both bar-2 notes anchored to the shared grid: measure index 1 × 4 beats = 2.0s.
+    expect(bar2Ens.startTime).toBeCloseTo(2.0, 3);
+    expect(bar2Herm.startTime).toBeCloseTo(2.0, 3);
+  });
+
+  it("keeps parts aligned across many bad measures (no accumulating drift)", () => {
+    // 6 bars; part B is short by a beat in bars 1,2,3. Without grid anchoring the
+    // final note would drift 1.5s. With anchoring it stays locked.
+    const full = Q("C") + Q("D") + Q("E") + Q("F");
+    const short = Q("C") + Q("D") + Q("E"); // 3 beats
+    const last = Q("G");
+    const xml = twoPartScore(
+      [full, full, full, full, full, last],
+      [short, short, short, full, full, last],
+    );
+    const { notes, notePartIndices, parts } = parseMusicXml(xml);
+    const hermIdx = parts.findIndex((p) => p.name === "Herm.");
+    const ensIdx = parts.findIndex((p) => p.name === "Ensemble");
+    const lastHerm = notes.filter((n, i) => notePartIndices[i] === hermIdx && n.pitch === "G4").pop()!;
+    const lastEns = notes.filter((n, i) => notePartIndices[i] === ensIdx && n.pitch === "G4").pop()!;
+    // Bar 6 (index 5) starts at 5 × 4 beats × 0.5s = 10.0s for BOTH parts.
+    expect(lastEns.startTime).toBeCloseTo(10.0, 3);
+    expect(lastHerm.startTime).toBeCloseTo(10.0, 3);
+  });
+
+  it("compresses an overflowing measure so the next bar still aligns", () => {
+    // Part B bar 1 has 5 beats (one too many). It must be compressed into the bar
+    // so bar 2 still starts on the shared grid at 2.0s.
+    const xml = twoPartScore(
+      [Q("C") + Q("C") + Q("G") + Q("G"), Q("E")],
+      [Q("C") + Q("C") + Q("G") + Q("G") + Q("A"), Q("E", 5)], // 5 beats in bar 1
+    );
+    const { notes, notePartIndices, parts } = parseMusicXml(xml);
+    const hermIdx = parts.findIndex((p) => p.name === "Herm.");
+    const bar2Herm = notes.find((n, i) => notePartIndices[i] === hermIdx && n.pitch === "E5")!;
+    expect(bar2Herm.startTime).toBeCloseTo(2.0, 3);
+    // And every Herm bar-1 note stays within [0, 2.0).
+    const bar1Herm = notes.filter((n, i) => notePartIndices[i] === hermIdx && n.startTime < 2.0);
+    for (const n of bar1Herm) expect(n.startTime).toBeLessThan(2.0);
+  });
+
+  it("does not disturb already-correct equal-length parts", () => {
+    const xml = twoPartScore(
+      [Q("C") + Q("C") + Q("G") + Q("G"), Q("E")],
+      [Q("C") + Q("C") + Q("G") + Q("G"), Q("E", 5)],
+    );
+    const { notes, notePartIndices, parts } = parseMusicXml(xml);
+    const ensIdx = parts.findIndex((p) => p.name === "Ensemble");
+    const bar2Ens = notes.find((n, i) => notePartIndices[i] === ensIdx && n.pitch === "E4")!;
+    expect(bar2Ens.startTime).toBeCloseTo(2.0, 3);
+    // First note still at 0.
+    expect(notes[0].startTime).toBeCloseTo(0, 3);
+  });
+});
+
 // ─── Part Metadata Tests (Phase 1 — RED) ────────────────────────────────────
 // These tests FAIL against the current implementation (which returns NoteSequence directly).
 // They will pass once parseMusicXml is changed to return { notes, parts, notePartIndices }.

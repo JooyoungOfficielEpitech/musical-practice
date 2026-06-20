@@ -8,6 +8,7 @@ same measure in another part, the parts drift apart permanently (the "Hermes vs 
 system; enforce_bar_grid additionally forces every measure to sum to exactly bar_beats,
 which makes every part share identical cumulative beats at every barline → no drift.
 """
+from __future__ import annotations
 import os
 import xml.etree.ElementTree as ET
 

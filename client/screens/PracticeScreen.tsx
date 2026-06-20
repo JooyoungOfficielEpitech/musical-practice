@@ -21,9 +21,6 @@ import { PracticeTimer } from "@/components/PracticeTimer";
 import { MusicalStaff } from "@/components/MusicalStaff";
 import { CentsIndicator } from "@/components/CentsIndicator";
 import { usePractice } from "@/context/PracticeContext";
-import { usePitchDetection } from "@/hooks/usePitchDetection";
-import { usePitchAccuracy } from "@/hooks/usePitchAccuracy";
-import { useAudioPermission } from "@/hooks/useAudioPermission";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { SessionCompleteModal } from "@/components/SessionCompleteModal";
 import { Spacing, BorderRadius, Typography, Shadows } from "@/constants/theme";
@@ -46,9 +43,7 @@ export default function PracticeScreen() {
   const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false);
   const [sessionResult, setSessionResult] = useState<{
     duration: number;
-    accuracy: number;
     bpm: number;
-    recordingSaved: boolean;
   } | null>(null);
   useEffect(() => {
     AsyncStorage.getItem("@musicalpractice/showTips").then((val) => {
@@ -58,18 +53,18 @@ export default function PracticeScreen() {
     AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotionEnabled);
   }, []);
 
-  const { isListening, currentPitch, error: pitchError, startListening, stopListening } = usePitchDetection();
-  const { sessionAccuracy, addReading, reset: resetAccuracy } = usePitchAccuracy();
-  const { isGranted, requestPermission } = useAudioPermission();
+  // Pitch detection features removed; providing empty defaults for legacy screen
+  const isListening = false;
+  const currentPitch: any = null;
+  const pitchError = null;
+  const sessionAccuracy = 0;
+  const isGranted = true;
+  const startListening = async () => {};
+  const stopListening = () => {};
+  const resetAccuracy = () => {};
+  const requestPermission = async () => true;
 
-  // Feed pitch readings into accuracy tracker
-  useEffect(() => {
-    if (currentPitch) {
-      addReading(currentPitch);
-    }
-  }, [currentPitch, addReading]);
-
-  // Warn when leaving during active practice
+  // Warn when leaving during active practice (disabled since no more listening)
   useEffect(() => {
     if (!isListening) return;
     const unsubscribe = navigation.addListener("beforeRemove", (e: any) => {
@@ -106,28 +101,25 @@ export default function PracticeScreen() {
   const handleSessionStop = useCallback(
     async (totalSeconds: number) => {
       stopListening();
-      const accuracy = sessionAccuracy > 0 ? sessionAccuracy : 0;
       await addSession({
         sheetMusicId: "quick",
         sheetMusicTitle: "Quick Practice",
         startedAt: Date.now() - totalSeconds * 1000,
         duration: totalSeconds,
-        accuracy,
+        accuracy: 0,
         bpm: currentBpm,
       });
-      setLastScore(accuracy);
+      setLastScore(null);
       resetAccuracy();
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
       setSessionResult({
         duration: totalSeconds,
-        accuracy,
         bpm: currentBpm,
-        recordingSaved: false,
       });
     },
-    [addSession, currentBpm, sessionAccuracy, stopListening, resetAccuracy],
+    [addSession, currentBpm, stopListening, resetAccuracy],
   );
 
   return (

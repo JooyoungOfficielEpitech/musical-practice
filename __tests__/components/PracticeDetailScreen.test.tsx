@@ -173,40 +173,6 @@ jest.mock("../../client/hooks/useAudioPlayer", () => ({
   }),
 }));
 
-jest.mock("../../client/hooks/usePitchDetection", () => ({
-  usePitchDetection: () => ({
-    isListening: false,
-    currentPitch: null,
-    error: null,
-    startListening: jest.fn(),
-    stopListening: jest.fn(),
-  }),
-}));
-
-jest.mock("../../client/hooks/usePitchAccuracy", () => ({
-  usePitchAccuracy: () => ({
-    sessionAccuracy: 0,
-    addReading: jest.fn(),
-    reset: jest.fn(),
-  }),
-}));
-
-jest.mock("../../client/hooks/useAudioPermission", () => ({
-  useAudioPermission: () => ({
-    isGranted: true,
-    requestPermission: jest.fn().mockResolvedValue(true),
-  }),
-}));
-
-jest.mock("../../client/hooks/useRecording", () => ({
-  useRecording: () => ({
-    isRecording: false,
-    startRecording: jest.fn(),
-    stopRecording: jest.fn(),
-    addAudioData: jest.fn(),
-  }),
-}));
-
 jest.mock("../../client/hooks/useTimer", () => ({
   useTimer: () => ({
     seconds: 0,
@@ -221,11 +187,6 @@ jest.mock("../../client/hooks/useTimer", () => ({
 jest.mock("../../client/components/SheetFormModal", () => ({
   SheetFormModal: () => null,
   __esModule: true,
-}));
-
-// Mock RecordingsList
-jest.mock("../../client/components/RecordingsList", () => ({
-  RecordingsList: () => null,
 }));
 
 // Mock AudioPlayer
@@ -305,11 +266,6 @@ jest.mock("../../client/hooks/usePracticeDetail", () => ({
     isStartingPractice: false,
     musicXmlLoading: false,
     hasMusicXml: false,
-    bestScore: 0,
-    sheetRecordings: [],
-    pitchError: null,
-    sessionAccuracy: 0,
-    isRecording: false,
     omr: { isProcessing: false, processImage: jest.fn(), error: null },
     handleNotePress: jest.fn(),
     handleSynthPlayPause: jest.fn(),
@@ -359,11 +315,6 @@ describe("PracticeDetailScreen", () => {
   it("shows play button in bottom bar", () => {
     const { getByLabelText } = render(<PracticeDetailScreen />);
     expect(getByLabelText("Start practice session")).toBeTruthy();
-  });
-
-  it("shows Recordings section in browse mode", () => {
-    const { getByText } = render(<PracticeDetailScreen />);
-    expect(getByText("Recordings")).toBeTruthy();
   });
 
   it("renders score not found when sheet doesn't exist", () => {

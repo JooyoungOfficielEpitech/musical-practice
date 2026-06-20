@@ -257,11 +257,9 @@ describe("useSynthPlayer", () => {
         await result.current.play();
       });
 
-      // Advance wall clock by 80ms (audio delay) + 500ms (playback) = 580ms
-      // pause() reads Date.now() directly, so elapsed = (580-80)/1000 = 0.5s
-      await act(async () => {
-        jest.advanceTimersByTime(580);
-      });
+      // Advance the AudioContext clock to 0.58s. audioStartCtxSec = 0 + 0.08s
+      // start delay, so pause() sees elapsed = 0.58 - 0.08 = 0.5s of playback.
+      mockCurrentTime = 0.58;
 
       await act(async () => {
         await result.current.pause();
@@ -362,10 +360,11 @@ describe("useSynthPlayer", () => {
         await result.current.play();
       });
 
-      // Advance wall clock by 500ms total; audio delay is 80ms, so 420ms of playback.
-      // Last timer tick at 500ms: elapsed = (500-80)/1000 = 0.42s → positionMs = 420ms
+      // AudioContext clock at 0.5s; minus the 0.08s start delay = 0.42s played.
+      // A timer tick reads the AudioContext clock and writes positionMs = 420ms.
+      mockCurrentTime = 0.5;
       await act(async () => {
-        jest.advanceTimersByTime(500);
+        jest.advanceTimersByTime(50);
       });
 
       expect(result.current.positionMs).toBeCloseTo(420, 0);
@@ -378,10 +377,11 @@ describe("useSynthPlayer", () => {
         await result.current.play();
       });
 
-      // Advance wall clock past end: 80ms delay + 1600ms > 1500ms duration
-      // Timer at 1600ms: elapsed = (1600-80)/1000 = 1.52s → 1520ms >= 1500ms → stop
+      // Push the AudioContext clock past the end: (1.6 - 0.08)s = 1.52s ≥ 1.5s
+      // duration, so a timer tick ends playback and pins positionMs to 1500.
+      mockCurrentTime = 1.6;
       await act(async () => {
-        jest.advanceTimersByTime(1680);
+        jest.advanceTimersByTime(50);
       });
 
       expect(result.current.isPlaying).toBe(false);

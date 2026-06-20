@@ -27,13 +27,6 @@ jest.mock("../../client/components/InteractiveScore", () => ({
   },
 }));
 
-jest.mock("../../client/components/PitchStrip", () => ({
-  PitchStrip: () => {
-    const { View } = require("react-native");
-    return <View testID="pitch-strip" />;
-  },
-}));
-
 jest.mock("../../client/components/MetronomeBottomSheet", () => ({
   MetronomeBottomSheet: ({ visible }: { visible: boolean }) => {
     const { View } = require("react-native");
@@ -101,11 +94,6 @@ describe("PracticeActiveView", () => {
   it("renders InteractiveScore", () => {
     const { getByTestId } = render(<PracticeActiveView {...baseProps} />);
     expect(getByTestId("interactive-score")).toBeTruthy();
-  });
-
-  it("renders PitchStrip", () => {
-    const { getByTestId } = render(<PracticeActiveView {...baseProps} />);
-    expect(getByTestId("pitch-strip")).toBeTruthy();
   });
 
   it("renders bottom toolbar", () => {

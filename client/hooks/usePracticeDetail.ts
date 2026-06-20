@@ -6,10 +6,6 @@ import { useNavigation } from "@react-navigation/native";
 import { usePractice } from "@/context/PracticeContext";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { useSynthPlayer } from "@/hooks/useSynthPlayer";
-import { usePitchDetection } from "@/hooks/usePitchDetection";
-import { usePitchAccuracy } from "@/hooks/usePitchAccuracy";
-import { useAudioPermission } from "@/hooks/useAudioPermission";
-import { useRecording } from "@/hooks/useRecording";
 import { useOmr } from "@/hooks/useOmr";
 import { useNoteEditor } from "@/hooks/useNoteEditor";
 import { parseMusicXml } from "@/lib/audio/musicXmlParser";
@@ -17,10 +13,9 @@ import { countNotesByPart, resolveInitialVisibleParts } from "@/lib/audio/partSe
 import { resolveExistingUri } from "@/lib/fileStorage";
 import type { SheetFormData } from "@/lib/storage";
 import type { NoteSequence, PartInfo } from "@/types/music";
-import type { PitchResult } from "@/lib/audio/types";
 
-export type AudioMode = "reference" | "autoplay";
-export interface SessionResult { duration: number; accuracy: number; bpm: number; recordingSaved: boolean; }
+export type AudioMode = "reference";
+export interface SessionResult { duration: number; bpm: number; }
 
 export interface PracticeDetailState {
   currentBpm: number; setCurrentBpm: (v: number) => void;
@@ -43,13 +38,9 @@ export interface PracticeDetailState {
   togglePartVisibility: (partId: string) => void;
   noteSequence: NoteSequence;
   sheetSessions: ReturnType<typeof usePractice>["sessions"];
-  bestScore: number | null;
-  sheetRecordings: ReturnType<typeof usePractice>["recordings"];
   synthPlayer: ReturnType<typeof useSynthPlayer>;
   audioPlayer: ReturnType<typeof useAudioPlayer>;
   noteEditor: ReturnType<typeof useNoteEditor>;
-  isListening: boolean; currentPitch: PitchResult | null; pitchError: string | null;
-  sessionAccuracy: number; isRecording: boolean;
   omr: ReturnType<typeof useOmr>;
   handleNotePress: (noteIndex: number) => void;
   handleSynthPlayPause: () => Promise<void>;
@@ -66,7 +57,7 @@ export interface PracticeDetailState {
 
 export function usePracticeDetail(sheetId: string): PracticeDetailState {
   const navigation = useNavigation();
-  const { sheets, sessions, recordings, addSession, editSheet, removeSheet, refreshData, persistPartSelection } = usePractice();
+  const { sheets, sessions, addSession, editSheet, removeSheet, refreshData, persistPartSelection } = usePractice();
   const sheet = useMemo(() => sheets.find((s) => s.id === sheetId), [sheets, sheetId]);
 
   const [currentBpm, setCurrentBpm] = useState(120);
@@ -117,25 +108,10 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
   const synthPlayer = useSynthPlayer(filteredNotes);
   const audioPlayer = useAudioPlayer();
   const noteEditor = useNoteEditor(musicXmlContent ?? "", noteSequence);
-  const { isRecording, startRecording, stopRecording, addAudioData } = useRecording();
-  const isRecordingRef = useRef(false);
   const omr = useOmr();
-  const { isListening, currentPitch, error: pitchError, startListening, stopListening } = usePitchDetection({ onAudioData: addAudioData });
-  const { sessionAccuracy, addReading, reset: resetAccuracy } = usePitchAccuracy();
-  const { isGranted, requestPermission } = useAudioPermission();
   const hasMusicXml = !!sheet?.musicXmlUri;
 
   const sheetSessions = useMemo(() => sessions.filter((s) => s.sheetMusicId === sheetId), [sessions, sheetId]);
-  const bestScore = useMemo(
-    () => (sheetSessions.length > 0 ? Math.max(...sheetSessions.map((s) => s.accuracy)) : null),
-    [sheetSessions],
-  );
-  const sheetRecordings = useMemo(() => {
-    const ids = new Set(sheetSessions.map((s) => s.id));
-    return recordings.filter((r) => ids.has(r.sessionId));
-  }, [sheetSessions, recordings]);
-
-  useEffect(() => { isRecordingRef.current = isRecording; }, [isRecording]);
 
   useEffect(() => {
     if (!sheet?.musicXmlUri) { setMusicXmlContent(null); setNoteSequence([]); setMusicXmlLoadError(null); return; }
@@ -184,8 +160,6 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheet?.audioUri]);
 
-  useEffect(() => { if (currentPitch) addReading(currentPitch); }, [currentPitch, addReading]);
-
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state) => {
       if (state !== "active" && isPracticing && audioPlayer.isLoaded && audioPlayer.isPlaying) audioPlayer.pause();
@@ -203,40 +177,23 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
 
   const setupAudioSession = useCallback(async () => {
     if (Platform.OS !== "web") {
-      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true, shouldPlayInBackground: false });
+      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true, shouldPlayInBackground: false });
     }
   }, []);
 
   const handleTimerStart = useCallback(async (): Promise<boolean> => {
-    if (!isGranted && !(await requestPermission())) return false;
-    resetAccuracy();
     try { await setupAudioSession(); } catch { /* non-fatal */ }
-    startRecording();
-    try { await startListening(); } catch {
-      stopRecording("__aborted__").catch(() => {});
-      return false;
-    }
-    if (sheet?.audioUri) {
-      try { await audioPlayer.loadSound(resolveExistingUri(sheet.audioUri)); await audioPlayer.play(); } catch { /* non-fatal */ }
-    }
     return true;
-  }, [isGranted, requestPermission, resetAccuracy, setupAudioSession, startListening, startRecording, stopRecording, audioPlayer, sheet]);
+  }, [setupAudioSession]);
 
   const handleSessionStop = useCallback(async (totalSeconds: number) => {
     if (!sheet) return;
-    stopListening();
     if (audioPlayer.isLoaded) await audioPlayer.pause();
     if (Platform.OS !== "web") setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }).catch(() => {});
-    const accuracy = sessionAccuracy > 0 ? sessionAccuracy : 0;
-    const wasRecording = isRecordingRef.current;
-    const sessionId = await addSession({ sheetMusicId: sheet.id, sheetMusicTitle: sheet.title, startedAt: Date.now() - totalSeconds * 1000, duration: totalSeconds, accuracy, bpm: currentBpm });
-    let recordingUri: string | undefined;
-    if (wasRecording) { const uri = await stopRecording(sessionId); if (uri) recordingUri = uri; }
-    resetAccuracy();
-    if (recordingUri) await refreshData();
+    await addSession({ sheetMusicId: sheet.id, sheetMusicTitle: sheet.title, startedAt: Date.now() - totalSeconds * 1000, duration: totalSeconds, accuracy: 0, bpm: currentBpm });
     if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setSessionResult({ duration: totalSeconds, accuracy, bpm: currentBpm, recordingSaved: !!recordingUri });
-  }, [sheet, addSession, currentBpm, sessionAccuracy, stopListening, resetAccuracy, stopRecording, refreshData, audioPlayer]);
+    setSessionResult({ duration: totalSeconds, bpm: currentBpm });
+  }, [sheet, addSession, currentBpm, audioPlayer]);
 
   const handleRunningChange = useCallback((running: boolean) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -284,9 +241,9 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
     noteSequence,
     showInstrumentPicker, setShowInstrumentPicker, editMode, setEditMode,
     partInfos, partNoteCounts, visiblePartIds, togglePartVisibility,
-    sheetSessions, bestScore, sheetRecordings,
+    sheetSessions,
     synthPlayer, audioPlayer, noteEditor,
-    isListening, currentPitch, pitchError: pitchError ?? null, sessionAccuracy, isRecording, omr,
+    omr,
     handleNotePress, handleSynthPlayPause, handleTimerStart, handleSessionStop,
     handleRunningChange, handleScanSheet, handleStartPractice,
     handleDeletePress, handleDeleteConfirm, toggleMetronome, handleEdit,

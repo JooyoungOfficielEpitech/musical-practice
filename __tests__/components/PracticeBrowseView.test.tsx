@@ -53,11 +53,9 @@ jest.mock("react-native-webview", () => ({ WebView: "WebView" }));
 jest.mock("expo-image", () => ({ Image: "Image" }));
 
 jest.mock("../../client/components/SheetMusicPager", () => ({ SheetMusicPager: () => null }));
-jest.mock("../../client/components/PitchPanel", () => ({ PitchPanel: () => null }));
 jest.mock("../../client/components/AudioPlayer", () => ({ AudioPlayer: () => null }));
 jest.mock("../../client/components/InteractiveScore", () => ({ InteractiveScore: () => null }));
 jest.mock("../../client/components/Metronome", () => ({ Metronome: () => null }));
-jest.mock("../../client/components/RecordingsList", () => ({ RecordingsList: () => null }));
 
 const baseSheet = {
   id: "s1", title: "La Traviata", artist: "Verdi",
@@ -95,12 +93,10 @@ const baseState = {
   showInstrumentPicker: false, setShowInstrumentPicker: jest.fn(),
   editMode: false, setEditMode: jest.fn(),
   partInfos: [], partNoteCounts: {}, visiblePartIds: new Set<string>(), togglePartVisibility: jest.fn(),
-  noteSequence: [], sheetSessions: [], bestScore: null, sheetRecordings: [],
+  noteSequence: [], sheetSessions: [],
   synthPlayer: baseSynthPlayer,
   audioPlayer: baseAudioPlayer,
   noteEditor: baseNoteEditor,
-  isListening: false, currentPitch: null, pitchError: null,
-  sessionAccuracy: 0, isRecording: false,
   omr: { isProcessing: false, processImage: jest.fn(), error: null, status: "none" as const },
   handleNotePress: jest.fn(), handleSynthPlayPause: jest.fn(),
   handleTimerStart: jest.fn(), handleSessionStop: jest.fn(),
@@ -117,8 +113,6 @@ const baseProps = {
   loading: false,
   onRefresh: jest.fn(),
   onGoBack: jest.fn(),
-  removeRecording: jest.fn(),
-  renameRecording: jest.fn(),
 };
 
 describe("PracticeBrowseView", () => {
@@ -187,14 +181,8 @@ describe("PracticeBrowseView — unified practice mode (no screen swap)", () => 
       hasMusicXml: true,
       musicXmlContent: "<score/>",
       isPracticing: true,
-      isListening: true,
     },
   };
-
-  it("shows the live pitch strip while practicing (score stays mounted in place)", () => {
-    const { queryByTestId } = render(<PracticeBrowseView {...practicingProps} />);
-    expect(queryByTestId("pitch-strip")).toBeTruthy();
-  });
 
   it("hides the Start Practice CTA while practicing (the session bar owns stop)", () => {
     const { queryByLabelText } = render(<PracticeBrowseView {...practicingProps} />);
@@ -205,16 +193,6 @@ describe("PracticeBrowseView — unified practice mode (no screen swap)", () => 
     const { getByText, queryByText } = render(<PracticeBrowseView {...practicingProps} />);
     expect(getByText("PRACTICE")).toBeTruthy();
     expect(queryByText("LISTEN & REVIEW")).toBeNull();
-  });
-
-  it("does NOT render the pitch strip when not practicing", () => {
-    const { queryByTestId } = render(
-      <PracticeBrowseView
-        {...baseProps}
-        state={{ ...baseState, hasMusicXml: true, musicXmlContent: "<score/>" }}
-      />
-    );
-    expect(queryByTestId("pitch-strip")).toBeNull();
   });
 });
 

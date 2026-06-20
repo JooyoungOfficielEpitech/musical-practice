@@ -6,7 +6,6 @@ import { LoopControls } from "@/components/LoopControls";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { InteractiveScore } from "@/components/InteractiveScore";
-import { PitchStrip } from "@/components/PitchStrip";
 import { MetronomeBottomSheet } from "@/components/MetronomeBottomSheet";
 import { AudioBottomSheet } from "@/components/AudioBottomSheet";
 import { PartSelectorBottomSheet } from "@/components/PartSelectorBottomSheet";
@@ -14,7 +13,6 @@ import { makeLoopRange } from "@/lib/audio/transportMath";
 import { Spacing, BorderRadius, Typography, Fonts } from "@/constants/theme";
 import type { useSynthPlayer } from "@/hooks/useSynthPlayer";
 import type { useNoteEditor } from "@/hooks/useNoteEditor";
-import type { PitchResult } from "@/lib/audio/types";
 import type { PartInfo } from "@/types/music";
 
 export interface PracticeActiveViewProps {
@@ -22,8 +20,6 @@ export interface PracticeActiveViewProps {
   musicXml: string;
   synthPlayer: ReturnType<typeof useSynthPlayer>;
   noteEditor: ReturnType<typeof useNoteEditor>;
-  isListening: boolean;
-  currentPitch: PitchResult | null;
   currentBpm: number;
   audioUrl?: string;
   onGoBack: () => void;
@@ -36,7 +32,7 @@ export interface PracticeActiveViewProps {
 
 export function PracticeActiveView({
   title, musicXml, synthPlayer, noteEditor,
-  isListening, currentPitch, currentBpm, audioUrl, onGoBack,
+  currentBpm, audioUrl, onGoBack,
   editMode, onToggleEditMode, parts, visiblePartIds, onTogglePart,
 }: PracticeActiveViewProps): React.JSX.Element {
   const { colors } = useTheme();
@@ -171,12 +167,6 @@ export function PracticeActiveView({
           </Text>
         )}
       </View>
-
-      {/* Pitch strip — always visible */}
-      <PitchStrip
-        isListening={isListening}
-        currentPitch={currentPitch}
-      />
 
       {/* Landscape: minimal floating play/pause — no modals to avoid iOS orientation crash */}
       {isLandscape ? (

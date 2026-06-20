@@ -8,12 +8,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { SheetMusicPager } from "@/components/SheetMusicPager";
 import { InteractiveScore } from "@/components/InteractiveScore";
-import { RecordingsList } from "@/components/RecordingsList";
 import { MetronomeBottomSheet } from "@/components/MetronomeBottomSheet";
 import { AudioBottomSheet } from "@/components/AudioBottomSheet";
 import { ScorePreviewEmpty } from "@/components/ScorePreviewEmpty";
 import { ScorePreviewControls } from "@/components/ScorePreviewControls";
-import { PitchStrip } from "@/components/PitchStrip";
 import { LoopControls } from "@/components/LoopControls";
 import { PartsSummaryBar } from "@/components/PartsSummaryBar";
 import { PartCheckSheet } from "@/components/PartCheckSheet";
@@ -23,7 +21,6 @@ import { makeLoopRange } from "@/lib/audio/transportMath";
 import { Spacing, BorderRadius, Typography, Fonts, ClayShadow, Colors } from "@/constants/theme";
 import type { SheetMusic } from "@/lib/storage";
 import type { PracticeDetailState } from "@/hooks/usePracticeDetail";
-import type { Recording } from "@/lib/audio/types";
 
 export interface PracticeBrowseViewProps {
   sheet: SheetMusic;
@@ -32,8 +29,6 @@ export interface PracticeBrowseViewProps {
   loading: boolean;
   onRefresh: () => void;
   onGoBack: () => void;
-  removeRecording: (id: string) => void;
-  renameRecording: (id: string, name: string) => Promise<void>;
 }
 
 interface ToolChipProps {
@@ -62,7 +57,7 @@ function ToolChip({ icon, label, active, onPress }: ToolChipProps): React.JSX.El
 }
 
 function PracticeBrowseViewComponent({
-  sheet, state, screenWidth, loading, onRefresh, onGoBack, removeRecording, renameRecording,
+  sheet, state, screenWidth, loading, onRefresh, onGoBack,
 }: PracticeBrowseViewProps): React.JSX.Element {
   const { colors } = useTheme();
   const { height: screenHeight } = useWindowDimensions();
@@ -83,11 +78,11 @@ function PracticeBrowseViewComponent({
 
   const {
     currentBpm, setShowEdit, isStartingPractice, musicXmlContent, musicXmlLoading,
-    hasMusicXml, setShowInstrumentPicker, editMode, setEditMode, bestScore,
-    sheetRecordings, synthPlayer, noteEditor, omr, handleNotePress, handleSynthPlayPause,
+    hasMusicXml, setShowInstrumentPicker, editMode, setEditMode,
+    synthPlayer, noteEditor, omr, handleNotePress, handleSynthPlayPause,
     handleScanSheet, handleStartPractice, handleDeletePress,
     partInfos, partNoteCounts, visiblePartIds, togglePartVisibility,
-    isPracticing, isListening, currentPitch,
+    isPracticing,
   } = state;
 
   const visiblePartIndices = useMemo(
@@ -204,12 +199,6 @@ function PracticeBrowseViewComponent({
         >
           <Ionicons name="trash-outline" size={20} color={colors.error} />
         </Pressable>
-          {bestScore !== null && (
-            <View style={[styles.bestBadge, { backgroundColor: colors.warningSubtle }]}>
-              <Ionicons name="trophy" size={12} color={colors.warning} />
-              <Text style={[styles.bestText, { color: colors.warning }]}>{bestScore}%</Text>
-            </View>
-          )}
         </View>
       </View>
 
@@ -300,18 +289,11 @@ function PracticeBrowseViewComponent({
               </View>
             )}
 
-            {/* Live pitch feedback — shown in place while practicing (no screen swap) */}
-            {isPracticing && musicXmlContent && (
-              <View style={styles.pitchStripWrap}>
-                <PitchStrip isListening={isListening} currentPitch={currentPitch} />
-              </View>
-            )}
-
             {/* Primary action — hidden during a live session (the session bar owns stop) */}
             {!isPracticing && (
               <>
                 {startPracticeCta}
-                <Text style={[styles.caption, { color: colors.textSecondary }]}>Start Practice for live mic pitch feedback and session tracking.</Text>
+                <Text style={[styles.caption, { color: colors.textSecondary }]}>Play along with the score.</Text>
               </>
             )}
           </>
@@ -337,17 +319,6 @@ function PracticeBrowseViewComponent({
             {startPracticeCta}
           </>
         )}
-
-        {/* Recordings */}
-        <View style={[styles.sectionDivider, { borderTopColor: colors.separator }]} />
-        <View style={styles.section}>
-          <View style={styles.recordingsHeader}>
-            <Ionicons name="mic-outline" size={16} color={colors.text} />
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Recordings</Text>
-            <Text style={[styles.recordingsCount, { color: colors.textSecondary }]}>{sheetRecordings.length}</Text>
-          </View>
-          <RecordingsList recordings={sheetRecordings as Recording[]} onDelete={removeRecording} onRename={renameRecording} />
-        </View>
       </ScrollView>
 
       <MetronomeBottomSheet visible={metronomeVisible} onDismiss={() => setMetronomeVisible(false)} initialBpm={currentBpm} />
@@ -415,7 +386,6 @@ const styles = StyleSheet.create({
   heroLoading: { ...row, justifyContent: "center", gap: Spacing.sm, height: 120, borderRadius: BorderRadius.md },
   heroLoadingText: { ...Typography.body },
   transport: { marginHorizontal: Spacing.lg, marginTop: Spacing.sm },
-  pitchStripWrap: { marginHorizontal: Spacing.lg, marginTop: Spacing.sm },
   listenLabel: { ...row, gap: Spacing.xs, marginBottom: Spacing.xs, marginLeft: Spacing.xs },
   listenLabelText: { ...Typography.small, fontFamily: Fonts.heading, fontWeight: "600", letterSpacing: 1 },
   tools: { ...row, flexWrap: "wrap", gap: Spacing.sm, marginTop: Spacing.sm },
@@ -427,8 +397,4 @@ const styles = StyleSheet.create({
   scanBtn: { ...row, justifyContent: "center", gap: Spacing.sm, marginHorizontal: Spacing.lg, marginBottom: Spacing.sm, paddingVertical: Spacing.sm + 2, borderRadius: 50, borderWidth: 1 },
   scanBtnText: semibold,
   scanErrorText: { ...Typography.small, textAlign: "center", marginHorizontal: Spacing.lg, marginBottom: Spacing.sm },
-  sectionDivider: { borderTopWidth: StyleSheet.hairlineWidth, marginVertical: Spacing.md, marginHorizontal: Spacing.lg },
-  section: { paddingHorizontal: Spacing.lg },
-  recordingsHeader: { ...row, gap: Spacing.xs, marginBottom: Spacing.sm },
-  recordingsCount: medium, sectionTitle: semibold,
 });

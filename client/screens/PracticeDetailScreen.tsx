@@ -32,7 +32,7 @@ export default function PracticeDetailScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const { sheetId } = route.params;
   const navigation = useNavigation();
-  const { sheets, removeRecording, renameRecording, refreshData, loading } = usePractice();
+  const { sheets, refreshData, loading } = usePractice();
   const sheet = sheets.find((s) => s.id === sheetId);
   const state = usePracticeDetail(sheetId);
   const {
@@ -83,8 +83,6 @@ export default function PracticeDetailScreen() {
         loading={loading}
         onRefresh={refreshData}
         onGoBack={() => navigation.goBack()}
-        removeRecording={removeRecording}
-        renameRecording={renameRecording}
       />
 
       {isPracticing && (

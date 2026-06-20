@@ -2,16 +2,12 @@ import React, { useRef, useCallback } from "react";
 import { StyleSheet, Text, View, Pressable, Modal, Alert, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
-import { ShareCard } from "@/components/ShareCard";
 import { generateShareText } from "@/lib/shareCard";
-import { shouldRequestReview, requestStoreReview } from "@/lib/reviewPrompt";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 
 interface SessionResult {
   duration: number; // total seconds
-  accuracy: number;
   bpm: number;
-  recordingSaved?: boolean;
 }
 
 interface SessionCompleteModalProps {
@@ -26,12 +22,6 @@ function formatDuration(totalSeconds: number): string {
   const mins = Math.floor(totalSeconds / 60);
   const secs = totalSeconds % 60;
   return `${mins}m ${secs}s`;
-}
-
-function getScoreColor(accuracy: number, colors: Record<string, string>): string {
-  if (accuracy >= 80) return colors.success;
-  if (accuracy >= 60) return colors.warning;
-  return colors.error;
 }
 
 export function SessionCompleteModal({ visible, result, onClose, streak = 0, totalSessions = 0 }: SessionCompleteModalProps) {
@@ -51,7 +41,7 @@ export function SessionCompleteModal({ visible, result, onClose, streak = 0, tot
       }
       // Fallback: share text only (view-shot requires additional package)
       const text = generateShareText({
-        accuracy: result.accuracy,
+        accuracy: 0,
         duration: result.duration,
         streak,
       });
@@ -63,18 +53,7 @@ export function SessionCompleteModal({ visible, result, onClose, streak = 0, tot
     }
   }, [result, streak]);
 
-  // Trigger review request when modal becomes visible with a good result
-  React.useEffect(() => {
-    if (visible && result && result.accuracy >= 70) {
-      shouldRequestReview(totalSessions, result.accuracy).then((should) => {
-        if (should) requestStoreReview();
-      });
-    }
-  }, [visible, result, totalSessions]);
-
   if (!result) return null;
-
-  const scoreColor = getScoreColor(result.accuracy, colors);
 
   return (
     <Modal visible={visible} transparent animationType="fade">
@@ -96,14 +75,6 @@ export function SessionCompleteModal({ visible, result, onClose, streak = 0, tot
             </View>
 
             <View style={[styles.statBox, { backgroundColor: colors.backgroundTertiary }]}>
-              <Ionicons name="analytics-outline" size={18} color={scoreColor} />
-              <Text style={[styles.statValue, { color: scoreColor }]}>
-                {result.accuracy}%
-              </Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Accuracy</Text>
-            </View>
-
-            <View style={[styles.statBox, { backgroundColor: colors.backgroundTertiary }]}>
               <Ionicons name="musical-note-outline" size={18} color={colors.textSecondary} />
               <Text style={[styles.statValue, { color: colors.text }]}>
                 {result.bpm}
@@ -111,13 +82,6 @@ export function SessionCompleteModal({ visible, result, onClose, streak = 0, tot
               <Text style={[styles.statLabel, { color: colors.textSecondary }]}>BPM</Text>
             </View>
           </View>
-
-          {result.recordingSaved && (
-            <View style={[styles.recordingBadge, { backgroundColor: colors.successLight }]}>
-              <Ionicons name="mic" size={14} color={colors.success} />
-              <Text style={[styles.recordingText, { color: colors.success }]}>Recording saved</Text>
-            </View>
-          )}
 
           <Pressable
             onPress={handleShare}
@@ -195,20 +159,6 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     ...Typography.label,
-  },
-  recordingBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.xs,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.xs,
-    marginBottom: Spacing.lg,
-  },
-  recordingText: {
-    ...Typography.small,
-    fontFamily: "Nunito_500Medium",
-    fontWeight: "500",
   },
   shareBtn: {
     flexDirection: "row",

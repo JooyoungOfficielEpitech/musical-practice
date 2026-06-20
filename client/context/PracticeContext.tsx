@@ -17,18 +17,10 @@ import {
 import { copyImagesToStorage, copyToLocalStorage, isDocumentUri } from "@/lib/fileStorage";
 import { migrateFileUrisToDocument } from "@/lib/migration";
 import { processSheetMusicImage } from "@/lib/omr";
-import {
-  getRecordings,
-  deleteRecording as deleteRecordingStorage,
-  renameRecording as renameRecordingStorage,
-  getRecordingsBySessionId,
-} from "@/lib/recordingStorage";
-import type { Recording } from "@/lib/audio/types";
 
 interface PracticeContextType {
   sheets: SheetMusic[];
   sessions: PracticeSession[];
-  recordings: Recording[];
   stats: UserStats;
   loading: boolean;
   addSheet: (sheet: Omit<SheetMusic, "id" | "createdAt" | "isFavorite">) => Promise<SheetMusic>;
@@ -37,8 +29,6 @@ interface PracticeContextType {
   toggleFavorite: (id: string) => Promise<void>;
   persistPartSelection: (id: string, partIds: string[]) => Promise<void>;
   addSession: (session: Omit<PracticeSession, "id">) => Promise<string>;
-  removeRecording: (id: string) => Promise<void>;
-  renameRecording: (id: string, newTitle: string) => Promise<void>;
   refreshData: () => Promise<void>;
   clearAllData: () => Promise<void>;
 }
@@ -48,7 +38,6 @@ const PracticeContext = createContext<PracticeContextType | undefined>(undefined
 export function PracticeProvider({ children }: { children: ReactNode }) {
   const [sheets, setSheets] = useState<SheetMusic[]>([]);
   const [sessions, setSessions] = useState<PracticeSession[]>([]);
-  const [recordings, setRecordings] = useState<Recording[]>([]);
   const [stats, setStats] = useState<UserStats>({
     totalPracticeTime: 0,
     totalSessions: 0,
@@ -60,11 +49,10 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
 
   const refreshData = useCallback(async () => {
     try {
-      const [sheetsData, sessionsData, statsData, recordingsData] = await Promise.all([
+      const [sheetsData, sessionsData, statsData] = await Promise.all([
         getSheets(),
         getSessions(),
         getStats(),
-        getRecordings(),
       ]);
 
       // Migrate any cache URIs to permanent document storage
@@ -85,7 +73,6 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
       setSheets(migratedSheets);
       setSessions(sessionsData);
       setStats(statsData);
-      setRecordings(recordingsData);
     } finally {
       // Always clear the loading flag — even if an error is thrown — so the
       // UI spinner never gets stuck in an infinite loading state.
@@ -228,30 +215,14 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const removeRecording = useCallback(async (id: string) => {
-    await deleteRecordingStorage(id);
-    setRecordings((prev) => prev.filter((r) => r.id !== id));
-  }, []);
-
-  const renameRecording = useCallback(async (id: string, newTitle: string) => {
-    await renameRecordingStorage(id, newTitle);
-    setRecordings((prev) => prev.map((r) => (r.id === id ? { ...r, title: newTitle } : r)));
-  }, []);
-
   const clearAllData = useCallback(async () => {
-    // Delete all recording files
-    for (const rec of recordings) {
-      await deleteRecordingStorage(rec.id);
-    }
     await AsyncStorage.multiRemove([
       "@musicalpractice/sheets",
       "@musicalpractice/sessions",
       "@musicalpractice/stats",
-      "@musicalpractice/recordings",
     ]);
     setSheets([]);
     setSessions([]);
-    setRecordings([]);
     setStats({
       totalPracticeTime: 0,
       totalSessions: 0,
@@ -266,7 +237,6 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
       value={{
         sheets,
         sessions,
-        recordings,
         stats,
         loading,
         addSheet,
@@ -275,8 +245,6 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
         toggleFavorite,
         persistPartSelection,
         addSession,
-        removeRecording,
-        renameRecording,
         refreshData,
         clearAllData,
       }}

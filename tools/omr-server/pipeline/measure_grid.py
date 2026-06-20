@@ -18,6 +18,7 @@ the bar — preserving every note and the measure count — and short measures a
 with a trailing rest. Splitting is deliberately avoided: it would change the measure
 count and re-break cross-part alignment.
 """
+from __future__ import annotations
 import copy
 import logging
 import math
