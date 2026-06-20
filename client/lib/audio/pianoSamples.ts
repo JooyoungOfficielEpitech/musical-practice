@@ -8,14 +8,18 @@ import { getAudioContext, getMasterGain, registerSource } from "./audioContext";
  * This serves as the default instrument until real samples are downloaded.
  */
 
-/** Harmonic structure for piano-like timbre: [harmonic number, relative amplitude] */
+/**
+ * Harmonic structure for piano-like timbre: [harmonic number, relative amplitude].
+ * Trimmed to 3 partials (from 6): on a 5–6 part score a 4-second scheduling
+ * window holds ~70 notes, and every partial is a separate oscillator+gain pair
+ * created on the JS→native bridge. Halving partials roughly halves that burst,
+ * which is what keeps dense multi-part playback from stuttering/lagging on device.
+ * The fundamental + 2 partials still reads as a warm keyboard tone.
+ */
 const PIANO_HARMONICS: readonly [number, number][] = [
   [1, 1.0],    // Fundamental
   [2, 0.5],    // 2nd harmonic
   [3, 0.25],   // 3rd harmonic
-  [4, 0.125],  // 4th harmonic
-  [5, 0.06],   // 5th harmonic (subtle brightness)
-  [6, 0.03],   // 6th harmonic
 ];
 
 /**
