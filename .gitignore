@@ -22,6 +22,10 @@ android/
 *.key
 *.mobileprovision
 
+# Store submit credentials (never commit)
+google-play-service-account.json
+*service-account*.json
+
 # Metro
 .metro-health-check*
 
