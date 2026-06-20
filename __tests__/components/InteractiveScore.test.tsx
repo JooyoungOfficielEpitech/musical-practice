@@ -235,13 +235,30 @@ describe("InteractiveScore — score reader bug fixes (Phase 1)", () => {
     expect(json).toContain("zoom:0.65");
   });
 
-  it("1.3 — scrollIntoView uses instant behavior, not smooth", () => {
+  it("1.3 — scrollIntoView uses smooth behavior for better visual feedback", () => {
     const { toJSON } = render(
       <InteractiveScore musicXml={testMusicXml} />
     );
     const json = JSON.stringify(toJSON());
-    expect(json).toContain("behavior:'instant'");
-    expect(json).not.toContain("behavior:'smooth'");
+    expect(json).toContain("behavior:'smooth'");
+    expect(json).not.toContain("behavior:'instant'");
+  });
+
+  it("1.3a — cursor has glow effect via box-shadow", () => {
+    const { toJSON } = render(
+      <InteractiveScore musicXml={testMusicXml} />
+    );
+    const json = JSON.stringify(toJSON());
+    expect(json).toContain("boxShadow");
+    expect(json).toContain("0 0 8px");
+  });
+
+  it("1.3b — cursor border width is increased to 4px", () => {
+    const { toJSON } = render(
+      <InteractiveScore musicXml={testMusicXml} />
+    );
+    const json = JSON.stringify(toJSON());
+    expect(json).toContain("borderLeft='4px");
   });
 
   it("1.4 — currentStep variable exists for incremental cursor tracking", () => {

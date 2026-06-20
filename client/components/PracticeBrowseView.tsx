@@ -252,6 +252,12 @@ function PracticeBrowseViewComponent({
                     <Text style={[styles.listenLabelText, { color: colors.textSecondary }]}>LISTEN</Text>
                   </View>
                 )}
+                {partInfos.length > 1 && (
+                  <View style={styles.partsLabel}>
+                    <Ionicons name="people-outline" size={13} color={colors.textSecondary} />
+                    <Text style={[styles.partsLabelText, { color: colors.textSecondary }]}>PARTS: Choose which voices to practice with</Text>
+                  </View>
+                )}
                 <ScorePreviewControls
                   compact
                   isPlaying={synthPlayer.isPlaying}
@@ -388,6 +394,8 @@ const styles = StyleSheet.create({
   transport: { marginHorizontal: Spacing.lg, marginTop: Spacing.sm },
   listenLabel: { ...row, gap: Spacing.xs, marginBottom: Spacing.xs, marginLeft: Spacing.xs },
   listenLabelText: { ...Typography.small, fontFamily: Fonts.heading, fontWeight: "600", letterSpacing: 1 },
+  partsLabel: { ...row, gap: Spacing.xs, marginBottom: Spacing.sm, marginLeft: Spacing.xs },
+  partsLabelText: { ...Typography.small, fontFamily: Fonts.heading, fontWeight: "600", letterSpacing: 0.5 },
   tools: { ...row, flexWrap: "wrap", gap: Spacing.sm, marginTop: Spacing.sm },
   toolsInset: { marginHorizontal: Spacing.lg, marginBottom: Spacing.sm },
   startPracticeBtn: { ...row, justifyContent: "center", gap: Spacing.sm, marginHorizontal: Spacing.lg, marginTop: Spacing.md, paddingVertical: Spacing.md, borderRadius: 50, minHeight: Spacing.buttonHeight, ...ClayShadow },
