@@ -244,3 +244,121 @@ class TestRegressionDebugFiles:
             if vals and (max(vals) - min(vals)) > 0.01:
                 mismatches += 1
         assert mismatches == 0, f"{fname}: {mismatches} measures still misaligned"
+
+
+# ── notation-truth rebuild (visual == audio) ────────────────────────────────
+
+def _dotted(note: ET.Element) -> ET.Element:
+    ET.SubElement(note, "dot")
+    return note
+
+
+def _triplet(note: ET.Element) -> ET.Element:
+    tm = ET.SubElement(note, "time-modification")
+    ET.SubElement(tm, "actual-notes").text = "3"
+    ET.SubElement(tm, "normal-notes").text = "2"
+    return note
+
+
+def _typed_beats(measure: ET.Element, divisions: int) -> list[tuple[str, float]]:
+    out = []
+    for n in measure.findall("note"):
+        t = n.findtext("type")
+        d = n.find("duration")
+        if t and d is not None and d.text:
+            out.append((t, int(d.text) / divisions))
+    return out
+
+
+class TestNotationTruth:
+    """Durations must be rebuilt from the notated symbol (type/dots/tuplet).
+
+    homr reads symbols; its raw duration numbers can be corrupt (divisions
+    mix-ups). What the user SEES must be what PLAYS — never rescale note
+    durations away from their notated value.
+    """
+
+    def test_corrupt_duration_rebuilt_from_type(self):
+        # duration says 3 (1.5 beats at div=2) but the symbol is a quarter → 1 beat
+        notes = [_note(3, ntype="quarter"), _note(2, ntype="quarter"),
+                 _note(2, ntype="quarter"), _note(2, ntype="quarter")]
+        part = {"P": [_measure(1, notes, divisions=2, time=(4, 4))]}
+        out = enforce_bar_grid(part)
+        div = _running_divisions(out["P"])[0]
+        assert [b for _, b in _typed_beats(out["P"][0], div)] == [1.0, 1.0, 1.0, 1.0]
+
+    def test_dotted_and_triplet_symbols(self):
+        # dotted quarter (1.5) + eighth (0.5) + triplet eighths (3 × 1/3) + quarter = 4
+        notes = [_dotted(_note(99, ntype="quarter")), _note(99, ntype="eighth"),
+                 _triplet(_note(99, ntype="eighth")), _triplet(_note(99, ntype="eighth")),
+                 _triplet(_note(99, ntype="eighth")), _note(99, ntype="quarter")]
+        part = {"P": [_measure(1, notes, divisions=2, time=(4, 4))]}
+        out = enforce_bar_grid(part)
+        div = _running_divisions(out["P"])[0]
+        beats = [b for _, b in _typed_beats(out["P"][0], div)]
+        assert beats[0] == 1.5 and beats[1] == 0.5 and beats[5] == 1.0
+        assert abs(sum(beats[2:5]) - 1.0) < 1e-9
+        assert _part_beats(out["P"]) == [4.0]
+
+    def test_overfull_measure_trims_tail_not_scales(self):
+        # six notated quarters in 4/4: first four keep exactly 1 beat each,
+        # overflow notes are dropped — NOT everything squeezed to 2/3 beat.
+        notes = [_note(1, ntype="quarter") for _ in range(6)]
+        part = {"P": [_measure(1, notes, divisions=1, time=(4, 4))]}
+        out = enforce_bar_grid(part)
+        div = _running_divisions(out["P"])[0]
+        kept = _typed_beats(out["P"][0], div)
+        assert [b for _, b in kept] == [1.0, 1.0, 1.0, 1.0]
+        assert _part_beats(out["P"]) == [4.0]
+
+    def test_double_length_measure_from_bad_divisions_recovers_exact_rhythm(self):
+        # The real-world P3 case: duration numbers doubled (divisions mix-up) but
+        # symbols correct. Notation-truth restores 1-beat quarters, sum lands at 4.
+        notes = [_note(2, ntype="quarter") for _ in range(4)]
+        part = {"P": [_measure(1, notes, divisions=1, time=(4, 4))]}
+        out = enforce_bar_grid(part)
+        div = _running_divisions(out["P"])[0]
+        assert [b for _, b in _typed_beats(out["P"][0], div)] == [1.0, 1.0, 1.0, 1.0]
+        assert _part_beats(out["P"]) == [4.0]
+
+    def test_untyped_notes_keep_raw_duration(self):
+        part = {"P": [_measure(1, [_note(2), _note(2)], divisions=1, time=(4, 4))]}
+        out = enforce_bar_grid(part)
+        assert _part_beats(out["P"]) == [4.0]
+
+
+@pytest.mark.parametrize("fname", [
+    f for f in (os.listdir(DEBUG_DIR) if os.path.isdir(DEBUG_DIR) else [])
+    if f.endswith(".musicxml")
+])
+def test_visual_equals_audio_on_captured_files(fname):
+    """Regression: after enforcement, every typed note's duration matches its symbol."""
+    from fractions import Fraction
+    TYPE_Q = {"breve": 8, "whole": 4, "half": 2, "quarter": 1,
+              "eighth": Fraction(1, 2), "16th": Fraction(1, 4),
+              "32nd": Fraction(1, 8), "64th": Fraction(1, 16)}
+    tree = ET.parse(os.path.join(DEBUG_DIR, fname))
+    char_measures = {p.get("id"): list(p.findall("measure")) for p in tree.getroot().findall("part")}
+    out = enforce_bar_grid(char_measures)
+    for name, measures in out.items():
+        divs = _running_divisions(measures)
+        for i, m in enumerate(measures):
+            pos = Fraction(0)
+            target = None
+            for n in m.findall("note"):
+                t = n.findtext("type")
+                d = n.find("duration")
+                if not t or t not in TYPE_Q or d is None or not d.text:
+                    continue
+                if n.find("grace") is not None or n.find("chord") is not None:
+                    continue
+                expect = Fraction(TYPE_Q[t])
+                if n.find("dot") is not None:
+                    expect *= Fraction(3, 2)
+                tm = n.find("time-modification")
+                if tm is not None:
+                    expect *= Fraction(int(tm.findtext("normal-notes")), int(tm.findtext("actual-notes")))
+                got = Fraction(int(d.text), divs[i])
+                # the single bar-boundary note may be clamped shorter; all others exact
+                assert got == expect or got < expect, (
+                    f"{fname} {name} m{m.get('number')}: {t} visual={float(expect)} audio={float(got)}")

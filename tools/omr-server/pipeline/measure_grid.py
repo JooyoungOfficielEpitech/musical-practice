@@ -11,12 +11,20 @@ adds the missing guarantee: every measure sums to EXACTLY bar_beats. Once that h
 every part has the same cumulative beats at every barline, so cross-part drift is
 mathematically impossible regardless of any per-part OMR rhythm error.
 
-Runs AFTER normalize_divisions. It works per part on that part's own running divisions,
-so it equalises BEATS (duration / divisions), not raw duration units. Overflowing
-measures (missed barline, doubled note values, long narration) are scale-compressed to
-the bar — preserving every note and the measure count — and short measures are padded
-with a trailing rest. Splitting is deliberately avoided: it would change the measure
-count and re-break cross-part alignment.
+Runs AFTER normalize_divisions, in two stages per measure:
+
+1. NOTATION-TRUTH REBUILD: every note that carries a <type> gets its <duration>
+   recomputed from the notated symbol (type × dots × time-modification). OMR reads
+   symbols — its raw duration numbers are the least reliable field (divisions
+   mix-ups produced measures summing to 2/3 or 2× of a bar). After this stage,
+   what the user SEES on the score is exactly what PLAYS. Durations are never
+   scale-compressed: that produced un-notatable lengths (0.417 beats) that made
+   one part's rhythm drift inside the bar against the others.
+
+2. BAR FIT: short measures are padded with a trailing rest; over-full measures are
+   trimmed from the tail (the bar-boundary note is clamped, later notes dropped).
+   Splitting is deliberately avoided: it would change the measure count and
+   re-break cross-part alignment.
 """
 from __future__ import annotations
 import copy
@@ -29,8 +37,20 @@ log = logging.getLogger("omr.measure_grid")
 
 DEFAULT_DIVISIONS = 2
 DEFAULT_BAR_BEATS = 4.0  # 4/4
-# Work on a fine grid so scale-compression keeps clean, non-degenerate note values.
-MIN_WORK_DIVISIONS = 24
+# Fine work grid: 96 per quarter keeps 64ths (6), dotted values and triplets exact.
+MIN_WORK_DIVISIONS = 96
+
+# Quarter-note beats per notated type.
+TYPE_QUARTERS: dict[str, Fraction] = {
+    "breve": Fraction(8),
+    "whole": Fraction(4),
+    "half": Fraction(2),
+    "quarter": Fraction(1),
+    "eighth": Fraction(1, 2),
+    "16th": Fraction(1, 4),
+    "32nd": Fraction(1, 8),
+    "64th": Fraction(1, 16),
+}
 
 _TIMED_TAGS = ("note", "backup", "forward")
 
@@ -96,35 +116,76 @@ def _append_rest(measure: ET.Element, duration: int) -> None:
     ET.SubElement(note, "duration").text = str(duration)
 
 
-def _compress_to(measure: ET.Element, span: int, target: int) -> None:
-    """Scale every duration so the main voice sums to exactly `target`.
+def _notation_beats(note: ET.Element) -> Fraction | None:
+    """Quarter-note beats implied by the notated symbol, or None if untyped."""
+    ntype = note.findtext("type")
+    if ntype not in TYPE_QUARTERS:
+        return None
+    beats = TYPE_QUARTERS[ntype]
+    dots = len(note.findall("dot"))
+    if dots:
+        # 1 dot → 3/2, 2 dots → 7/4, n dots → 2 - 2^-n
+        beats *= Fraction(2) - Fraction(1, 2 ** dots)
+    tm = note.find("time-modification")
+    if tm is not None:
+        actual = tm.findtext("actual-notes")
+        normal = tm.findtext("normal-notes")
+        if actual and normal and int(actual) > 0:
+            beats *= Fraction(int(normal), int(actual))
+    return beats
 
-    Floors each scaled duration (clamped to >= 1) then absorbs the rounding
-    remainder into the last main note, guaranteeing an exact total.
+
+def _rebuild_durations(measure: ET.Element, work_div: int) -> None:
+    """Set every typed note's <duration> to its notated value (visual == audio)."""
+    for note in measure.findall("note"):
+        if note.find("grace") is not None:
+            continue
+        beats = _notation_beats(note)
+        if beats is None:
+            continue  # untyped (whole-measure rests, padding) keep raw duration
+        val = beats * work_div
+        d = note.find("duration")
+        if d is None:
+            d = ET.SubElement(note, "duration")
+        d.text = str(max(1, round(val)))
+
+
+def _trim_to(measure: ET.Element, target: int) -> None:
+    """Trim the measure tail so the main voice sums to exactly `target`.
+
+    The bar-boundary note is clamped to the remaining space; notes fully past the
+    bar are removed (chord notes follow their base note's fate). Earlier notes
+    keep their notated durations untouched.
     """
-    factor = Fraction(target, span)
-    total = 0
-    last_main: ET.Element | None = None
+    pos = 0
+    base_removed = False
+    base_dur = 0
+    to_remove: list[ET.Element] = []
     for note in measure.findall("note"):
         d = note.find("duration")
         if d is None or not d.text:
             continue
-        d.text = str(max(1, int(int(d.text) * factor)))
-        if note.find("chord") is None:
-            total += int(d.text)
-            last_main = note
-    for tag in ("backup", "forward"):
-        for el in measure.findall(tag):
-            d = el.find("duration")
-            if d is None or not d.text:
-                continue
-            d.text = str(max(1, int(int(d.text) * factor)))
-            total += int(d.text)
-
-    remainder = target - total
-    if remainder != 0 and last_main is not None:
-        d = last_main.find("duration")
-        d.text = str(max(1, int(d.text) + remainder))
+        if note.find("chord") is not None:
+            if base_removed:
+                to_remove.append(note)
+            else:
+                d.text = str(base_dur)
+            continue
+        dur = int(d.text)
+        if pos >= target:
+            base_removed = True
+            to_remove.append(note)
+        elif pos + dur > target:
+            base_dur = target - pos
+            base_removed = False
+            d.text = str(base_dur)
+            pos = target
+        else:
+            base_dur = dur
+            base_removed = False
+            pos += dur
+    for note in to_remove:
+        measure.remove(note)
 
 
 def _strip_divisions(measure: ET.Element) -> None:
@@ -182,6 +243,7 @@ def enforce_bar_grid(
         for idx, measure in enumerate(measures):
             new_m = copy.deepcopy(measure)
             _scale_all_durations(new_m, scale_up)
+            _rebuild_durations(new_m, work_div)
 
             target = round(beats_per_measure[idx] * work_div)
             span = _span(new_m)
@@ -195,7 +257,7 @@ def enforce_bar_grid(
                 _append_rest(new_m, target - span)
                 adjusted += 1
             else:  # span > target
-                _compress_to(new_m, span, target)
+                _trim_to(new_m, target)
                 adjusted += 1
 
             out_measures.append(new_m)
