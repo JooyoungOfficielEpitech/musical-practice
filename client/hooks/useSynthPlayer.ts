@@ -14,6 +14,7 @@ import {
 } from "../lib/audio/synthEngine";
 import { resetMasterGain, pruneEndedSources, disconnectMasterBus } from "../lib/audio/audioContext";
 import { createPianoNote } from "../lib/audio/pianoSamples";
+import { dlog } from "../lib/debug/debugLog";
 import {
   findClosestSample,
   playSample,
@@ -243,6 +244,7 @@ export function useSynthPlayer(
     if (prevNotesRef.current === notes) return;
     prevNotesRef.current = notes;
     lastScheduledIndexRef.current = 0;
+    dlog("player", "notes changed", { notes: notes.length, playing: isPlayingRef.current });
     if (!isPlayingRef.current) return;
     const elapsed = getCurrentTime() - audioStartCtxSec.current;
     const currentSec = playbackOffsetSec.current + elapsed;
@@ -291,6 +293,7 @@ export function useSynthPlayer(
       }
 
       if (currentMs >= currentDurationMs) {
+        dlog("player", "playback end", { atMs: currentMs });
         setPositionMs(currentDurationMs);
         setIsPlaying(false);
         isPlayingRef.current = false;
@@ -312,7 +315,7 @@ export function useSynthPlayer(
 
   const play = useCallback(async () => {
     if (notes.length === 0) {
-      console.log("[SynthPlayer] play() called but notes array is empty");
+      dlog("player", "play() with empty notes");
       return;
     }
 
@@ -341,6 +344,7 @@ export function useSynthPlayer(
       }
 
       scheduleFromOffset(startOffset);
+      dlog("player", "play", { offset: startOffset, notes: notes.length, tempo: tempoRef.current });
       // Send initial position immediately — don't wait 50ms for first timer
       // tick. startOffset already lives on the tempo-scaled timeline.
       setPositionMs(startOffset * 1000);
@@ -350,12 +354,13 @@ export function useSynthPlayer(
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Synth playback failed";
       setError(msg);
+      dlog("player", "PLAY ERROR", { msg });
       console.error("[useSynthPlayer] play error:", e);
     }
   }, [notes, positionMs, rawDurationMs, scheduleFromOffset, startTimer]);
 
   const pause = useCallback(async () => {
-    console.log("[SynthPlayer] pause() called");
+
     // Stop the timer guard immediately — prevents a rogue tick from double-counting elapsed
     // after we update playbackOffsetSec.current below.
     isPlayingRef.current = false;
@@ -364,6 +369,7 @@ export function useSynthPlayer(
     const currentSec = playbackOffsetSec.current + elapsed;
     playbackOffsetSec.current = currentSec;
     setPositionMs(currentSec * 1000);
+    dlog("player", "pause", { pos: currentSec });
 
     await stopAll();
     stopTimer();
@@ -374,7 +380,7 @@ export function useSynthPlayer(
   }, [stopTimer]);
 
   const stop = useCallback(async () => {
-    console.log("[SynthPlayer] stop() called");
+    dlog("player", "stop");
     isPlayingRef.current = false;  // block timer immediately
     await stopAll();
     stopTimer();
@@ -388,6 +394,7 @@ export function useSynthPlayer(
     async (ms: number) => {
       const currentDurationMs = rawDurationMs / tempoRef.current;
       const clampedMs = Math.max(0, Math.min(ms, currentDurationMs));
+      dlog("player", "seek", { toMs: clampedMs, playing: isPlayingRef.current });
       setPositionMs(clampedMs);
       if (isPlayingRef.current) {
         await stopAll();
@@ -518,7 +525,7 @@ export function useSynthPlayer(
   // Cleanup on unmount — destroy AudioContext here (the only place it should be closed)
   useEffect(() => {
     return () => {
-      console.log("[SynthPlayer] cleanup — unmounting, destroying audio context");
+      dlog("player", "unmount — destroy audio context");
       stopTimer();
       destroyAudioContext();
     };

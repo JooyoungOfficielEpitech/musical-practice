@@ -10,6 +10,7 @@ import { useOmr } from "@/hooks/useOmr";
 import { useNoteEditor } from "@/hooks/useNoteEditor";
 import { parseMusicXml } from "@/lib/audio/musicXmlParser";
 import { downloadResult } from "@/lib/omrQueue";
+import { dlog } from "@/lib/debug/debugLog";
 import { countNotesByPart, resolveInitialVisibleParts } from "@/lib/audio/partSelection";
 import { resolveExistingUri } from "@/lib/fileStorage";
 import type { SheetFormData } from "@/lib/storage";
@@ -113,9 +114,14 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
         if (sheet.resultStoragePath) {
           try {
             await downloadResult(sheet.resultStoragePath, sheet.id);
-          } catch {
-            /* offline or transient — cached file below still serves */
+            dlog("load", "server refresh OK", { path: sheet.resultStoragePath });
+          } catch (refreshErr) {
+            dlog("load", "server refresh FAILED — using cache", {
+              msg: refreshErr instanceof Error ? refreshErr.message : String(refreshErr),
+            });
           }
+        } else {
+          dlog("load", "no resultStoragePath — cache only (legacy sheet)");
         }
         const { File } = await import("expo-file-system");
         // Rebase in case the app container path changed after an update.
@@ -123,6 +129,24 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
         if (cancelled) return;
         setMusicXmlContent(xml);
         const parsed = parseMusicXml(xml);
+        {
+          // Cross-part drift detector: with the bar grid enforced, every part
+          // must end at (nearly) the same time. A big spread = server-side bug.
+          const ends = new Map<number, number>();
+          parsed.notes.forEach((n, i) => {
+            const p = parsed.notePartIndices[i];
+            ends.set(p, Math.max(ends.get(p) ?? 0, n.startTime + n.duration));
+          });
+          const vals = [...ends.values()];
+          const spread = vals.length > 1 ? Math.max(...vals) - Math.min(...vals) : 0;
+          dlog("load", "xml parsed", {
+            chars: xml.length,
+            parts: parsed.parts.length,
+            notes: parsed.notes.length,
+            partEndSpreadSec: spread,
+          });
+          if (spread > 2) dlog("load", "WARNING: cross-part end spread > 2s — parts likely misaligned");
+        }
         setNoteSequence(parsed.notes);
         setPartInfos(parsed.parts);
         setPartNoteCounts(countNotesByPart(parsed.notePartIndices, parsed.parts));
@@ -134,6 +158,7 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
           setMusicXmlContent(null);
           setNoteSequence([]);
           const msg = e instanceof Error ? e.message : "Failed to load music notation";
+          dlog("load", "XML LOAD ERROR", { msg });
           setMusicXmlLoadError(msg);
         }
       }

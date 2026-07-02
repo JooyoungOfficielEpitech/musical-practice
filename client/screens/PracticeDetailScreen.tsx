@@ -14,6 +14,7 @@ import { InstrumentPicker } from "@/components/InstrumentPicker";
 import { PitchPicker } from "@/components/PitchPicker";
 import { usePractice } from "@/context/PracticeContext";
 import { usePracticeDetail } from "@/hooks/usePracticeDetail";
+import { DebugOverlay } from "@/components/DebugOverlay";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 import type { RootStackParamList } from "@/types/navigation";
 
@@ -110,6 +111,22 @@ export default function PracticeDetailScreen() {
         initialPitch={noteEditor.selectedPitch}
         onConfirm={noteEditor.applyPitch}
         onDismiss={noteEditor.dismiss}
+      />
+      <DebugOverlay
+        snapshot={{
+          sheet: sheet.id,
+          xmlSource: sheet.resultStoragePath ?? "cache-only(legacy)",
+          parts: state.partInfos.length,
+          visibleParts: [...state.visiblePartIds].join(",") || "all",
+          notes: state.noteSequence.length,
+          isPlaying: synthPlayer.isPlaying,
+          posMs: Math.round(synthPlayer.positionMs),
+          durMs: Math.round(synthPlayer.durationMs),
+          tempo: synthPlayer.tempo,
+          instrument: synthPlayer.instrument,
+          playerError: synthPlayer.error,
+          loadError: state.musicXmlLoadError,
+        }}
       />
     </View>
   );
