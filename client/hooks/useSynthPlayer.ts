@@ -94,6 +94,12 @@ export function useSynthPlayer(
       ? Math.max(...notes.map((n) => (n.startTime + n.duration) * 1000))
       : 0;
   const durationMs = rawDurationMs / tempo;
+  // The long-lived position interval must read the duration of the CURRENT
+  // notes array, not the one captured when the interval was created.
+  const rawDurationMsRef = useRef(rawDurationMs);
+  useEffect(() => {
+    rawDurationMsRef.current = rawDurationMs;
+  }, [rawDurationMs]);
 
   /** Resolve instrument string to InstrumentMode. */
   const resolveMode = useCallback((inst: string): InstrumentMode => {
@@ -154,8 +160,6 @@ export function useSynthPlayer(
       const now = ctx.currentTime;
       const currentTempo = tempoRef.current;
       const tempoScale = 1 / currentTempo;
-      let scheduledCount = 0;
-      let skippedCount = 0;
 
       // When starting fresh (not a rolling top-up), reset the index and restore
       // the master bus to full volume (a prior stop() faded it to silence).
@@ -176,7 +180,6 @@ export function useSynthPlayer(
 
         // Skip notes that have already fully elapsed
         if (relativeEnd <= 0) {
-          skippedCount++;
           continue;
         }
 
@@ -192,7 +195,6 @@ export function useSynthPlayer(
           relativeStart < 0 ? scaledDuration + relativeStart : scaledDuration;
 
         if (actualDuration > 0) {
-          scheduledCount++;
           playNoteWithInstrument(note, scheduledStart, actualDuration);
         }
 
@@ -202,7 +204,6 @@ export function useSynthPlayer(
         }
       }
 
-      console.log(`[SynthPlayer] scheduleFromOffset(${offsetSec.toFixed(2)}s) window=${windowEnd.toFixed(1)}s — scheduled=${scheduledCount}, skipped=${skippedCount}, nextIdx=${lastScheduledIndexRef.current}, ctxTime=${now.toFixed(3)}`);
       if (!isResume) {
         // Anchor position tracking to the AudioContext clock (now + delay) — the
         // exact clock the notes above were scheduled against.
@@ -223,6 +224,37 @@ export function useSynthPlayer(
     scheduleFromOffset(currentSec, true);
   }, [notes, scheduleFromOffset]);
 
+  // The position timer is a long-lived interval created once per play(). Route
+  // its callbacks through refs so a tick never runs a stale closure over a
+  // replaced notes array (stale top-ups kept scheduling a muted part's notes
+  // while never scheduling the new selection — "one part plays, the rest don't").
+  const scheduleFromOffsetRef = useRef(scheduleFromOffset);
+  const topUpScheduleRef = useRef(topUpSchedule);
+  useEffect(() => {
+    scheduleFromOffsetRef.current = scheduleFromOffset;
+    topUpScheduleRef.current = topUpSchedule;
+  }, [scheduleFromOffset, topUpSchedule]);
+
+  // When the notes array itself changes (part mute/solo toggle), the rolling
+  // index points into the old array. Reset it and, if playing, re-anchor the
+  // new selection at the current position without interrupting the transport.
+  const prevNotesRef = useRef(notes);
+  useEffect(() => {
+    if (prevNotesRef.current === notes) return;
+    prevNotesRef.current = notes;
+    lastScheduledIndexRef.current = 0;
+    if (!isPlayingRef.current) return;
+    const elapsed = getCurrentTime() - audioStartCtxSec.current;
+    const currentSec = playbackOffsetSec.current + elapsed;
+    (async () => {
+      await stopAll();
+      await resumeAudioContext();
+      scheduleFromOffsetRef.current(currentSec);
+    })().catch((e) => {
+      console.error("[useSynthPlayer] reschedule after notes change failed:", e);
+    });
+  }, [notes]);
+
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -242,7 +274,7 @@ export function useSynthPlayer(
       // Clamp: don't go backward past the start offset (elapsed is negative during 80ms audio delay)
       const currentMs = Math.max(currentSec * 1000, playbackOffsetSec.current * 1000);
       const currentTempo = tempoRef.current;
-      const currentDurationMs = rawDurationMs / currentTempo;
+      const currentDurationMs = rawDurationMsRef.current / currentTempo;
       const loop = loopRangeRef.current;
 
       // Check loop boundary
@@ -251,7 +283,7 @@ export function useSynthPlayer(
         const loopStartSec = loop.startMs / 1000;
         stopAll().then(() => {
           resumeAudioContext().then(() => {
-            scheduleFromOffset(loopStartSec);
+            scheduleFromOffsetRef.current(loopStartSec);
             setPositionMs(loop.startMs);
           });
         });
@@ -259,7 +291,6 @@ export function useSynthPlayer(
       }
 
       if (currentMs >= currentDurationMs) {
-        console.log(`[SynthPlayer] playback ended — currentMs=${currentMs.toFixed(0)}, durationMs=${currentDurationMs.toFixed(0)}`);
         setPositionMs(currentDurationMs);
         setIsPlaying(false);
         isPlayingRef.current = false;
@@ -272,18 +303,12 @@ export function useSynthPlayer(
 
       // Top up the rolling schedule every ~2 seconds
       if (Math.floor(currentMs / 2000) !== Math.floor((currentMs - POSITION_UPDATE_INTERVAL) / 2000)) {
-        topUpSchedule();
-      }
-
-      // Log every second
-      if (Math.floor(currentMs / 1000) !== Math.floor((currentMs - POSITION_UPDATE_INTERVAL) / 1000)) {
-        const ctxState = getAudioContext().state;
-        console.log(`[SynthPlayer] pos=${(currentMs / 1000).toFixed(2)}s / ${(currentDurationMs / 1000).toFixed(2)}s | elapsed=${(getCurrentTime() - audioStartCtxSec.current).toFixed(3)}s ctxState=${ctxState}`);
+        topUpScheduleRef.current();
       }
 
       setPositionMs(currentMs);
     }, POSITION_UPDATE_INTERVAL);
-  }, [rawDurationMs, notes.length, scheduleFromOffset, topUpSchedule]);
+  }, [rawDurationMs]);
 
   const play = useCallback(async () => {
     if (notes.length === 0) {
@@ -293,7 +318,6 @@ export function useSynthPlayer(
 
     try {
       setError(null);
-      console.log(`[SynthPlayer] play() — ${notes.length} notes, rawDurationMs=${rawDurationMs}, tempo=${tempoRef.current}`);
       await resumeAudioContext();
 
       const currentDurationMs = rawDurationMs / tempoRef.current;
@@ -312,17 +336,14 @@ export function useSynthPlayer(
       } else if (positionMs === 0 && firstNoteTimeSec > 0) {
         // Skip initial silence on first play
         startOffset = firstNoteTimeSec;
-        setPositionMs(firstNoteTimeSec * 1000);
-        console.log(`[SynthPlayer] skipping initial silence, starting at ${firstNoteTimeSec.toFixed(2)}s`);
       } else {
         startOffset = positionMs / 1000;
       }
 
-      console.log(`[SynthPlayer] scheduling from offset=${startOffset}s, durationMs=${rawDurationMs / tempoRef.current}`);
       scheduleFromOffset(startOffset);
-      // Send initial position immediately — don't wait 50ms for first timer tick
-      setPositionMs(startOffset * 1000 * tempoRef.current);
-      console.log(`[SynthPlayer] play() — initial positionMs=${(startOffset * 1000 * tempoRef.current).toFixed(0)}ms, ctxTime=${getAudioContext().currentTime.toFixed(3)}`);
+      // Send initial position immediately — don't wait 50ms for first timer
+      // tick. startOffset already lives on the tempo-scaled timeline.
+      setPositionMs(startOffset * 1000);
       setIsPlaying(true);
       isPlayingRef.current = true;
       startTimer();
