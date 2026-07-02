@@ -15,16 +15,11 @@ import type { SheetFormData } from "@/lib/storage";
 import type { NoteSequence, PartInfo } from "@/types/music";
 
 export type AudioMode = "reference";
-export interface SessionResult { duration: number; bpm: number; }
 
 export interface PracticeDetailState {
   currentBpm: number; setCurrentBpm: (v: number) => void;
-  showMetronome: boolean;
   showEdit: boolean; setShowEdit: (v: boolean) => void;
-  isPracticing: boolean;
-  isStartingPractice: boolean;
   showDeleteConfirm: boolean; setShowDeleteConfirm: (v: boolean) => void;
-  sessionResult: SessionResult | null; setSessionResult: (r: SessionResult | null) => void;
   audioMode: AudioMode; setAudioMode: (mode: AudioMode) => void;
   musicXmlContent: string | null; musicXmlLoading: boolean; hasMusicXml: boolean;
   musicXmlLoadError: string | null;
@@ -44,14 +39,9 @@ export interface PracticeDetailState {
   omr: ReturnType<typeof useOmr>;
   handleNotePress: (noteIndex: number) => void;
   handleSynthPlayPause: () => Promise<void>;
-  handleTimerStart: () => Promise<boolean>;
-  handleSessionStop: (totalSeconds: number) => Promise<void>;
-  handleRunningChange: (running: boolean) => void;
   handleScanSheet: () => Promise<void>;
-  handleStartPractice: () => Promise<void>;
   handleDeletePress: () => void;
   handleDeleteConfirm: () => Promise<void>;
-  toggleMetronome: () => void;
   handleEdit: (data: SheetFormData) => Promise<void>;
 }
 
@@ -61,12 +51,8 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
   const sheet = useMemo(() => sheets.find((s) => s.id === sheetId), [sheets, sheetId]);
 
   const [currentBpm, setCurrentBpm] = useState(120);
-  const [showMetronome, setShowMetronome] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
-  const [isPracticing, setIsPracticing] = useState(false);
-  const [isStartingPractice, setIsStartingPractice] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [sessionResult, setSessionResult] = useState<SessionResult | null>(null);
   const [audioMode, setAudioMode] = useState<AudioMode>("reference");
   const [musicXmlContent, setMusicXmlContent] = useState<string | null>(null);
   const [noteSequence, setNoteSequence] = useState<NoteSequence>([]);
@@ -160,12 +146,6 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheet?.audioUri]);
 
-  useEffect(() => {
-    const sub = AppState.addEventListener("change", (state) => {
-      if (state !== "active" && isPracticing && audioPlayer.isLoaded && audioPlayer.isPlaying) audioPlayer.pause();
-    });
-    return () => sub.remove();
-  }, [isPracticing, audioPlayer]);
 
   const handleNotePress = useCallback((idx: number) => {
     if (noteSequence[idx]) synthPlayer.seekTo(noteSequence[idx].startTime * 1000);
@@ -181,37 +161,12 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
     }
   }, []);
 
-  const handleTimerStart = useCallback(async (): Promise<boolean> => {
-    try { await setupAudioSession(); } catch { /* non-fatal */ }
-    return true;
-  }, [setupAudioSession]);
-
-  const handleSessionStop = useCallback(async (totalSeconds: number) => {
-    if (!sheet) return;
-    if (audioPlayer.isLoaded) await audioPlayer.pause();
-    if (Platform.OS !== "web") setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }).catch(() => {});
-    await addSession({ sheetMusicId: sheet.id, sheetMusicTitle: sheet.title, startedAt: Date.now() - totalSeconds * 1000, duration: totalSeconds, accuracy: 0, bpm: currentBpm });
-    if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setSessionResult({ duration: totalSeconds, bpm: currentBpm });
-  }, [sheet, addSession, currentBpm, audioPlayer]);
-
-  const handleRunningChange = useCallback((running: boolean) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setIsPracticing(running);
-  }, []);
 
   const handleScanSheet = useCallback(async () => {
     if (!sheet || sheet.imageUris.length === 0 || omr.isProcessing) return;
     const result = await omr.processImage(sheet.imageUris[0], sheet);
     if (result) await refreshData();
   }, [sheet, omr, refreshData]);
-
-  const handleStartPractice = useCallback(async () => {
-    setIsStartingPractice(true);
-    const ok = await handleTimerStart();
-    setIsStartingPractice(false);
-    if (ok) { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setIsPracticing(true); }
-  }, [handleTimerStart]);
 
   const handleDeletePress = useCallback(() => { setShowDeleteConfirm(true); }, []);
 
@@ -222,11 +177,6 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
     navigation.goBack();
   }, [sheet, removeSheet, navigation]);
 
-  const toggleMetronome = useCallback(() => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setShowMetronome((prev) => !prev);
-  }, []);
-
   const handleEdit = useCallback(async (data: SheetFormData) => {
     if (!sheet) return;
     await editSheet({ ...sheet, ...data });
@@ -234,9 +184,9 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
   }, [sheet, editSheet]);
 
   return {
-    currentBpm, setCurrentBpm, showMetronome, showEdit, setShowEdit,
-    isPracticing, isStartingPractice, showDeleteConfirm, setShowDeleteConfirm,
-    sessionResult, setSessionResult, audioMode, setAudioMode,
+    currentBpm, setCurrentBpm, showEdit, setShowEdit,
+    showDeleteConfirm, setShowDeleteConfirm,
+    audioMode, setAudioMode,
     musicXmlContent, musicXmlLoading, hasMusicXml, musicXmlLoadError, audioLoadError, partsDeselectedError,
     noteSequence,
     showInstrumentPicker, setShowInstrumentPicker, editMode, setEditMode,
@@ -244,8 +194,7 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
     sheetSessions,
     synthPlayer, audioPlayer, noteEditor,
     omr,
-    handleNotePress, handleSynthPlayPause, handleTimerStart, handleSessionStop,
-    handleRunningChange, handleScanSheet, handleStartPractice,
-    handleDeletePress, handleDeleteConfirm, toggleMetronome, handleEdit,
+    handleNotePress, handleSynthPlayPause, handleScanSheet,
+    handleDeletePress, handleDeleteConfirm, handleEdit,
   };
 }

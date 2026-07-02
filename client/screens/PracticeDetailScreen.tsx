@@ -8,10 +8,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { useTheme } from "@/hooks/useTheme";
 import { PracticeBrowseView } from "@/components/PracticeBrowseView";
-import { PracticeBottomBar } from "@/components/PracticeBottomBar";
 import { SheetFormModal } from "@/components/SheetFormModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
-import { SessionCompleteModal } from "@/components/SessionCompleteModal";
 import { InstrumentPicker } from "@/components/InstrumentPicker";
 import { PitchPicker } from "@/components/PitchPicker";
 import { usePractice } from "@/context/PracticeContext";
@@ -36,9 +34,9 @@ export default function PracticeDetailScreen() {
   const sheet = sheets.find((s) => s.id === sheetId);
   const state = usePracticeDetail(sheetId);
   const {
-    isPracticing, showEdit, setShowEdit, showDeleteConfirm, setShowDeleteConfirm,
-    sessionResult, setSessionResult, showInstrumentPicker, setShowInstrumentPicker,
-    editMode, synthPlayer, noteEditor, handleSessionStop, handleRunningChange,
+    showEdit, setShowEdit, showDeleteConfirm, setShowDeleteConfirm,
+    showInstrumentPicker, setShowInstrumentPicker,
+    editMode, synthPlayer, noteEditor,
     handleDeleteConfirm, handleEdit,
   } = state;
 
@@ -73,9 +71,6 @@ export default function PracticeDetailScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.backgroundDefault, paddingTop: insets.top }]}>
-      {/* Single persistent score view: practice mode layers onto Browse (no view
-          swap), so the InteractiveScore/OSMD webview never unmounts and the score
-          doesn't flash-reload when starting practice. */}
       <PracticeBrowseView
         sheet={sheet}
         state={state}
@@ -84,15 +79,6 @@ export default function PracticeDetailScreen() {
         onRefresh={refreshData}
         onGoBack={() => navigation.goBack()}
       />
-
-      {isPracticing && (
-        <PracticeBottomBar
-          onStop={handleSessionStop}
-          onRunningChange={handleRunningChange}
-          minimal
-          autoStart
-        />
-      )}
 
       <SheetFormModal
         visible={showEdit}
@@ -111,12 +97,6 @@ export default function PracticeDetailScreen() {
         icon="trash-outline"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setShowDeleteConfirm(false)}
-      />
-
-      <SessionCompleteModal
-        visible={!!sessionResult}
-        result={sessionResult}
-        onClose={() => setSessionResult(null)}
       />
 
       <InstrumentPicker

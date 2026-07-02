@@ -218,13 +218,10 @@ jest.mock("../../client/hooks/useNoteEditor", () => ({
 
 jest.mock("../../client/hooks/usePracticeDetail", () => ({
   usePracticeDetail: () => ({
-    isPracticing: false,
     showEdit: false,
     setShowEdit: jest.fn(),
     showDeleteConfirm: false,
     setShowDeleteConfirm: jest.fn(),
-    sessionResult: null,
-    setSessionResult: jest.fn(),
     showInstrumentPicker: false,
     setShowInstrumentPicker: jest.fn(),
     editMode: false,
@@ -242,6 +239,9 @@ jest.mock("../../client/hooks/usePracticeDetail", () => ({
       tempo: 1.0,
       positionMs: 0,
       durationMs: 0,
+      loopRange: null,
+      setLoopRange: jest.fn(),
+      clearLoopRange: jest.fn(),
     },
     noteEditor: {
       editedMusicXml: "",
@@ -252,26 +252,37 @@ jest.mock("../../client/hooks/usePracticeDetail", () => ({
       applyPitch: jest.fn(),
       dismiss: jest.fn(),
     },
-    handleSessionStop: jest.fn(),
-    handleRunningChange: jest.fn(),
     handleDeleteConfirm: jest.fn(),
     handleEdit: jest.fn(),
     musicXmlContent: null,
-    isListening: false,
-    currentPitch: null,
     partInfos: [],
-    visiblePartIds: [],
+    visiblePartIds: new Set(),
     togglePartVisibility: jest.fn(),
     currentBpm: 120,
-    isStartingPractice: false,
     musicXmlLoading: false,
     hasMusicXml: false,
     omr: { isProcessing: false, processImage: jest.fn(), error: null },
+    audioPlayer: {
+      isLoaded: false,
+      isPlaying: false,
+      loadSound: jest.fn(),
+      unload: jest.fn(),
+      play: jest.fn(),
+      pause: jest.fn(),
+      seekTo: jest.fn(),
+    },
     handleNotePress: jest.fn(),
     handleSynthPlayPause: jest.fn(),
     handleScanSheet: jest.fn(),
-    handleStartPractice: jest.fn(),
     handleDeletePress: jest.fn(),
+    audioMode: "reference",
+    setAudioMode: jest.fn(),
+    noteSequence: [],
+    sheetSessions: [],
+    musicXmlLoadError: null,
+    audioLoadError: null,
+    partsDeselectedError: null,
+    partNoteCounts: {},
   }),
 }));
 
@@ -312,10 +323,6 @@ describe("PracticeDetailScreen", () => {
     expect(getByLabelText("Metronome")).toBeTruthy();
   });
 
-  it("shows play button in bottom bar", () => {
-    const { getByLabelText } = render(<PracticeDetailScreen />);
-    expect(getByLabelText("Start practice session")).toBeTruthy();
-  });
 
   it("renders score not found when sheet doesn't exist", () => {
     // Override mockSheets to return no match

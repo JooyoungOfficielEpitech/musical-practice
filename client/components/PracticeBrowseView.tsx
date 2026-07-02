@@ -77,12 +77,11 @@ function PracticeBrowseViewComponent({
   const heroHeight = Math.round(Math.min(420, Math.max(240, screenHeight * 0.42)));
 
   const {
-    currentBpm, setShowEdit, isStartingPractice, musicXmlContent, musicXmlLoading,
+    currentBpm, setShowEdit, musicXmlContent, musicXmlLoading,
     hasMusicXml, setShowInstrumentPicker, editMode, setEditMode,
     synthPlayer, noteEditor, omr, handleNotePress, handleSynthPlayPause,
-    handleScanSheet, handleStartPractice, handleDeletePress,
+    handleScanSheet, handleDeletePress,
     partInfos, partNoteCounts, visiblePartIds, togglePartVisibility,
-    isPracticing,
   } = state;
 
   const visiblePartIndices = useMemo(
@@ -90,10 +89,6 @@ function PracticeBrowseViewComponent({
     [partInfos, visiblePartIds],
   );
 
-  const handleStartPress = useCallback(() => {
-    if (Platform.OS === "ios") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    handleStartPractice();
-  }, [handleStartPractice]);
 
   const handleScanPress = useCallback(() => {
     if (Platform.OS === "ios") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -154,15 +149,6 @@ function PracticeBrowseViewComponent({
     synthPlayer.clearLoopRange();
   }, [synthPlayer]);
 
-  const startPracticeCta = (
-    <Pressable onPress={handleStartPress} accessibilityLabel="Start practice session" accessibilityRole="button" accessibilityState={{ busy: isStartingPractice }}
-      style={({ pressed }) => [styles.startPracticeBtn, { backgroundColor: isStartingPractice ? colors.textSecondary : colors.primaryDark, opacity: pressed && !isStartingPractice ? 0.9 : 1 }]}
-      android_ripple={{ color: Colors.light.ripple, borderless: false }}
-    >
-      {isStartingPractice ? <ActivityIndicator size="small" color={colors.buttonText} /> : <Ionicons name="mic" size={20} color={colors.buttonText} />}
-      <Text style={[styles.startPracticeText, { color: colors.buttonText }]}>{isStartingPractice ? "Preparing..." : "Start Practice"}</Text>
-    </Pressable>
-  );
 
   return (
     <>
@@ -172,7 +158,7 @@ function PracticeBrowseViewComponent({
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </Pressable>
         <View style={styles.topBarTitle}>
-          <Text style={[styles.modeLabel, { color: isPracticing ? colors.primary : colors.textSecondary }]}>{isPracticing ? "PRACTICE" : "LISTEN & REVIEW"}</Text>
+          <Text style={[styles.modeLabel, { color: colors.textSecondary }]}>LISTEN & REVIEW</Text>
           <Text style={[styles.titleText, { color: colors.text }]} numberOfLines={1}>{sheet.title}</Text>
           {!!sheet.artist && <Text style={[styles.subtitleText, { color: colors.textSecondary }]} numberOfLines={1}>{sheet.artist}</Text>}
         </View>
@@ -246,12 +232,10 @@ function PracticeBrowseViewComponent({
             {/* Transport — listen (synth) */}
             {musicXmlContent && (
               <View style={styles.transport}>
-                {!isPracticing && (
-                  <View style={styles.listenLabel}>
-                    <Ionicons name="headset-outline" size={13} color={colors.textSecondary} />
-                    <Text style={[styles.listenLabelText, { color: colors.textSecondary }]}>LISTEN</Text>
-                  </View>
-                )}
+                <View style={styles.listenLabel}>
+                  <Ionicons name="headset-outline" size={13} color={colors.textSecondary} />
+                  <Text style={[styles.listenLabelText, { color: colors.textSecondary }]}>LISTEN</Text>
+                </View>
                 {partInfos.length > 1 && (
                   <View style={styles.partsLabel}>
                     <Ionicons name="people-outline" size={13} color={colors.textSecondary} />
@@ -295,13 +279,6 @@ function PracticeBrowseViewComponent({
               </View>
             )}
 
-            {/* Primary action — hidden during a live session (the session bar owns stop) */}
-            {!isPracticing && (
-              <>
-                {startPracticeCta}
-                <Text style={[styles.caption, { color: colors.textSecondary }]}>Play along with the score.</Text>
-              </>
-            )}
           </>
         ) : (
           <>
@@ -322,7 +299,6 @@ function PracticeBrowseViewComponent({
               <ToolChip icon="timer-outline" label="Metronome" onPress={handleMetronomeToggle} />
               {sheet.audioUri && <ToolChip icon="headset-outline" label="Audio" onPress={handleAudioToggle} />}
             </View>
-            {startPracticeCta}
           </>
         )}
       </ScrollView>
@@ -398,9 +374,6 @@ const styles = StyleSheet.create({
   partsLabelText: { ...Typography.small, fontFamily: Fonts.heading, fontWeight: "600", letterSpacing: 0.5 },
   tools: { ...row, flexWrap: "wrap", gap: Spacing.sm, marginTop: Spacing.sm },
   toolsInset: { marginHorizontal: Spacing.lg, marginBottom: Spacing.sm },
-  startPracticeBtn: { ...row, justifyContent: "center", gap: Spacing.sm, marginHorizontal: Spacing.lg, marginTop: Spacing.md, paddingVertical: Spacing.md, borderRadius: 50, minHeight: Spacing.buttonHeight, ...ClayShadow },
-  startPracticeText: { ...Typography.subtitle, fontFamily: Fonts.bodyBold, fontWeight: "700" },
-  caption: { ...Typography.small, textAlign: "center", marginTop: Spacing.xs, marginHorizontal: Spacing.lg },
   pagerWrap: { paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md },
   scanBtn: { ...row, justifyContent: "center", gap: Spacing.sm, marginHorizontal: Spacing.lg, marginBottom: Spacing.sm, paddingVertical: Spacing.sm + 2, borderRadius: 50, borderWidth: 1 },
   scanBtnText: semibold,

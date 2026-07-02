@@ -82,11 +82,8 @@ const baseAudioPlayer = {
 
 const baseState = {
   currentBpm: 120, setCurrentBpm: jest.fn(),
-  showMetronome: false,
   showEdit: false, setShowEdit: jest.fn(),
-  isPracticing: false, isStartingPractice: false,
   showDeleteConfirm: false, setShowDeleteConfirm: jest.fn(),
-  sessionResult: null, setSessionResult: jest.fn(),
   audioMode: "reference" as const, setAudioMode: jest.fn(),
   musicXmlContent: null, musicXmlLoading: false, hasMusicXml: false,
   musicXmlLoadError: null, audioLoadError: null, partsDeselectedError: null,
@@ -99,10 +96,9 @@ const baseState = {
   noteEditor: baseNoteEditor,
   omr: { isProcessing: false, processImage: jest.fn(), error: null, status: "none" as const },
   handleNotePress: jest.fn(), handleSynthPlayPause: jest.fn(),
-  handleTimerStart: jest.fn(), handleSessionStop: jest.fn(),
-  handleRunningChange: jest.fn(), handleScanSheet: jest.fn(),
-  handleStartPractice: jest.fn(), handleDeletePress: jest.fn(),
-  handleDeleteConfirm: jest.fn(), toggleMetronome: jest.fn(),
+  handleScanSheet: jest.fn(),
+  handleDeletePress: jest.fn(),
+  handleDeleteConfirm: jest.fn(),
   handleEdit: jest.fn(),
 };
 
@@ -134,10 +130,6 @@ describe("PracticeBrowseView", () => {
     expect(queryByLabelText("Scan sheet music for auto-play")).toBeNull();
   });
 
-  it("3.4 — shows Start Practice CTA", () => {
-    const { getByLabelText } = render(<PracticeBrowseView {...baseProps} />);
-    expect(getByLabelText("Start practice session")).toBeTruthy();
-  });
 });
 
 // ─── Score-as-hero redesign ──────────────────────────────────────────────────
@@ -171,30 +163,6 @@ describe("PracticeBrowseView — mode indicator (LISTEN & REVIEW clarity)", () =
   });
 });
 
-// ─── Unified practice mode (Issue: start-practice / preview separation) ──────
-describe("PracticeBrowseView — unified practice mode (no screen swap)", () => {
-  const practicingProps = {
-    ...baseProps,
-    sheet: { ...baseSheet, omrStatus: "ready" as const },
-    state: {
-      ...baseState,
-      hasMusicXml: true,
-      musicXmlContent: "<score/>",
-      isPracticing: true,
-    },
-  };
-
-  it("hides the Start Practice CTA while practicing (the session bar owns stop)", () => {
-    const { queryByLabelText } = render(<PracticeBrowseView {...practicingProps} />);
-    expect(queryByLabelText("Start practice session")).toBeNull();
-  });
-
-  it("shows a PRACTICE mode label instead of LISTEN & REVIEW while practicing", () => {
-    const { getByText, queryByText } = render(<PracticeBrowseView {...practicingProps} />);
-    expect(getByText("PRACTICE")).toBeTruthy();
-    expect(queryByText("LISTEN & REVIEW")).toBeNull();
-  });
-});
 
 // ─── Back button affordance (Issue: missing-score-detail-back-button) ────────
 describe("PracticeBrowseView — back button affordance", () => {

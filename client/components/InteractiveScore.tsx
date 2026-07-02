@@ -27,9 +27,9 @@ type WebViewIncoming =
   | { type: "debug"; tbl0?: number; tbl1?: number; tbl10?: number; tblN?: number; len?: number; bpm?: number; msg?: string };
 
 function buildHtml(isDark: boolean): string {
-  const cursorColor = isDark ? "#3B82F6" : "#2563EB";
-  const bgColor = isDark ? "#1A1A2E" : "#FFFFFF";
-  const textColor = isDark ? "#FFFFFF" : "#1F2937";
+  const cursorColor = isDark ? "#F59E0B" : "#D97706";
+  const bgColor = isDark ? "#1A1815" : "#FFFFFF";
+  const textColor = isDark ? "#FAFAF9" : "#1C1917";
 
   return `<!DOCTYPE html>
 <html>
