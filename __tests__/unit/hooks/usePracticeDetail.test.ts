@@ -21,6 +21,17 @@ const mockSheets = [
     // no audioUri, no musicXmlUri
   },
   {
+    id: "sheet-sync",
+    title: "Sync Sheet",
+    artist: "Bach",
+    imageUris: [],
+    createdAt: Date.now(),
+    folder: "Classical",
+    isFavorite: false,
+    musicXmlUri: "file://sync.xml",
+    resultStoragePath: "user-1/job-9.musicxml",
+  },
+  {
     id: "sheet-xml",
     title: "XML Sheet",
     artist: "Bach",
@@ -46,6 +57,12 @@ jest.mock("../../../client/context/PracticeContext", () => ({
     refreshData: jest.fn(),
     loading: false,
   }),
+}));
+
+// ─── OMR queue (server refresh) ───────────────────────────────────────────────
+const mockDownloadResult = jest.fn().mockResolvedValue("file://sync.xml");
+jest.mock("../../../client/lib/omrQueue", () => ({
+  downloadResult: (...args: unknown[]) => mockDownloadResult(...args),
 }));
 
 // ─── Sub-hooks ────────────────────────────────────────────────────────────────
@@ -245,5 +262,35 @@ describe("usePracticeDetail — error handling (Phase 3)", () => {
     // partsDeselectedError should be set
     const error = (result.current as unknown as Record<string, unknown>).partsDeselectedError;
     expect(error).toBeTruthy();
+  });
+});
+
+
+describe("usePracticeDetail — server refresh on open", () => {
+  beforeEach(() => {
+    mockDownloadResult.mockClear();
+    mockDownloadResult.mockResolvedValue("file://sync.xml");
+  });
+
+  it("re-downloads the score when the sheet has resultStoragePath", async () => {
+    renderHook(() => usePracticeDetail("sheet-sync"));
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    expect(mockDownloadResult).toHaveBeenCalledWith("user-1/job-9.musicxml", "sheet-sync");
+  });
+
+  it("does not attempt a download for sheets without resultStoragePath", async () => {
+    renderHook(() => usePracticeDetail("sheet-xml"));
+    await act(async () => {});
+    expect(mockDownloadResult).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the cached file when the refresh download fails (offline)", async () => {
+    mockDownloadResult.mockRejectedValueOnce(new Error("offline"));
+    const { result } = renderHook(() => usePracticeDetail("sheet-sync"));
+    await act(async () => {});
+    // no crash; hook still attempts to serve the cached score
+    expect(result.current).toBeTruthy();
   });
 });

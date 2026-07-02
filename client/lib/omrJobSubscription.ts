@@ -33,7 +33,7 @@ export function subscribeOmrJob(
   jobId: string,
   index: number,
   sheetId: string,
-  onJobDone: (index: number, musicXmlUri: string) => Promise<void>,
+  onJobDone: (index: number, musicXmlUri: string, resultStoragePath: string) => Promise<void>,
   deps: JobSubscriptionDeps,
 ): void {
   const sb = supabase;
@@ -71,10 +71,11 @@ export function subscribeOmrJob(
       clearPoll();
       channel.unsubscribe();
       try {
-        const uri = await downloadResult(row.result_storage_path as string, sheetId);
+        const storagePath = row.result_storage_path as string;
+        const uri = await downloadResult(storagePath, sheetId);
         deps.updateJob(index, { status: "done", progressPercent: 100, musicXmlUri: uri });
         // Persist the sheet BEFORE settlement so overall "done" never precedes the saved result
-        await onJobDone(index, uri);
+        await onJobDone(index, uri, storagePath);
         deps.settleJob(index, { status: "done", progressPercent: 100, musicXmlUri: uri });
         AccessibilityInfo.announceForAccessibility(
           `Recognition complete for ${deps.sectionTitle(index)}`,

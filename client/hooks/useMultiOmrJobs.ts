@@ -39,7 +39,7 @@ export interface UseMultiOmrJobsResult {
   submitAll: (
     pdfB64: string,
     sections: SectionInput[],
-    onJobDone: (index: number, musicXmlUri: string) => Promise<void>,
+    onJobDone: (index: number, musicXmlUri: string, resultStoragePath: string) => Promise<void>,
   ) => void;
   retry: (index: number) => Promise<void>;
   reset: () => void;
@@ -59,7 +59,7 @@ export function useMultiOmrJobs(): UseMultiOmrJobsResult {
   const submitContextRef = useRef<{
     pdfB64: string;
     sections: SectionInput[];
-    onJobDone: (index: number, musicXmlUri: string) => Promise<void>;
+    onJobDone: (index: number, musicXmlUri: string, resultStoragePath: string) => Promise<void>;
   } | null>(null);
 
   const _unsubscribeAll = useCallback(() => {
@@ -93,7 +93,7 @@ export function useMultiOmrJobs(): UseMultiOmrJobsResult {
       jobId: string,
       index: number,
       sheetId: string,
-      onJobDone: (index: number, musicXmlUri: string) => Promise<void>,
+      onJobDone: (index: number, musicXmlUri: string, resultStoragePath: string) => Promise<void>,
     ) => {
       subscribeOmrJob(jobId, index, sheetId, onJobDone, {
         updateJob: _updateJob,
@@ -110,7 +110,7 @@ export function useMultiOmrJobs(): UseMultiOmrJobsResult {
     (
       pdfB64: string,
       sections: SectionInput[],
-      onJobDone: (index: number, musicXmlUri: string) => Promise<void>,
+      onJobDone: (index: number, musicXmlUri: string, resultStoragePath: string) => Promise<void>,
     ) => {
       // Guard against double-tap: if already submitting, return early
       if (isSubmitting) return;

@@ -9,6 +9,7 @@ import { useSynthPlayer } from "@/hooks/useSynthPlayer";
 import { useOmr } from "@/hooks/useOmr";
 import { useNoteEditor } from "@/hooks/useNoteEditor";
 import { parseMusicXml } from "@/lib/audio/musicXmlParser";
+import { downloadResult } from "@/lib/omrQueue";
 import { countNotesByPart, resolveInitialVisibleParts } from "@/lib/audio/partSelection";
 import { resolveExistingUri } from "@/lib/fileStorage";
 import type { SheetFormData } from "@/lib/storage";
@@ -106,6 +107,16 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
     setMusicXmlLoadError(null);
     (async () => {
       try {
+        // Pull the latest server-side result first — scores get reprocessed on
+        // the server, and the local file is otherwise a forever-stale snapshot.
+        // Offline/failure falls back silently to the cached copy below.
+        if (sheet.resultStoragePath) {
+          try {
+            await downloadResult(sheet.resultStoragePath, sheet.id);
+          } catch {
+            /* offline or transient — cached file below still serves */
+          }
+        }
         const { File } = await import("expo-file-system");
         // Rebase in case the app container path changed after an update.
         const xml = await new File(resolveExistingUri(sheet.musicXmlUri!)).text();

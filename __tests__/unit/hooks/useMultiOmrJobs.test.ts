@@ -101,7 +101,7 @@ describe("useMultiOmrJobs", () => {
     });
 
     expect(mockDownloadResult).toHaveBeenCalledWith("results/job-1.xml", expect.any(String));
-    expect(onJobDone).toHaveBeenCalledWith(0, "file:///musicxml/s0.musicxml");
+    expect(onJobDone).toHaveBeenCalledWith(0, "file:///musicxml/s0.musicxml", "results/job-1.xml");
     expect(result.current.jobs[0].status).toBe("done");
     expect(result.current.jobs[0].musicXmlUri).toBe("file:///musicxml/s0.musicxml");
     expect(result.current.overallStatus).toBe("done");

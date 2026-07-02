@@ -58,13 +58,14 @@ export default function PdfImportScreen() {
       pageRange: undefined,
       title,
     }));
-    multiOmrJobs.submitAll(pdfB64, sections, async (index, musicXmlUri) => {
+    multiOmrJobs.submitAll(pdfB64, sections, async (index, musicXmlUri, resultStoragePath) => {
       await addSheet({
         title: sectionTitles[index] ?? `Section ${index + 1}`,
         artist: "",
         folder: "Musical",
         imageUris: [],
         musicXmlUri,
+        resultStoragePath,
         omrStatus: "ready",
       });
     });

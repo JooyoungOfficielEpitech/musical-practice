@@ -12,6 +12,9 @@ export interface SheetMusic {
   isFavorite: boolean;
   musicXmlUri?: string;
   noteSequenceUri?: string;
+  /** Supabase storage path of the OMR result — lets the app re-pull the latest
+   *  server-side result (reprocessed scores) instead of serving a stale cache. */
+  resultStoragePath?: string;
   omrStatus?: "none" | "processing" | "ready" | "failed";
   selectedInstrument?: string;
   selectedPartIds?: string[]; // parts the user chose to practice (성부 선택), persisted
