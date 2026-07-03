@@ -318,9 +318,11 @@ describe("PracticeDetailScreen", () => {
     expect(getByLabelText("Delete score")).toBeTruthy();
   });
 
-  it("shows metronome button in browse mode", () => {
+  it("shows edit and delete buttons", () => {
     const { getByLabelText } = render(<PracticeDetailScreen />);
-    expect(getByLabelText("Metronome")).toBeTruthy();
+    // Core controls should be in the top bar
+    expect(getByLabelText("Edit score")).toBeTruthy();
+    expect(getByLabelText("Delete score")).toBeTruthy();
   });
 
 

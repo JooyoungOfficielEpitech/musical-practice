@@ -93,7 +93,7 @@ describe("LibraryScreen — filter visibility", () => {
     expect(queryByText("Jazz")).toBeNull();
   });
 
-  it("shows genre filter chips when filtered.length > 0", () => {
+  it("shows scores list when filtered.length > 0", () => {
     mockUsePractice.mockReturnValue({
       ...defaultPracticeContext,
       sheets: [
@@ -101,23 +101,20 @@ describe("LibraryScreen — filter visibility", () => {
           id: "1",
           title: "Test Score",
           artist: "Test Artist",
-          folder: "All",
           createdAt: new Date().toISOString(),
-          favorite: false,
         },
       ],
     });
 
     const { getByText } = render(<LibraryScreen />);
 
-    // When library has content, filter chips should be visible
-    expect(getByText("All")).toBeDefined();
-    expect(getByText("Classical")).toBeDefined();
+    // When library has content, the hint text should be visible
+    expect(getByText("Long press to rename or delete")).toBeDefined();
   });
 });
 
 describe("LibraryScreen — + button entry point", () => {
-  it("1. pressing + on iOS shows action sheet with Add Score and Import PDF", () => {
+  it("1. pressing + on iOS shows action sheet with Import PDF", () => {
     const spy = jest.spyOn(ActionSheetIOS, "showActionSheetWithOptions").mockImplementation(() => {});
 
     const { getByLabelText } = render(<LibraryScreen />);
@@ -125,7 +122,7 @@ describe("LibraryScreen — + button entry point", () => {
 
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
-        options: expect.arrayContaining(["Add Score", "Import PDF"]),
+        options: expect.arrayContaining(["Import PDF"]),
       }),
       expect.any(Function),
     );
@@ -142,15 +139,13 @@ describe("LibraryScreen — + button entry point", () => {
     const { getByLabelText } = render(<LibraryScreen />);
     fireEvent.press(getByLabelText("Add new score"));
 
-    // Find index of "Import PDF" in options
-    const options = (ActionSheetIOS.showActionSheetWithOptions as jest.Mock).mock.calls[0][0].options as string[];
-    const importIndex = options.indexOf("Import PDF");
-    capturedCallback!(importIndex);
+    // Index 0 is "Import PDF", so select that
+    capturedCallback!(0);
 
     expect(mockNavigate).toHaveBeenCalledWith("PdfImport");
   });
 
-  it("3. on Android, pressing + shows Alert with Add Score and Import PDF buttons", () => {
+  it("3. on Android, pressing + shows Alert with Import PDF button", () => {
     Object.defineProperty(Platform, "OS", { value: "android", configurable: true });
     const alertSpy = jest.spyOn(Alert, "alert");
 
@@ -161,7 +156,6 @@ describe("LibraryScreen — + button entry point", () => {
       expect.any(String),
       undefined,
       expect.arrayContaining([
-        expect.objectContaining({ text: "Add Score" }),
         expect.objectContaining({ text: "Import PDF" }),
       ]),
     );

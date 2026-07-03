@@ -145,17 +145,10 @@ jest.mock("react-native", () => {
 describe("usePracticeDetail — initial state", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("1.1 — boolean flags default correctly, currentBpm=120, audioMode=reference", () => {
+  it("1.1 — boolean flags default correctly", () => {
     const { result } = renderHook(() => usePracticeDetail("sheet-1"));
     expect(result.current.showEdit).toBe(false);
-    expect(result.current.editMode).toBe(true);
-    expect(result.current.currentBpm).toBe(120);
-    expect(result.current.audioMode).toBe("reference");
-  });
-
-  it("1.2 — audioMode stays reference when sheet has musicXmlUri but no audioUri (no autoplay)", () => {
-    const { result } = renderHook(() => usePracticeDetail("sheet-xml"));
-    expect(result.current.audioMode).toBe("reference");
+    expect(result.current.showDeleteConfirm).toBe(false);
   });
 
   it("1.4 — handleDeletePress sets showDeleteConfirm to true", () => {
@@ -172,14 +165,9 @@ describe("usePracticeDetail — initial state", () => {
 describe("usePracticeDetail — part selection (Phase 2)", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("2.1 — editMode defaults to true", () => {
-    const { result } = renderHook(() => usePracticeDetail("sheet-1"));
-    expect(result.current.editMode).toBe(true);
-  });
-
-  it("2.2 — audioMode never auto-switches to autoplay on XML load", () => {
+  it("2.1 — partInfos is populated from XML", () => {
     const { result } = renderHook(() => usePracticeDetail("sheet-xml"));
-    expect(result.current.audioMode).toBe("reference");
+    expect(Array.isArray(result.current.partInfos)).toBe(true);
   });
 
   it("2.3 — partInfos is an array in hook return", () => {
@@ -227,10 +215,6 @@ describe("usePracticeDetail — error handling (Phase 3)", () => {
     expect((result.current as unknown as Record<string, unknown>).musicXmlLoadError).toBeDefined();
   });
 
-  it("3.2 — returns audioLoadError field (null by default)", () => {
-    const { result } = renderHook(() => usePracticeDetail("sheet-1"));
-    expect((result.current as unknown as Record<string, unknown>).audioLoadError).toBeDefined();
-  });
 
   it("3.3 — returns partsDeselectedError field (null by default)", () => {
     const { result } = renderHook(() => usePracticeDetail("sheet-1"));

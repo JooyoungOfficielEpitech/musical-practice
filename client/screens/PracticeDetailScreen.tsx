@@ -10,8 +10,6 @@ import { useTheme } from "@/hooks/useTheme";
 import { PracticeBrowseView } from "@/components/PracticeBrowseView";
 import { SheetFormModal } from "@/components/SheetFormModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
-import { InstrumentPicker } from "@/components/InstrumentPicker";
-import { PitchPicker } from "@/components/PitchPicker";
 import { usePractice } from "@/context/PracticeContext";
 import { usePracticeDetail } from "@/hooks/usePracticeDetail";
 import { DebugOverlay } from "@/components/DebugOverlay";
@@ -36,8 +34,7 @@ export default function PracticeDetailScreen() {
   const state = usePracticeDetail(sheetId);
   const {
     showEdit, setShowEdit, showDeleteConfirm, setShowDeleteConfirm,
-    showInstrumentPicker, setShowInstrumentPicker,
-    editMode, synthPlayer, noteEditor,
+    synthPlayer,
     handleDeleteConfirm, handleEdit,
   } = state;
 
@@ -100,18 +97,6 @@ export default function PracticeDetailScreen() {
         onCancel={() => setShowDeleteConfirm(false)}
       />
 
-      <InstrumentPicker
-        visible={showInstrumentPicker}
-        selectedInstrumentId={synthPlayer.instrument}
-        onSelect={(id) => synthPlayer.setInstrument(id)}
-        onClose={() => setShowInstrumentPicker(false)}
-      />
-      <PitchPicker
-        visible={editMode && noteEditor.selectedIndex !== null}
-        initialPitch={noteEditor.selectedPitch}
-        onConfirm={noteEditor.applyPitch}
-        onDismiss={noteEditor.dismiss}
-      />
       <DebugOverlay
         snapshot={{
           sheet: sheet.id,

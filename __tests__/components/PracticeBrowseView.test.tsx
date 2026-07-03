@@ -118,16 +118,10 @@ describe("PracticeBrowseView", () => {
     expect(getByText("Verdi")).toBeTruthy();
   });
 
-  it("3.2 — shows Scan button when omrStatus != ready and imageUris non-empty", () => {
+  it("3.2 — shows edit and delete buttons in top bar", () => {
     const { getByLabelText } = render(<PracticeBrowseView {...baseProps} />);
-    expect(getByLabelText("Scan sheet music for auto-play")).toBeTruthy();
-  });
-
-  it("3.3 — does NOT show Scan button when omrStatus = ready", () => {
-    const { queryByLabelText } = render(
-      <PracticeBrowseView {...baseProps} sheet={{ ...baseSheet, omrStatus: "ready" }} />
-    );
-    expect(queryByLabelText("Scan sheet music for auto-play")).toBeNull();
+    expect(getByLabelText("Edit score")).toBeTruthy();
+    expect(getByLabelText("Delete score")).toBeTruthy();
   });
 
 });
@@ -142,23 +136,23 @@ describe("PracticeBrowseView — score hero layout", () => {
       />
     );
     // Hero transport play control is present; the old section labels are gone.
-    expect(getByLabelText("Play synth")).toBeTruthy();
+    expect(getByLabelText("Play")).toBeTruthy();
     expect(queryByText("Auto-Play")).toBeNull();
     expect(queryByText("Score Preview")).toBeNull();
   });
 });
 
 // ─── Mode indicator (Issue: unclear-listen-vs-practice-modes) ────────────────
-describe("PracticeBrowseView — mode indicator (LISTEN & REVIEW clarity)", () => {
-  it("displays 'LISTEN & REVIEW' label above score title", () => {
+describe("PracticeBrowseView — mode indicator (SCORE + LISTEN clarity)", () => {
+  it("displays 'SCORE + LISTEN' label above score title", () => {
     const { getByText } = render(<PracticeBrowseView {...baseProps} />);
-    expect(getByText("LISTEN & REVIEW")).toBeTruthy();
+    expect(getByText("SCORE + LISTEN")).toBeTruthy();
   });
 
   it("displays mode label above title in proper hierarchy", () => {
     const { getByText } = render(<PracticeBrowseView {...baseProps} />);
     // Mode label should exist and be separate from title
-    expect(getByText("LISTEN & REVIEW")).toBeTruthy();
+    expect(getByText("SCORE + LISTEN")).toBeTruthy();
     expect(getByText("La Traviata")).toBeTruthy();
   });
 });

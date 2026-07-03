@@ -2,16 +2,10 @@ import React, { createContext, useContext, useState, useEffect, useCallback, typ
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   type SheetMusic,
-  type PracticeSession,
-  type UserStats,
   getSheets,
   saveSheet,
   updateSheet,
   deleteSheet as deleteSheetStorage,
-  getSessions,
-  saveSession,
-  getStats,
-  updateStats,
   generateId,
 } from "@/lib/storage";
 import { copyImagesToStorage, copyToLocalStorage, isDocumentUri } from "@/lib/fileStorage";
@@ -20,40 +14,23 @@ import { processSheetMusicImage } from "@/lib/omr";
 
 interface PracticeContextType {
   sheets: SheetMusic[];
-  sessions: PracticeSession[];
-  stats: UserStats;
   loading: boolean;
   addSheet: (sheet: Omit<SheetMusic, "id" | "createdAt" | "isFavorite">) => Promise<SheetMusic>;
   editSheet: (sheet: SheetMusic) => Promise<void>;
   removeSheet: (id: string) => Promise<void>;
-  toggleFavorite: (id: string) => Promise<void>;
   persistPartSelection: (id: string, partIds: string[]) => Promise<void>;
-  addSession: (session: Omit<PracticeSession, "id">) => Promise<string>;
   refreshData: () => Promise<void>;
-  clearAllData: () => Promise<void>;
 }
 
 const PracticeContext = createContext<PracticeContextType | undefined>(undefined);
 
 export function PracticeProvider({ children }: { children: ReactNode }) {
   const [sheets, setSheets] = useState<SheetMusic[]>([]);
-  const [sessions, setSessions] = useState<PracticeSession[]>([]);
-  const [stats, setStats] = useState<UserStats>({
-    totalPracticeTime: 0,
-    totalSessions: 0,
-    averageAccuracy: 0,
-    streak: 0,
-    lastPracticeDate: "",
-  });
   const [loading, setLoading] = useState(true);
 
   const refreshData = useCallback(async () => {
     try {
-      const [sheetsData, sessionsData, statsData] = await Promise.all([
-        getSheets(),
-        getSessions(),
-        getStats(),
-      ]);
+      const sheetsData = await getSheets();
 
       // Migrate any cache URIs to permanent document storage
       const migratedSheets = await migrateFileUrisToDocument(sheetsData);
@@ -71,11 +48,7 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
       }
 
       setSheets(migratedSheets);
-      setSessions(sessionsData);
-      setStats(statsData);
     } finally {
-      // Always clear the loading flag — even if an error is thrown — so the
-      // UI spinner never gets stuck in an infinite loading state.
       setLoading(false);
     }
   }, []);
@@ -151,18 +124,6 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
     setSheets((prev) => prev.filter((s) => s.id !== id));
   }, []);
 
-  const toggleFavorite = useCallback(
-    async (id: string) => {
-      const sheet = sheets.find((s) => s.id === id);
-      if (sheet) {
-        const updated = { ...sheet, isFavorite: !sheet.isFavorite };
-        await updateSheet(updated);
-        setSheets((prev) => prev.map((s) => (s.id === id ? updated : s)));
-      }
-    },
-    [sheets],
-  );
-
   const persistPartSelection = useCallback(
     async (id: string, partIds: string[]) => {
       const sheet = sheets.find((s) => s.id === id);
@@ -174,79 +135,16 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
     [sheets],
   );
 
-  const addSession = useCallback(
-    async (data: Omit<PracticeSession, "id">): Promise<string> => {
-      const session: PracticeSession = { ...data, id: generateId() };
-      await saveSession(session);
-      setSessions((prev) => [session, ...prev]);
-
-      setStats((prevStats) => {
-        const today = new Date().toDateString();
-        const newStats: UserStats = {
-          totalPracticeTime: prevStats.totalPracticeTime + data.duration,
-          totalSessions: prevStats.totalSessions + 1,
-          averageAccuracy:
-            prevStats.totalSessions === 0
-              ? data.accuracy
-              : Math.round(
-                  (prevStats.averageAccuracy * prevStats.totalSessions + data.accuracy) /
-                    (prevStats.totalSessions + 1),
-                ),
-          streak: (() => {
-            if (prevStats.lastPracticeDate === today) return prevStats.streak;
-            // Compute "yesterday" in local time — do NOT subtract 86400000ms from
-            // Date.now(), because that arithmetic is timezone-unaware and produces
-            // the wrong local date for users east of UTC (e.g. UTC+9).
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            const yesterdayStr = yesterday.toDateString();
-            return prevStats.lastPracticeDate === yesterdayStr
-              ? prevStats.streak + 1
-              : 1;
-          })(),
-          lastPracticeDate: today,
-        };
-        updateStats(newStats);
-        return newStats;
-      });
-
-      return session.id;
-    },
-    [],
-  );
-
-  const clearAllData = useCallback(async () => {
-    await AsyncStorage.multiRemove([
-      "@musicalpractice/sheets",
-      "@musicalpractice/sessions",
-      "@musicalpractice/stats",
-    ]);
-    setSheets([]);
-    setSessions([]);
-    setStats({
-      totalPracticeTime: 0,
-      totalSessions: 0,
-      averageAccuracy: 0,
-      streak: 0,
-      lastPracticeDate: "",
-    });
-  }, []);
-
   return (
     <PracticeContext.Provider
       value={{
         sheets,
-        sessions,
-        stats,
         loading,
         addSheet,
         editSheet,
         removeSheet,
-        toggleFavorite,
         persistPartSelection,
-        addSession,
         refreshData,
-        clearAllData,
       }}
     >
       {children}

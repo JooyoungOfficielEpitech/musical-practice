@@ -1,13 +1,9 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { Platform, AppState, LayoutAnimation } from "react-native";
+import { Platform, AppState } from "react-native";
 import { setAudioModeAsync } from "expo-audio";
-import * as Haptics from "expo-haptics";
 import { useNavigation } from "@react-navigation/native";
 import { usePractice } from "@/context/PracticeContext";
-import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { useSynthPlayer } from "@/hooks/useSynthPlayer";
-import { useOmr } from "@/hooks/useOmr";
-import { useNoteEditor } from "@/hooks/useNoteEditor";
 import { parseMusicXml } from "@/lib/audio/musicXmlParser";
 import { downloadResult } from "@/lib/omrQueue";
 import { dlog } from "@/lib/debug/debugLog";
@@ -16,32 +12,20 @@ import { resolveExistingUri } from "@/lib/fileStorage";
 import type { SheetFormData } from "@/lib/storage";
 import type { NoteSequence, PartInfo } from "@/types/music";
 
-export type AudioMode = "reference";
-
 export interface PracticeDetailState {
-  currentBpm: number; setCurrentBpm: (v: number) => void;
   showEdit: boolean; setShowEdit: (v: boolean) => void;
   showDeleteConfirm: boolean; setShowDeleteConfirm: (v: boolean) => void;
-  audioMode: AudioMode; setAudioMode: (mode: AudioMode) => void;
   musicXmlContent: string | null; musicXmlLoading: boolean; hasMusicXml: boolean;
   musicXmlLoadError: string | null;
-  audioLoadError: string | null;
   partsDeselectedError: string | null;
-  showInstrumentPicker: boolean; setShowInstrumentPicker: (v: boolean) => void;
-  editMode: boolean; setEditMode: React.Dispatch<React.SetStateAction<boolean>>;
   partInfos: PartInfo[];
   partNoteCounts: Record<string, number>;
   visiblePartIds: Set<string>;
   togglePartVisibility: (partId: string) => void;
   noteSequence: NoteSequence;
-  sheetSessions: ReturnType<typeof usePractice>["sessions"];
   synthPlayer: ReturnType<typeof useSynthPlayer>;
-  audioPlayer: ReturnType<typeof useAudioPlayer>;
-  noteEditor: ReturnType<typeof useNoteEditor>;
-  omr: ReturnType<typeof useOmr>;
   handleNotePress: (noteIndex: number) => void;
   handleSynthPlayPause: () => Promise<void>;
-  handleScanSheet: () => Promise<void>;
   handleDeletePress: () => void;
   handleDeleteConfirm: () => Promise<void>;
   handleEdit: (data: SheetFormData) => Promise<void>;
@@ -49,21 +33,16 @@ export interface PracticeDetailState {
 
 export function usePracticeDetail(sheetId: string): PracticeDetailState {
   const navigation = useNavigation();
-  const { sheets, sessions, addSession, editSheet, removeSheet, refreshData, persistPartSelection } = usePractice();
+  const { sheets, editSheet, removeSheet, refreshData, persistPartSelection } = usePractice();
   const sheet = useMemo(() => sheets.find((s) => s.id === sheetId), [sheets, sheetId]);
 
-  const [currentBpm, setCurrentBpm] = useState(120);
   const [showEdit, setShowEdit] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [audioMode, setAudioMode] = useState<AudioMode>("reference");
   const [musicXmlContent, setMusicXmlContent] = useState<string | null>(null);
   const [noteSequence, setNoteSequence] = useState<NoteSequence>([]);
   const [musicXmlLoading, setMusicXmlLoading] = useState(false);
   const [musicXmlLoadError, setMusicXmlLoadError] = useState<string | null>(null);
-  const [audioLoadError, setAudioLoadError] = useState<string | null>(null);
   const [partsDeselectedError, setPartsDeselectedError] = useState<string | null>(null);
-  const [showInstrumentPicker, setShowInstrumentPicker] = useState(false);
-  const [editMode, setEditMode] = useState(true);
 
   const [partInfos, setPartInfos] = useState<PartInfo[]>([]);
   const [partNoteCounts, setPartNoteCounts] = useState<Record<string, number>>({});
@@ -98,7 +77,6 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
     sheet?.selectedInstrument ?? "piano",
     sheet?.savedTempoMultiplier ?? 1.0,
   );
-  const audioPlayer = useAudioPlayer();
 
   // Remember the user's tempo per score — reopening must not reset their choice.
   const persistedTempoRef = useRef(sheet?.savedTempoMultiplier ?? 1.0);
@@ -109,11 +87,8 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
     editSheet({ ...sheet, savedTempoMultiplier: synthPlayer.tempo }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [synthPlayer.tempo]);
-  const noteEditor = useNoteEditor(musicXmlContent ?? "", noteSequence);
-  const omr = useOmr();
-  const hasMusicXml = !!sheet?.musicXmlUri;
 
-  const sheetSessions = useMemo(() => sessions.filter((s) => s.sheetMusicId === sheetId), [sessions, sheetId]);
+  const hasMusicXml = !!sheet?.musicXmlUri;
 
   useEffect(() => {
     if (!sheet?.musicXmlUri) { setMusicXmlContent(null); setNoteSequence([]); setMusicXmlLoadError(null); return; }
@@ -184,19 +159,6 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
   }, [sheet?.musicXmlUri]);
 
 
-  useEffect(() => {
-    setAudioLoadError(null);
-    if (sheet?.audioUri) {
-      audioPlayer.loadSound(resolveExistingUri(sheet.audioUri)).catch((e) => {
-        const msg = e instanceof Error ? e.message : "Failed to load reference audio";
-        setAudioLoadError(msg);
-      });
-    }
-    return () => { audioPlayer.unload(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sheet?.audioUri]);
-
-
   const handleNotePress = useCallback((idx: number) => {
     if (noteSequence[idx]) synthPlayer.seekTo(noteSequence[idx].startTime * 1000);
   }, [synthPlayer, noteSequence]);
@@ -204,19 +166,6 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
   const handleSynthPlayPause = useCallback(async () => {
     if (synthPlayer.isPlaying) await synthPlayer.pause(); else await synthPlayer.play();
   }, [synthPlayer]);
-
-  const setupAudioSession = useCallback(async () => {
-    if (Platform.OS !== "web") {
-      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true, shouldPlayInBackground: false });
-    }
-  }, []);
-
-
-  const handleScanSheet = useCallback(async () => {
-    if (!sheet || sheet.imageUris.length === 0 || omr.isProcessing) return;
-    const result = await omr.processImage(sheet.imageUris[0], sheet);
-    if (result) await refreshData();
-  }, [sheet, omr, refreshData]);
 
   const handleDeletePress = useCallback(() => { setShowDeleteConfirm(true); }, []);
 
@@ -234,17 +183,13 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
   }, [sheet, editSheet]);
 
   return {
-    currentBpm, setCurrentBpm, showEdit, setShowEdit,
+    showEdit, setShowEdit,
     showDeleteConfirm, setShowDeleteConfirm,
-    audioMode, setAudioMode,
-    musicXmlContent, musicXmlLoading, hasMusicXml, musicXmlLoadError, audioLoadError, partsDeselectedError,
+    musicXmlContent, musicXmlLoading, hasMusicXml, musicXmlLoadError, partsDeselectedError,
     noteSequence,
-    showInstrumentPicker, setShowInstrumentPicker, editMode, setEditMode,
     partInfos, partNoteCounts, visiblePartIds, togglePartVisibility,
-    sheetSessions,
-    synthPlayer, audioPlayer, noteEditor,
-    omr,
-    handleNotePress, handleSynthPlayPause, handleScanSheet,
+    synthPlayer,
+    handleNotePress, handleSynthPlayPause,
     handleDeletePress, handleDeleteConfirm, handleEdit,
   };
 }
