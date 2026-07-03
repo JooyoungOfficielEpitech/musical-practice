@@ -209,7 +209,7 @@ describe("musicXmlParser", () => {
       expect(notes[2].startTime).toBeCloseTo(0.5, 3);
     });
 
-    it("uses default tempo of 120 BPM when none specified", () => {
+    it("uses default tempo of 100 BPM when none specified", () => {
       const xml = `<score-partwise>
         <part id="P1">
           <measure number="1">
@@ -221,9 +221,9 @@ describe("musicXmlParser", () => {
       </score-partwise>`;
 
       const { notes } = parseMusicXml(xml);
-      // Default 120 BPM => 0.5s per quarter
+      // Default 120 BPM => 0.6s per quarter
       expect(notes[0].startTime).toBeCloseTo(0, 3);
-      expect(notes[1].startTime).toBeCloseTo(0.5, 3);
+      expect(notes[1].startTime).toBeCloseTo(0.6, 3);
     });
 
     it("handles higher divisions value", () => {

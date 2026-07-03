@@ -93,8 +93,22 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
     if (sheet) persistPartSelection(sheet.id, [...next]).catch(() => {});
   }, [visiblePartIds, sheet, persistPartSelection]);
 
-  const synthPlayer = useSynthPlayer(filteredNotes);
+  const synthPlayer = useSynthPlayer(
+    filteredNotes,
+    sheet?.selectedInstrument ?? "piano",
+    sheet?.savedTempoMultiplier ?? 1.0,
+  );
   const audioPlayer = useAudioPlayer();
+
+  // Remember the user's tempo per score — reopening must not reset their choice.
+  const persistedTempoRef = useRef(sheet?.savedTempoMultiplier ?? 1.0);
+  useEffect(() => {
+    if (!sheet || synthPlayer.tempo === persistedTempoRef.current) return;
+    persistedTempoRef.current = synthPlayer.tempo;
+    dlog("load", "persist tempo", { multiplier: synthPlayer.tempo });
+    editSheet({ ...sheet, savedTempoMultiplier: synthPlayer.tempo }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [synthPlayer.tempo]);
   const noteEditor = useNoteEditor(musicXmlContent ?? "", noteSequence);
   const omr = useOmr();
   const hasMusicXml = !!sheet?.musicXmlUri;

@@ -18,6 +18,8 @@ export interface SheetMusic {
   omrStatus?: "none" | "processing" | "ready" | "failed";
   selectedInstrument?: string;
   selectedPartIds?: string[]; // parts the user chose to practice (성부 선택), persisted
+  /** Last tempo multiplier the user set for this score — restored on open. */
+  savedTempoMultiplier?: number;
 }
 
 export interface PracticeSession {

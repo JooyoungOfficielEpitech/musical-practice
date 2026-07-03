@@ -1,7 +1,7 @@
 import type { NoteEvent, NoteSequence, PartInfo, ParsedMusicXml } from "../../types/music";
 import { noteToFrequency } from "./noteMapping";
 
-const DEFAULT_TEMPO = 120; // BPM
+const DEFAULT_TEMPO = 100; // BPM — comfortable practice default when the marking is missing or absurd
 const DEFAULT_DIVISIONS = 1;
 const DEFAULT_VELOCITY = 80;
 
@@ -70,13 +70,22 @@ function getAllElements(xml: string, tag: string): string[] {
   return results;
 }
 
+// OMR misreads tempo markings often enough that values outside the plausible
+// performance range are treated as noise rather than instructions.
+const MIN_SANE_TEMPO = 40;
+const MAX_SANE_TEMPO = 200;
+
+function saneTempoOrDefault(bpm: number): number {
+  return bpm >= MIN_SANE_TEMPO && bpm <= MAX_SANE_TEMPO ? bpm : DEFAULT_TEMPO;
+}
+
 function parseTempo(xml: string): number {
   // Look for <sound tempo="120"/> or <per-minute>120</per-minute>
   const soundMatch = xml.match(/<sound[^>]*tempo="(\d+(?:\.\d+)?)"[^>]*\/?>/);
-  if (soundMatch) return parseFloat(soundMatch[1]);
+  if (soundMatch) return saneTempoOrDefault(parseFloat(soundMatch[1]));
 
   const perMinute = getTagContent(xml, "per-minute");
-  if (perMinute) return parseFloat(perMinute);
+  if (perMinute) return saneTempoOrDefault(parseFloat(perMinute));
 
   return DEFAULT_TEMPO;
 }
