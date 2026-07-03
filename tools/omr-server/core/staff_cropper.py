@@ -84,11 +84,19 @@ def enhance_for_omr(img: np.ndarray) -> np.ndarray:
     return sharpened
 
 
-def replace_x_noteheads(img: np.ndarray) -> np.ndarray:
+def replace_x_noteheads(img: np.ndarray) -> tuple[np.ndarray, list[int]]:
     """Detect x-noteheads and replace them with filled round noteheads.
 
     X-noteheads are used for spoken rhythm and confuse homr. This function
-    replaces them with filled ellipses before OMR.
+    replaces them with filled ellipses before OMR and returns the x-coordinates
+    of replaced X-noteheads for downstream marking in MusicXML.
+
+    Args:
+        img: Input sheet music image (BGR or grayscale).
+
+    Returns:
+        Tuple of (processed_image, x_positions) where x_positions is a list
+        of x-coordinates (relative to cropped image) of detected X-noteheads.
     """
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img.copy()
     _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
@@ -114,11 +122,13 @@ def replace_x_noteheads(img: np.ndarray) -> np.ndarray:
             kept.append((cx, cy, sz, score))
 
     result = img.copy()
+    x_positions = []
     for cx, cy, sz, score in kept:
         cv2.ellipse(result, (cx, cy), (6, 4), 0, 0, 360, (0, 0, 0), -1)
+        x_positions.append(cx)
 
-    log.info(f"Replaced {len(kept)} x-noteheads with round noteheads")
-    return result
+    log.info(f"Replaced {len(kept)} x-noteheads with round noteheads at x-coordinates: {x_positions}")
+    return result, x_positions
 
 
 def crop_vocal_staff(img: np.ndarray, padding_factor: float = 1.5) -> Optional[np.ndarray]:

@@ -1,0 +1,263 @@
+{
+  "page_8_spike": {
+    "page": 8,
+    "geometry": {
+      "staff_top": 53,
+      "staff_bottom": 101,
+      "staff_spacing": 12.0
+    },
+    "regions_above": [
+      [
+        15,
+        16,
+        true
+      ],
+      [
+        15,
+        16,
+        false
+      ],
+      [
+        18,
+        24,
+        true
+      ],
+      [
+        29,
+        37,
+        true
+      ],
+      [
+        29,
+        37,
+        true
+      ],
+      [
+        29,
+        37,
+        true
+      ],
+      [
+        29,
+        37,
+        true
+      ],
+      [
+        29,
+        37,
+        true
+      ],
+      [
+        29,
+        37,
+        true
+      ],
+      [
+        29,
+        37,
+        true
+      ],
+      [
+        29,
+        37,
+        true
+      ]
+    ],
+    "regions_on": [],
+    "regions_below": [
+      [
+        123,
+        18,
+        true
+      ],
+      [
+        125,
+        18,
+        true
+      ],
+      [
+        125,
+        18,
+        true
+      ],
+      [
+        125,
+        18,
+        true
+      ],
+      [
+        142,
+        18,
+        true
+      ],
+      [
+        145,
+        10,
+        false
+      ]
+    ]
+  },
+  "other_pages": {
+    "8": {
+      "staff_top": 209,
+      "staff_bottom": 2073,
+      "staff_spacing": 12.0,
+      "above_count": 12,
+      "above_x_shaped": 9,
+      "above_y_centers": [
+        116,
+        116,
+        117,
+        117,
+        118,
+        121,
+        121,
+        121,
+        121,
+        124,
+        190,
+        195
+      ],
+      "on_count": 126,
+      "below_count": 2
+    },
+    "9": {
+      "staff_top": 209,
+      "staff_bottom": 2074,
+      "staff_spacing": 12.0,
+      "above_count": 8,
+      "above_x_shaped": 4,
+      "above_y_centers": [
+        116,
+        117,
+        117,
+        121,
+        121,
+        121,
+        121,
+        124
+      ],
+      "on_count": 164,
+      "below_count": 11
+    },
+    "10": {
+      "staff_top": 172,
+      "staff_bottom": 2074,
+      "staff_spacing": 12.0,
+      "above_count": 14,
+      "above_x_shaped": 9,
+      "above_y_centers": [
+        116,
+        116,
+        117,
+        117,
+        117,
+        120,
+        121,
+        121,
+        121,
+        121,
+        124,
+        155,
+        160,
+        166
+      ],
+      "on_count": 87,
+      "below_count": 5
+    },
+    "11": {
+      "staff_top": 218,
+      "staff_bottom": 2074,
+      "staff_spacing": 12.0,
+      "above_count": 12,
+      "above_x_shaped": 8,
+      "above_y_centers": [
+        116,
+        117,
+        117,
+        120,
+        121,
+        121,
+        121,
+        121,
+        124,
+        200,
+        203,
+        211
+      ],
+      "on_count": 78,
+      "below_count": 4
+    },
+    "12": {
+      "staff_top": 209,
+      "staff_bottom": 2073,
+      "staff_spacing": 12.0,
+      "above_count": 10,
+      "above_x_shaped": 6,
+      "above_y_centers": [
+        116,
+        116,
+        117,
+        117,
+        120,
+        121,
+        121,
+        121,
+        121,
+        124
+      ],
+      "on_count": 91,
+      "below_count": 8
+    },
+    "13": {
+      "staff_top": 209,
+      "staff_bottom": 2074,
+      "staff_spacing": 12.0,
+      "above_count": 14,
+      "above_x_shaped": 10,
+      "above_y_centers": [
+        116,
+        116,
+        117,
+        117,
+        120,
+        121,
+        121,
+        121,
+        121,
+        124,
+        163,
+        163,
+        163,
+        163
+      ],
+      "on_count": 102,
+      "below_count": 6
+    },
+    "14": {
+      "staff_top": 209,
+      "staff_bottom": 2073,
+      "staff_spacing": 12.0,
+      "above_count": 13,
+      "above_x_shaped": 9,
+      "above_y_centers": [
+        116,
+        116,
+        117,
+        117,
+        117,
+        120,
+        121,
+        121,
+        121,
+        121,
+        124,
+        201,
+        202
+      ],
+      "on_count": 99,
+      "below_count": 6
+    }
+  },
+  "proposed_rule": "Erase all ink with y < (staff_top - 28px)"
+}

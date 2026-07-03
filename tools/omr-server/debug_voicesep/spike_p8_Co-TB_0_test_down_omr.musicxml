@@ -1,0 +1,22 @@
+Processing debug_voicesep/spike_p8_Co-TB_0_test_down_voice.png
+Starting Inference.
+Segnet Inference time: 0.5458740830072202; batch_size 8
+Creating bounds for noteheads
+Creating bounds for staff_fragments
+Creating bounds for clefs_keys
+Creating bounds for stems_rest
+Creating bounds for bar_lines
+Found 0 staff line fragments
+Found 0 noteheads
+Traceback (most recent call last):
+  File "/Users/mmecoco/Desktop/musical-practice/tools/omr-server/./venv/bin/homr", line 6, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/homr/main.py", line 427, in main
+    process_image(args.image, config, xml_generator_args)
+  File "/Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/homr/main.py", line 184, in process_image
+    multi_staffs, image, debug, title_future = detect_staffs_in_image(image_path, config)
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/homr/main.py", line 239, in detect_staffs_in_image
+    raise Exception("No noteheads found")
+Exception: No noteheads found

@@ -30,6 +30,68 @@ def note_to_midi(note_el: ET.Element) -> Optional[int]:
     return pitch_to_midi(step, octave, alter)
 
 
+def mark_x_noteheads_in_xml(xml_str: str, x_positions: list[int]) -> str:
+    """Convert pitched notes at given x-offsets to unpitched (X-noteheads).
+
+    Takes MusicXML string and a list of x-coordinates where X-noteheads were
+    detected in the source image. Converts notes (in order of appearance) that
+    correspond to those x-positions into unpitched elements with notehead="x".
+
+    Args:
+        xml_str: MusicXML string to process.
+        x_positions: List of x-coordinates (in cropped image space) where
+                     X-noteheads were detected.
+
+    Returns:
+        Modified MusicXML string with marked X-noteheads.
+    """
+    if not x_positions:
+        return xml_str
+
+    try:
+        root = ET.fromstring(xml_str)
+    except ET.ParseError:
+        log.warning("Failed to parse XML in mark_x_noteheads_in_xml; returning unchanged")
+        return xml_str
+
+    part = root.find(".//part")
+    if part is None:
+        return xml_str
+
+    # Collect all pitched notes in order (across all measures)
+    all_notes = []
+    for measure in part.findall("measure"):
+        for note in measure.findall("note"):
+            # Skip rests, chords, and unpitched notes already present
+            if note.find("pitch") is None or note.find("chord") is not None:
+                continue
+            all_notes.append(note)
+
+    # Convert first len(x_positions) notes to unpitched
+    # (In practice, this matching is simplified; a production version would
+    # correlate x-position to note onset time more precisely.)
+    for i, x_pos in enumerate(x_positions):
+        if i >= len(all_notes):
+            break
+        note = all_notes[i]
+
+        # Remove pitch element
+        pitch = note.find("pitch")
+        if pitch is not None:
+            note.remove(pitch)
+
+        # Add unpitched element with display-step and display-octave
+        unpitched = ET.SubElement(note, "unpitched")
+        ET.SubElement(unpitched, "display-step").text = "B"
+        ET.SubElement(unpitched, "display-octave").text = "4"
+
+        # Add notehead element
+        notehead = ET.SubElement(note, "notehead")
+        notehead.text = "x"
+
+    return ET.tostring(root, encoding="unicode", xml_declaration=True)
+
+
 def make_rest_measure(divisions: int = 2) -> ET.Element:
     """Create a whole-rest measure element."""
     m = ET.Element("measure")

@@ -1,0 +1,152 @@
+{
+ "spike_p13_Co-SA_0.png": {
+  "original": {
+   "pitched": 8,
+   "chord_notes": 3,
+   "measures": 3,
+   "score": 52.9
+  },
+  "adaptive": {
+   "pitched": 9,
+   "chord_notes": 5,
+   "measures": 4,
+   "score": 51.5
+  },
+  "sharpen": {
+   "pitched": 9,
+   "chord_notes": 5,
+   "measures": 4,
+   "score": 51.5
+  },
+  "scale1.5": {
+   "pitched": 8,
+   "chord_notes": 4,
+   "measures": 4,
+   "score": 50.4
+  },
+  "scale2": {
+   "pitched": 2,
+   "chord_notes": 1,
+   "measures": 3,
+   "score": 21.6
+  },
+  "scale2_adaptive": {
+   "pitched": 6,
+   "chord_notes": 3,
+   "measures": 4,
+   "score": 39.8
+  },
+  "scale2_sharpen": {
+   "pitched": 8,
+   "chord_notes": 4,
+   "measures": 3,
+   "score": 50.4
+  },
+  "dilate1": {
+   "pitched": 8,
+   "chord_notes": 4,
+   "measures": 4,
+   "score": 50.4
+  }
+ },
+ "spike_p8_Co-TB_0.png": {
+  "original": {
+   "pitched": 8,
+   "chord_notes": 3,
+   "measures": 4,
+   "score": 46.0
+  },
+  "adaptive": {
+   "pitched": 8,
+   "chord_notes": 3,
+   "measures": 4,
+   "score": 46.0
+  },
+  "sharpen": {
+   "pitched": 9,
+   "chord_notes": 4,
+   "measures": 4,
+   "score": 48.5
+  },
+  "scale1.5": {
+   "pitched": 9,
+   "chord_notes": 4,
+   "measures": 4,
+   "score": 48.5
+  },
+  "scale2": {
+   "pitched": 8,
+   "chord_notes": 3,
+   "measures": 4,
+   "score": 46.0
+  },
+  "scale2_adaptive": {
+   "pitched": 8,
+   "chord_notes": 3,
+   "measures": 4,
+   "score": 43.5
+  },
+  "scale2_sharpen": {
+   "pitched": 8,
+   "chord_notes": 3,
+   "measures": 4,
+   "score": 46.0
+  },
+  "dilate1": {
+   "pitched": 8,
+   "chord_notes": 3,
+   "measures": 4,
+   "score": 46.0
+  }
+ },
+ "spike_p8_Co-SA_0.png": {
+  "original": {
+   "pitched": 11,
+   "chord_notes": 3,
+   "measures": 4,
+   "score": 53.5
+  },
+  "adaptive": {
+   "pitched": 8,
+   "chord_notes": 2,
+   "measures": 4,
+   "score": 48.5
+  },
+  "sharpen": {
+   "pitched": 11,
+   "chord_notes": 3,
+   "measures": 4,
+   "score": 53.5
+  },
+  "scale1.5": {
+   "pitched": 13,
+   "chord_notes": 4,
+   "measures": 4,
+   "score": 55.7
+  },
+  "scale2": {
+   "pitched": 9,
+   "chord_notes": 4,
+   "measures": 4,
+   "score": 51.0
+  },
+  "scale2_adaptive": {
+   "pitched": 14,
+   "chord_notes": 4,
+   "measures": 5,
+   "score": 52.7
+  },
+  "scale2_sharpen": {
+   "pitched": 11,
+   "chord_notes": 3,
+   "measures": 4,
+   "score": 53.5
+  },
+  "dilate1": {
+   "pitched": 13,
+   "chord_notes": 4,
+   "measures": 4,
+   "score": 55.7
+  }
+ }
+}

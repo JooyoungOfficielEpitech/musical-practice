@@ -46,7 +46,7 @@ class TestProcessSingleStaffNonCompound:
         staff_image = np.zeros((100, 200), dtype=np.uint8)
 
         with (
-            patch("core.staff_cropper.replace_x_noteheads", return_value=staff_image),
+            patch("core.staff_cropper.replace_x_noteheads", return_value=(staff_image, [])),
             patch("pipeline.staff_processor.run_homr", return_value=_make_xml_with_measures(3)),
             patch("pipeline.staff_processor.postprocess_musicxml", return_value=_make_xml_with_measures(3)),
         ):
@@ -68,7 +68,7 @@ class TestProcessSingleStaffCompoundSeparates:
         sep_result = _make_mock_separation_result(n_up=2, n_down=2)
 
         with (
-            patch("core.staff_cropper.replace_x_noteheads", return_value=staff_image),
+            patch("core.staff_cropper.replace_x_noteheads", return_value=(staff_image, [])),
             patch(
                 "pipeline.staff_processor.separate_voices_image",
                 return_value=sep_result,
@@ -101,7 +101,7 @@ class TestProcessSingleStaffCompoundSeparates:
         homr_mock = MagicMock()
 
         with (
-            patch("core.staff_cropper.replace_x_noteheads", return_value=staff_image),
+            patch("core.staff_cropper.replace_x_noteheads", return_value=(staff_image, [])),
             patch(
                 "pipeline.staff_processor.separate_voices_image",
                 return_value=None,
@@ -133,7 +133,7 @@ class TestProcessSingleStaffCompoundSeparates:
         staff_image = np.zeros((100, 200), dtype=np.uint8)
 
         with (
-            patch("core.staff_cropper.replace_x_noteheads", return_value=staff_image),
+            patch("core.staff_cropper.replace_x_noteheads", return_value=(staff_image, [])),
             patch(
                 "pipeline.staff_processor.separate_voices_image",
                 return_value=None,
@@ -159,7 +159,7 @@ class TestProcessSingleStaffFallback:
         sep_result = _make_mock_separation_result(n_up=3, n_down=1)
 
         with (
-            patch("core.staff_cropper.replace_x_noteheads", return_value=staff_image),
+            patch("core.staff_cropper.replace_x_noteheads", return_value=(staff_image, [])),
             patch(
                 "pipeline.staff_processor.separate_voices_image",
                 return_value=sep_result,
@@ -203,7 +203,7 @@ class TestProcessSingleStaffFallback:
         sep_result = _make_mock_separation_result(n_up=2, n_down=2)
 
         with (
-            patch("core.staff_cropper.replace_x_noteheads", return_value=staff_image),
+            patch("core.staff_cropper.replace_x_noteheads", return_value=(staff_image, [])),
             patch(
                 "pipeline.staff_processor.separate_voices_image",
                 return_value=sep_result,
@@ -249,7 +249,7 @@ class TestProcessSingleStaffCacheMergedPath:
         sep_result = _make_mock_separation_result(n_up=1, n_down=1)
 
         with (
-            patch("core.staff_cropper.replace_x_noteheads", return_value=staff_image),
+            patch("core.staff_cropper.replace_x_noteheads", return_value=(staff_image, [])),
             patch(
                 "pipeline.staff_processor.separate_voices_image",
                 return_value=sep_result,
@@ -281,7 +281,7 @@ class TestProcessSingleStaffCacheMergedPath:
         sep_result = _make_mock_separation_result(n_up=1, n_down=1)
 
         with (
-            patch("core.staff_cropper.replace_x_noteheads", return_value=staff_image),
+            patch("core.staff_cropper.replace_x_noteheads", return_value=(staff_image, [])),
             patch(
                 "pipeline.staff_processor.separate_voices_image",
                 return_value=sep_result,
@@ -312,7 +312,7 @@ class TestCropCleaning:
             ) as strip_mock,
             patch(
                 "core.staff_cropper.replace_x_noteheads",
-                return_value=cleaned,
+                return_value=(cleaned, []),
             ) as replace_mock,
             patch("pipeline.staff_processor.run_homr", return_value=_make_xml_with_measures(2)),
             patch("pipeline.staff_processor.postprocess_musicxml", return_value=_make_xml_with_measures(2)),

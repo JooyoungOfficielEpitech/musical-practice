@@ -1,0 +1,35 @@
+{
+ "elapsed_min": 6.2,
+ "parts": {
+  "Alto": {
+   "measures": 214,
+   "pitched": 74,
+   "mean_midi": 60.8
+  },
+  "Bass": {
+   "measures": 214,
+   "pitched": 91,
+   "mean_midi": 49.1
+  },
+  "Herm.": {
+   "measures": 214,
+   "pitched": 681,
+   "mean_midi": 72.1
+  },
+  "Orph.": {
+   "measures": 214,
+   "pitched": 16,
+   "mean_midi": 74.8
+  },
+  "Soprano": {
+   "measures": 214,
+   "pitched": 134,
+   "mean_midi": 63.9
+  },
+  "Tenor": {
+   "measures": 214,
+   "pitched": 129,
+   "mean_midi": 55.9
+  }
+ }
+}

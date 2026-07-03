@@ -1,0 +1,67 @@
+crop_cleaner: strip_outside_staff: erased 7 out-of-band components
+staff_cropper: Replaced 6 x-noteheads with round noteheads
+voice_separator: Not enough directed notes (up=2, down=0); skipping separation
+omr.staff_processor: CoSA_sys0: separation returned None, using merged split_voices path
+omr.runner:   [original] score=18.6 | {'notes': 2, 'rests': 5, 'measures': 6, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.29, 'notes_per_measure': 0.3}
+omr.runner:   [adaptive] score=18.6 | {'notes': 2, 'rests': 5, 'measures': 6, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.29, 'notes_per_measure': 0.3}
+omr.runner:   [sharpen] score=18.6 | {'notes': 2, 'rests': 5, 'measures': 6, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.29, 'notes_per_measure': 0.3}
+omr.runner:   [scale1.5] score=18.6 | {'notes': 2, 'rests': 5, 'measures': 6, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.29, 'notes_per_measure': 0.3}
+omr.runner: chord strategy: picked original (chords=0, notes=2)
+omr.postprocessor: Stripped 1 repeat barlines
+omr.staff_processor: CoSA_sys0: merged best-strategy score=18.6 (original)
+omr.voice_splitter: split_voices: single voice, no chords — returning as voice1
+crop_cleaner: strip_outside_staff: erased 74 out-of-band components
+staff_cropper: Replaced 2 x-noteheads with round noteheads
+voice_separator: Not enough directed notes (up=5, down=1); skipping separation
+omr.staff_processor: CoSA_sys0: separation returned None, using merged split_voices path
+omr.runner:   [original] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+omr.runner:   [adaptive] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+omr.runner:   [sharpen] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+omr.runner:   [scale1.5] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+omr.runner: chord strategy: picked original (chords=3, notes=8)
+omr.staff_processor: CoSA_sys0: merged best-strategy score=46.0 (original)
+omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+omr.voice_splitter: split_by_chord: split 4 measures into 2 voices
+crop_cleaner: strip_outside_staff: erased 19 out-of-band components
+staff_cropper: Replaced 3 x-noteheads with round noteheads
+voice_separator: Not enough directed notes (up=3, down=1); skipping separation
+omr.staff_processor: CoTB_sys0: separation returned None, using merged split_voices path
+omr.runner:   [original] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+omr.runner:   [adaptive] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+omr.runner:   [sharpen] score=47.3 | {'notes': 9, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 4, 'note_ratio': 0.69, 'notes_per_measure': 2.2}
+omr.runner:   [scale1.5] score=48.5 | {'notes': 9, 'rests': 4, 'measures': 4, 'pitches': 4, 'durations': 3, 'chord_notes': 4, 'note_ratio': 0.69, 'notes_per_measure': 2.2}
+omr.runner: chord strategy: picked scale1.5 (chords=4, notes=9)
+omr.staff_processor: CoTB_sys0: merged best-strategy score=48.5 (scale1.5)
+omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+omr.voice_splitter: split_by_chord: split 4 measures into 2 voices
+crop_cleaner: strip_outside_staff: erased 38 out-of-band components
+staff_cropper: Replaced 5 x-noteheads with round noteheads
+voice_separator: Not enough directed notes (up=1, down=0); skipping separation
+omr.staff_processor: CoSA_sys0: separation returned None, using merged split_voices path
+omr.runner:   [original] score=52.9 | {'notes': 8, 'rests': 1, 'measures': 3, 'pitches': 5, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.89, 'notes_per_measure': 2.7}
+omr.runner:   [adaptive] score=51.5 | {'notes': 9, 'rests': 1, 'measures': 4, 'pitches': 5, 'durations': 2, 'chord_notes': 5, 'note_ratio': 0.9, 'notes_per_measure': 2.2}
+omr.runner:   [sharpen] score=51.5 | {'notes': 9, 'rests': 1, 'measures': 4, 'pitches': 5, 'durations': 2, 'chord_notes': 5, 'note_ratio': 0.9, 'notes_per_measure': 2.2}
+omr.runner:   [scale1.5] score=50.4 | {'notes': 8, 'rests': 1, 'measures': 4, 'pitches': 5, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.89, 'notes_per_measure': 2.0}
+omr.runner: chord strategy: picked adaptive (chords=5, notes=9)
+omr.postprocessor: Stripped 2 repeat barlines
+omr.staff_processor: CoSA_sys0: merged best-strategy score=51.5 (adaptive)
+omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+omr.voice_splitter: split_by_chord: split 4 measures into 2 voices
+
+=== spike_p1_Co-SA_0.png (Co.SA) ===
+  Soprano: {'measures': 6, 'pitched': 2, 'mean_midi': 58.0, 'pitch_seq': [58, 58]}
+  Alto: {'measures': 0, 'pitched': 0, 'mean_midi': 0, 'pitch_seq': []}
+
+=== spike_p8_Co-SA_0.png (Co.SA) ===
+  Soprano: {'measures': 4, 'pitched': 5, 'mean_midi': 65.2, 'pitch_seq': [58, 58, 70, 70, 70]}
+  Alto: {'measures': 4, 'pitched': 3, 'mean_midi': 65.0, 'pitch_seq': [65, 65, 65]}
+
+=== spike_p8_Co-TB_0.png (Co.TB) ===
+  Tenor: {'measures': 4, 'pitched': 5, 'mean_midi': 53.2, 'pitch_seq': [46, 46, 58, 58, 58]}
+  Bass: {'measures': 4, 'pitched': 3, 'mean_midi': 53.0, 'pitch_seq': [53, 53, 53]}
+
+=== spike_p13_Co-SA_0.png (Co.SA) ===
+  Soprano: {'measures': 4, 'pitched': 4, 'mean_midi': 63.0, 'pitch_seq': [61, 63, 63, 65]}
+  Alto: {'measures': 4, 'pitched': 4, 'mean_midi': 58.0, 'pitch_seq': [58, 58, 58, 58]}
+
+DONE

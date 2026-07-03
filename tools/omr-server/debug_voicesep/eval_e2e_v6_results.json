@@ -1,0 +1,91 @@
+{
+ "spike_p1_Co-SA_0.png": {
+  "Soprano": {
+   "measures": 6,
+   "pitched": 2,
+   "mean_midi": 58.0,
+   "pitch_seq": [
+    58,
+    58
+   ]
+  },
+  "Alto": {
+   "measures": 0,
+   "pitched": 0,
+   "mean_midi": 0,
+   "pitch_seq": []
+  }
+ },
+ "spike_p8_Co-SA_0.png": {
+  "Soprano": {
+   "measures": 4,
+   "pitched": 5,
+   "mean_midi": 65.2,
+   "pitch_seq": [
+    58,
+    58,
+    70,
+    70,
+    70
+   ]
+  },
+  "Alto": {
+   "measures": 4,
+   "pitched": 3,
+   "mean_midi": 65.0,
+   "pitch_seq": [
+    65,
+    65,
+    65
+   ]
+  }
+ },
+ "spike_p8_Co-TB_0.png": {
+  "Tenor": {
+   "measures": 4,
+   "pitched": 5,
+   "mean_midi": 53.2,
+   "pitch_seq": [
+    46,
+    46,
+    58,
+    58,
+    58
+   ]
+  },
+  "Bass": {
+   "measures": 4,
+   "pitched": 3,
+   "mean_midi": 53.0,
+   "pitch_seq": [
+    53,
+    53,
+    53
+   ]
+  }
+ },
+ "spike_p13_Co-SA_0.png": {
+  "Soprano": {
+   "measures": 4,
+   "pitched": 4,
+   "mean_midi": 63.0,
+   "pitch_seq": [
+    61,
+    63,
+    63,
+    65
+   ]
+  },
+  "Alto": {
+   "measures": 4,
+   "pitched": 4,
+   "mean_midi": 58.0,
+   "pitch_seq": [
+    58,
+    58,
+    58,
+    58
+   ]
+  }
+ }
+}

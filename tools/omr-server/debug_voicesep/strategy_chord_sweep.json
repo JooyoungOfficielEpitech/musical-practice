@@ -1,0 +1,90 @@
+{
+ "spike_p13_Co-SA_0.png": {
+  "original": {
+   "pitched": 8,
+   "chord_notes": 3,
+   "measures": 3,
+   "score": 52.9
+  },
+  "otsu": {
+   "pitched": 8,
+   "chord_notes": 4,
+   "measures": 4,
+   "score": 50.4
+  },
+  "adaptive": {
+   "pitched": 9,
+   "chord_notes": 5,
+   "measures": 4,
+   "score": 51.5
+  },
+  "high_contrast": {
+   "pitched": 8,
+   "chord_notes": 4,
+   "measures": 4,
+   "score": 50.4
+  },
+  "denoise": {
+   "pitched": 8,
+   "chord_notes": 4,
+   "measures": 4,
+   "score": 50.4
+  },
+  "deskew": {
+   "pitched": 8,
+   "chord_notes": 3,
+   "measures": 3,
+   "score": 52.9
+  },
+  "sharpen": {
+   "pitched": 9,
+   "chord_notes": 5,
+   "measures": 4,
+   "score": 51.5
+  }
+ },
+ "spike_p8_Co-TB_0.png": {
+  "original": {
+   "pitched": 8,
+   "chord_notes": 3,
+   "measures": 4,
+   "score": 46.0
+  },
+  "otsu": {
+   "pitched": 8,
+   "chord_notes": 3,
+   "measures": 4,
+   "score": 46.0
+  },
+  "adaptive": {
+   "pitched": 8,
+   "chord_notes": 3,
+   "measures": 4,
+   "score": 46.0
+  },
+  "high_contrast": {
+   "pitched": 8,
+   "chord_notes": 3,
+   "measures": 4,
+   "score": 46.0
+  },
+  "denoise": {
+   "pitched": 8,
+   "chord_notes": 3,
+   "measures": 4,
+   "score": 46.0
+  },
+  "deskew": {
+   "pitched": 8,
+   "chord_notes": 3,
+   "measures": 4,
+   "score": 46.0
+  },
+  "sharpen": {
+   "pitched": 9,
+   "chord_notes": 4,
+   "measures": 4,
+   "score": 48.5
+  }
+ }
+}

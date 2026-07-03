@@ -18,7 +18,7 @@ import cv2
 from omr_io.pdf_to_png import pdf_to_png
 from core.staff_cropper import crop_all_vocal_staves, replace_x_noteheads
 from pipeline.omr_runner import run_homr
-from pipeline.postprocessor import postprocess as postprocess_musicxml
+from pipeline.postprocessor import postprocess as postprocess_musicxml, mark_x_noteheads_in_xml
 from omr_io.xml_writer import combine_chars_to_xml_string
 from pipeline.alignment import align_and_flatten
 from pipeline.divisions_normalizer import normalize_divisions
@@ -92,10 +92,12 @@ def run(pdf_path: str, output_xml: str | None = None):
                     crop_out = os.path.join(debug_dir, f"{tag}_1_crop.png")
                     cv2.imwrite(crop_out, staff_img)
 
-                    # x-notehead replacement
-                    xfixed = replace_x_noteheads(staff_img)
+                    # x-notehead replacement (returns image and x-coordinates)
+                    xfixed, x_positions = replace_x_noteheads(staff_img)
                     xfix_out = os.path.join(debug_dir, f"{tag}_2_xfix.png")
                     cv2.imwrite(xfix_out, xfixed)
+                    if x_positions:
+                        print(f"      [{char} sys{g_idx}] Detected {len(x_positions)} x-noteheads at x: {x_positions}")
 
                     # Save exact homr input
                     homr_in = os.path.join(tmp, f"{tag}_homr_input.png")
@@ -113,6 +115,11 @@ def run(pdf_path: str, output_xml: str | None = None):
                         continue
 
                     xml = postprocess_musicxml(raw_xml)
+
+                    # Mark X-noteheads in the XML if any were detected
+                    if x_positions:
+                        xml = mark_x_noteheads_in_xml(xml, x_positions)
+                        print(f"      [{char} sys{g_idx}] Marked {len(x_positions)} X-noteheads in MusicXML")
 
                     # Save per-staff XML
                     staff_xml_path = os.path.join(debug_dir, f"{tag}.xml")

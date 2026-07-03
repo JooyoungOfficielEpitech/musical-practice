@@ -1,0 +1,1026 @@
+2026-06-11 21:01:22,759 staff_detector: Barline connectivity (x=197): [np.False_, np.False_, np.False_, np.False_, np.False_, np.True_, np.True_, np.True_, np.False_, np.True_, np.True_, np.True_]
+2026-06-11 21:01:22,759 staff_detector: Barline-based systems: [5, 4, 4]
+[32m[INFO] 2026-06-11 21:01:23,149 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:01:23,197 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:01:23,198 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:01:23,251 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:01:23,253 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:01:23,253 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:01:23,270 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:01:23,280 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:01:23,280 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[33m[WARNING] 2026-06-11 21:01:23,708 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:01:23,852 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:01:23,996 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:01:24,139 [RapidOCR] main.py:125: The text detection result is empty[0m
+2026-06-11 21:01:25,620 crop_cleaner: strip_outside_staff: erased 7 out-of-band components
+2026-06-11 21:01:25,623 crop_cleaner: strip_outside_staff: erased 57 out-of-band components
+2026-06-11 21:01:25,632 crop_cleaner: strip_outside_staff: erased 178 out-of-band components
+2026-06-11 21:01:25,635 staff_cropper: Replaced 6 x-noteheads with round noteheads
+2026-06-11 21:01:25,637 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:01:25,647 staff_cropper: Replaced 19 x-noteheads with round noteheads
+2026-06-11 21:01:25,673 voice_separator: Not enough directed notes (up=3, down=1); skipping separation
+2026-06-11 21:01:25,673 omr.staff_processor: CoSA_sys1: separation returned None, using merged split_voices path
+2026-06-11 21:01:25,674 voice_separator: Not enough directed notes (up=2, down=0); skipping separation
+2026-06-11 21:01:25,674 omr.staff_processor: CoSA_sys0: separation returned None, using merged split_voices path
+2026-06-11 21:01:25,697 voice_separator: Not enough directed notes (up=1, down=16); skipping separation
+2026-06-11 21:01:25,698 omr.staff_processor: CoSA_sys2: separation returned None, using merged split_voices path
+2026-06-11 21:01:29,698 omr.runner:   [original] score=39.7 | {'notes': 8, 'rests': 4, 'measures': 5, 'pitches': 2, 'durations': 3, 'chord_notes': 4, 'note_ratio': 0.67, 'notes_per_measure': 1.6}
+2026-06-11 21:01:29,712 omr.runner:   [original] score=18.6 | {'notes': 2, 'rests': 5, 'measures': 6, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.29, 'notes_per_measure': 0.3}
+2026-06-11 21:01:29,744 omr.runner:   [original] score=51.6 | {'notes': 16, 'rests': 1, 'measures': 3, 'pitches': 2, 'durations': 1, 'chord_notes': 0, 'note_ratio': 0.94, 'notes_per_measure': 5.3}
+2026-06-11 21:01:33,546 omr.runner:   [adaptive] score=39.7 | {'notes': 8, 'rests': 4, 'measures': 5, 'pitches': 2, 'durations': 3, 'chord_notes': 4, 'note_ratio': 0.67, 'notes_per_measure': 1.6}
+2026-06-11 21:01:33,665 omr.runner:   [adaptive] score=18.6 | {'notes': 2, 'rests': 5, 'measures': 6, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.29, 'notes_per_measure': 0.3}
+2026-06-11 21:01:33,716 omr.runner:   [adaptive] score=51.2 | {'notes': 17, 'rests': 1, 'measures': 3, 'pitches': 1, 'durations': 1, 'chord_notes': 0, 'note_ratio': 0.94, 'notes_per_measure': 5.7}
+2026-06-11 21:01:36,511 omr.runner:   [sharpen] score=39.7 | {'notes': 8, 'rests': 4, 'measures': 5, 'pitches': 2, 'durations': 3, 'chord_notes': 4, 'note_ratio': 0.67, 'notes_per_measure': 1.6}
+2026-06-11 21:01:36,803 omr.runner:   [sharpen] score=18.6 | {'notes': 2, 'rests': 5, 'measures': 6, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.29, 'notes_per_measure': 0.3}
+2026-06-11 21:01:36,930 omr.runner:   [sharpen] score=51.2 | {'notes': 17, 'rests': 1, 'measures': 3, 'pitches': 1, 'durations': 1, 'chord_notes': 0, 'note_ratio': 0.94, 'notes_per_measure': 5.7}
+2026-06-11 21:01:38,894 omr.runner:   [scale1.5] score=39.7 | {'notes': 8, 'rests': 4, 'measures': 5, 'pitches': 2, 'durations': 3, 'chord_notes': 4, 'note_ratio': 0.67, 'notes_per_measure': 1.6}
+2026-06-11 21:01:38,895 omr.runner: chord strategy: picked original (chords=4, notes=8)
+2026-06-11 21:01:39,145 omr.staff_processor: CoSA_sys1: merged best-strategy score=39.7 (original)
+2026-06-11 21:01:39,145 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:01:39,146 omr.voice_splitter: split_by_chord: split 5 measures into 2 voices
+2026-06-11 21:01:39,240 crop_cleaner: strip_outside_staff: erased 24 out-of-band components
+2026-06-11 21:01:39,284 staff_cropper: Replaced 3 x-noteheads with round noteheads
+2026-06-11 21:01:39,413 voice_separator: Not enough directed notes (up=2, down=1); skipping separation
+2026-06-11 21:01:39,413 omr.staff_processor: CoTB_sys0: separation returned None, using merged split_voices path
+2026-06-11 21:01:39,730 omr.runner:   [scale1.5] score=18.6 | {'notes': 2, 'rests': 5, 'measures': 6, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.29, 'notes_per_measure': 0.3}
+2026-06-11 21:01:39,730 omr.runner: chord strategy: picked original (chords=0, notes=2)
+2026-06-11 21:01:39,730 omr.postprocessor: Stripped 1 repeat barlines
+2026-06-11 21:01:39,732 omr.staff_processor: CoSA_sys0: merged best-strategy score=18.6 (original)
+2026-06-11 21:01:39,732 omr.voice_splitter: split_voices: single voice, no chords — returning as voice1
+2026-06-11 21:01:39,751 crop_cleaner: strip_outside_staff: erased 19 out-of-band components
+2026-06-11 21:01:39,767 staff_cropper: Replaced 4 x-noteheads with round noteheads
+2026-06-11 21:01:39,808 voice_separator: Not enough directed notes (up=1, down=1); skipping separation
+2026-06-11 21:01:39,808 omr.staff_processor: CoTB_sys1: separation returned None, using merged split_voices path
+2026-06-11 21:01:39,825 omr.runner:   [scale1.5] score=51.2 | {'notes': 17, 'rests': 1, 'measures': 3, 'pitches': 1, 'durations': 1, 'chord_notes': 0, 'note_ratio': 0.94, 'notes_per_measure': 5.7}
+2026-06-11 21:01:39,825 omr.runner: chord strategy: picked adaptive (chords=0, notes=17)
+2026-06-11 21:01:39,827 omr.staff_processor: CoSA_sys2: merged best-strategy score=51.2 (adaptive)
+2026-06-11 21:01:39,827 omr.voice_splitter: split_voices: single voice, no chords — returning as voice1
+2026-06-11 21:01:39,845 crop_cleaner: strip_outside_staff: erased 6 out-of-band components
+2026-06-11 21:01:39,860 staff_cropper: Replaced 18 x-noteheads with round noteheads
+2026-06-11 21:01:39,896 voice_separator: Not enough directed notes (up=1, down=16); skipping separation
+2026-06-11 21:01:39,896 omr.staff_processor: CoTB_sys2: separation returned None, using merged split_voices path
+2026-06-11 21:01:41,663 omr.runner:   [original] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:01:42,931 omr.runner:   [original] score=42.2 | {'notes': 8, 'rests': 4, 'measures': 5, 'pitches': 4, 'durations': 3, 'chord_notes': 4, 'note_ratio': 0.67, 'notes_per_measure': 1.6}
+2026-06-11 21:01:42,938 omr.runner:   [original] score=50.2 | {'notes': 17, 'rests': 2, 'measures': 3, 'pitches': 1, 'durations': 1, 'chord_notes': 0, 'note_ratio': 0.89, 'notes_per_measure': 5.7}
+2026-06-11 21:01:44,676 omr.runner:   [adaptive] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:01:46,170 omr.runner:   [adaptive] score=52.1 | {'notes': 18, 'rests': 1, 'measures': 3, 'pitches': 1, 'durations': 1, 'chord_notes': 0, 'note_ratio': 0.95, 'notes_per_measure': 6.0}
+2026-06-11 21:01:46,207 omr.runner:   [adaptive] score=43.5 | {'notes': 9, 'rests': 4, 'measures': 5, 'pitches': 4, 'durations': 3, 'chord_notes': 5, 'note_ratio': 0.69, 'notes_per_measure': 1.8}
+2026-06-11 21:01:47,814 omr.runner:   [sharpen] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:01:49,387 omr.runner:   [sharpen] score=50.4 | {'notes': 16, 'rests': 1, 'measures': 3, 'pitches': 1, 'durations': 1, 'chord_notes': 0, 'note_ratio': 0.94, 'notes_per_measure': 5.3}
+2026-06-11 21:01:49,422 omr.runner:   [sharpen] score=41.0 | {'notes': 8, 'rests': 4, 'measures': 5, 'pitches': 3, 'durations': 3, 'chord_notes': 4, 'note_ratio': 0.67, 'notes_per_measure': 1.6}
+2026-06-11 21:01:50,868 omr.runner:   [scale1.5] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:01:50,868 omr.runner: chord strategy: picked original (chords=2, notes=4)
+2026-06-11 21:01:50,868 omr.postprocessor: Stripped 1 repeat barlines
+2026-06-11 21:01:50,870 omr.staff_processor: CoTB_sys0: merged best-strategy score=24.6 (original)
+2026-06-11 21:01:50,870 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:01:50,870 omr.voice_splitter: split_by_chord: split 6 measures into 2 voices
+2026-06-11 21:01:50,899 crop_cleaner: strip_outside_staff: erased 78 out-of-band components
+2026-06-11 21:01:50,917 staff_cropper: Replaced 7 x-noteheads with round noteheads
+2026-06-11 21:01:52,346 omr.runner:   [scale1.5] score=51.5 | {'notes': 17, 'rests': 2, 'measures': 3, 'pitches': 2, 'durations': 1, 'chord_notes': 0, 'note_ratio': 0.89, 'notes_per_measure': 5.7}
+2026-06-11 21:01:52,346 omr.runner: chord strategy: picked adaptive (chords=0, notes=18)
+2026-06-11 21:01:52,351 omr.staff_processor: CoTB_sys2: merged best-strategy score=52.1 (adaptive)
+2026-06-11 21:01:52,352 omr.voice_splitter: split_voices: single voice, no chords — returning as voice1
+2026-06-11 21:01:52,379 crop_cleaner: strip_outside_staff: erased 50 out-of-band components
+2026-06-11 21:01:52,412 staff_cropper: Replaced 11 x-noteheads with round noteheads
+2026-06-11 21:01:52,644 omr.runner:   [scale1.5] score=41.0 | {'notes': 8, 'rests': 4, 'measures': 5, 'pitches': 3, 'durations': 3, 'chord_notes': 4, 'note_ratio': 0.67, 'notes_per_measure': 1.6}
+2026-06-11 21:01:52,644 omr.runner: chord strategy: picked adaptive (chords=5, notes=9)
+2026-06-11 21:01:52,646 omr.staff_processor: CoTB_sys1: merged best-strategy score=43.5 (adaptive)
+2026-06-11 21:01:52,646 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:01:52,647 omr.voice_splitter: split_by_chord: split 5 measures into 2 voices
+2026-06-11 21:01:52,673 crop_cleaner: strip_outside_staff: erased 138 out-of-band components
+2026-06-11 21:01:52,687 staff_cropper: Replaced 25 x-noteheads with round noteheads
+2026-06-11 21:01:54,132 omr.postprocessor: Stripped 1 repeat barlines
+### PROGRESS 6%
+2026-06-11 21:01:55,442 staff_detector: Barline connectivity (x=197): [np.True_, np.True_, np.True_, np.False_, np.True_, np.True_, np.True_, np.False_, np.True_, np.True_, np.True_]
+2026-06-11 21:01:55,442 staff_detector: Barline-based systems: [4, 4, 4]
+[32m[INFO] 2026-06-11 21:01:55,492 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:01:55,495 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:01:55,495 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:01:55,522 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:01:55,522 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:01:55,522 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:01:55,537 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:01:55,543 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:01:55,543 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+2026-06-11 21:01:57,567 crop_cleaner: strip_outside_staff: erased 36 out-of-band components
+2026-06-11 21:01:57,568 crop_cleaner: strip_outside_staff: erased 42 out-of-band components
+2026-06-11 21:01:57,572 crop_cleaner: strip_outside_staff: erased 92 out-of-band components
+2026-06-11 21:01:57,585 staff_cropper: Replaced 9 x-noteheads with round noteheads
+2026-06-11 21:01:57,586 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:01:57,598 staff_cropper: Replaced 6 x-noteheads with round noteheads
+2026-06-11 21:02:01,364 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:02:01,393 crop_cleaner: strip_outside_staff: erased 50 out-of-band components
+2026-06-11 21:02:01,410 staff_cropper: Replaced 3 x-noteheads with round noteheads
+2026-06-11 21:02:01,428 crop_cleaner: strip_outside_staff: erased 45 out-of-band components
+2026-06-11 21:02:01,444 staff_cropper: Replaced 4 x-noteheads with round noteheads
+2026-06-11 21:02:01,447 voice_separator: Not enough directed notes (up=2, down=0); skipping separation
+2026-06-11 21:02:01,447 omr.staff_processor: CoSA_sys3: separation returned None, using merged split_voices path
+2026-06-11 21:02:01,479 voice_separator: Not enough directed notes (up=4, down=1); skipping separation
+2026-06-11 21:02:01,480 omr.staff_processor: CoSA_sys4: separation returned None, using merged split_voices path
+2026-06-11 21:02:01,565 crop_cleaner: strip_outside_staff: erased 33 out-of-band components
+2026-06-11 21:02:01,581 staff_cropper: Replaced 7 x-noteheads with round noteheads
+2026-06-11 21:02:01,620 voice_separator: Not enough directed notes (up=2, down=1); skipping separation
+2026-06-11 21:02:01,620 omr.staff_processor: CoSA_sys5: separation returned None, using merged split_voices path
+2026-06-11 21:02:04,706 omr.runner:   [original] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:02:05,070 omr.runner:   [original] score=18.6 | {'notes': 2, 'rests': 5, 'measures': 6, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.29, 'notes_per_measure': 0.3}
+2026-06-11 21:02:05,108 omr.runner:   [original] score=42.4 | {'notes': 8, 'rests': 2, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.8, 'notes_per_measure': 1.6}
+2026-06-11 21:02:07,138 omr.runner:   [adaptive] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:02:08,238 omr.runner:   [adaptive] score=18.6 | {'notes': 2, 'rests': 5, 'measures': 6, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.29, 'notes_per_measure': 0.3}
+2026-06-11 21:02:08,286 omr.runner:   [adaptive] score=42.4 | {'notes': 8, 'rests': 2, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.8, 'notes_per_measure': 1.6}
+2026-06-11 21:02:09,862 omr.runner:   [sharpen] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:02:11,526 omr.runner:   [sharpen] score=42.4 | {'notes': 8, 'rests': 2, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.8, 'notes_per_measure': 1.6}
+2026-06-11 21:02:11,648 omr.runner:   [sharpen] score=18.6 | {'notes': 2, 'rests': 5, 'measures': 6, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.29, 'notes_per_measure': 0.3}
+2026-06-11 21:02:11,987 omr.runner: homr failed: Processing /var/folders/pr/s3jnbyx921dd0dnw1h9z4yy40000gn/T/tmpku6y9pee/scale1.5/input.png
+Starting Inference.
+Segnet Inference time: 1.2184108750079758; batch_size 8
+Filtered 2 of 440 cells
+Creating 
+2026-06-11 21:02:11,987 omr.runner: chord strategy: picked original (chords=2, notes=4)
+2026-06-11 21:02:11,989 omr.staff_processor: CoSA_sys4: merged best-strategy score=24.6 (original)
+2026-06-11 21:02:11,990 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:02:11,990 omr.voice_splitter: split_by_chord: split 6 measures into 2 voices
+2026-06-11 21:02:12,013 crop_cleaner: strip_outside_staff: erased 12 out-of-band components
+2026-06-11 21:02:12,030 staff_cropper: Replaced 3 x-noteheads with round noteheads
+2026-06-11 21:02:12,068 voice_separator: Separated: 2 up, 2 down, 21 ambiguous
+2026-06-11 21:02:12,068 omr.staff_processor: CoTB_sys3: separated 2 up, 2 down, 21 ambiguous
+2026-06-11 21:02:14,980 omr.runner:   [scale1.5] score=42.4 | {'notes': 8, 'rests': 2, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.8, 'notes_per_measure': 1.6}
+2026-06-11 21:02:14,980 omr.runner: chord strategy: picked original (chords=4, notes=8)
+2026-06-11 21:02:14,980 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:02:14,982 omr.staff_processor: CoSA_sys5: merged best-strategy score=42.4 (original)
+2026-06-11 21:02:14,982 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:02:14,983 omr.voice_splitter: split_by_chord: split 5 measures into 2 voices
+2026-06-11 21:02:15,008 crop_cleaner: strip_outside_staff: erased 19 out-of-band components
+2026-06-11 21:02:15,024 staff_cropper: Replaced 2 x-noteheads with round noteheads
+2026-06-11 21:02:15,068 voice_separator: Not enough directed notes (up=1, down=0); skipping separation
+2026-06-11 21:02:15,069 omr.staff_processor: CoTB_sys4: separation returned None, using merged split_voices path
+2026-06-11 21:02:15,246 omr.runner:   [scale1.5] score=18.6 | {'notes': 2, 'rests': 5, 'measures': 6, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.29, 'notes_per_measure': 0.3}
+2026-06-11 21:02:15,246 omr.runner: chord strategy: picked original (chords=0, notes=2)
+2026-06-11 21:02:15,248 omr.staff_processor: CoSA_sys3: merged best-strategy score=18.6 (original)
+2026-06-11 21:02:15,248 omr.voice_splitter: split_voices: single voice, no chords — returning as voice1
+2026-06-11 21:02:15,270 crop_cleaner: strip_outside_staff: erased 20 out-of-band components
+2026-06-11 21:02:15,288 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:02:15,375 voice_separator: Not enough directed notes (up=2, down=1); skipping separation
+2026-06-11 21:02:15,375 omr.staff_processor: CoTB_sys5: separation returned None, using merged split_voices path
+2026-06-11 21:02:15,586 omr.chord_voicer: take_voice(upper): reduced 2 chord groups
+2026-06-11 21:02:18,005 omr.runner:   [original] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:02:18,700 omr.chord_voicer: take_voice(lower): reduced 1 chord groups
+2026-06-11 21:02:18,709 omr.runner:   [original] score=39.8 | {'notes': 6, 'rests': 2, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.75, 'notes_per_measure': 1.2}
+2026-06-11 21:02:20,137 omr.runner:   [adaptive] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:02:20,810 omr.runner:   [adaptive] score=39.8 | {'notes': 6, 'rests': 2, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.75, 'notes_per_measure': 1.2}
+2026-06-11 21:02:22,506 omr.runner:   [sharpen] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:02:23,169 omr.runner:   [sharpen] score=39.8 | {'notes': 6, 'rests': 2, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.75, 'notes_per_measure': 1.2}
+2026-06-11 21:02:24,618 omr.runner:   [scale1.5] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:02:24,618 omr.runner: chord strategy: picked original (chords=2, notes=4)
+2026-06-11 21:02:24,620 omr.staff_processor: CoTB_sys4: merged best-strategy score=24.6 (original)
+2026-06-11 21:02:24,620 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:02:24,620 omr.voice_splitter: split_by_chord: split 6 measures into 2 voices
+2026-06-11 21:02:25,144 omr.runner:   [scale1.5] score=38.5 | {'notes': 6, 'rests': 2, 'measures': 5, 'pitches': 3, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.75, 'notes_per_measure': 1.2}
+2026-06-11 21:02:25,144 omr.runner: chord strategy: picked original (chords=2, notes=6)
+2026-06-11 21:02:25,144 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:02:25,146 omr.staff_processor: CoTB_sys5: merged best-strategy score=39.8 (original)
+2026-06-11 21:02:25,146 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:02:25,146 omr.voice_splitter: split_by_chord: split 5 measures into 2 voices
+### PROGRESS 13%
+2026-06-11 21:02:25,239 staff_detector: Barline connectivity (x=197): [np.True_, np.True_, np.True_, np.False_, np.True_, np.True_, np.True_, np.True_, np.False_, np.True_, np.True_]
+2026-06-11 21:02:25,239 staff_detector: Barline-based systems: [4, 5, 3]
+[32m[INFO] 2026-06-11 21:02:25,290 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:02:25,293 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:02:25,294 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:02:25,321 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:02:25,322 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:02:25,322 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:02:25,337 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:02:25,343 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:02:25,343 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[33m[WARNING] 2026-06-11 21:02:26,669 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:02:26,807 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:02:27,218 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:02:27,362 [RapidOCR] main.py:125: The text detection result is empty[0m
+2026-06-11 21:02:27,500 crop_cleaner: strip_outside_staff: erased 55 out-of-band components
+2026-06-11 21:02:27,505 crop_cleaner: strip_outside_staff: erased 109 out-of-band components
+2026-06-11 21:02:27,505 crop_cleaner: strip_outside_staff: erased 95 out-of-band components
+2026-06-11 21:02:27,518 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:02:27,529 staff_cropper: Replaced 27 x-noteheads with round noteheads
+2026-06-11 21:02:27,533 staff_cropper: Replaced 8 x-noteheads with round noteheads
+2026-06-11 21:02:31,714 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:02:31,730 crop_cleaner: strip_outside_staff: erased 72 out-of-band components
+2026-06-11 21:02:31,736 crop_cleaner: strip_outside_staff: erased 28 out-of-band components
+2026-06-11 21:02:31,738 crop_cleaner: strip_outside_staff: erased 31 out-of-band components
+2026-06-11 21:02:31,748 staff_cropper: Replaced 4 x-noteheads with round noteheads
+2026-06-11 21:02:31,752 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:02:31,753 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:02:31,789 voice_separator: Separated: 3 up, 2 down, 19 ambiguous
+2026-06-11 21:02:31,789 omr.staff_processor: CoTB_sys6: separated 3 up, 2 down, 19 ambiguous
+2026-06-11 21:02:31,790 voice_separator: Separated: 4 up, 3 down, 17 ambiguous
+2026-06-11 21:02:31,790 omr.staff_processor: CoSA_sys6: separated 4 up, 3 down, 17 ambiguous
+2026-06-11 21:02:31,798 voice_separator: Not enough directed notes (up=7, down=1); skipping separation
+2026-06-11 21:02:31,799 omr.staff_processor: CoSA_sys7: separation returned None, using merged split_voices path
+2026-06-11 21:02:35,594 omr.runner:   [original] score=35.2 | {'notes': 5, 'rests': 5, 'measures': 5, 'pitches': 3, 'durations': 3, 'chord_notes': 0, 'note_ratio': 0.5, 'notes_per_measure': 1.0}
+2026-06-11 21:02:38,393 crop_cleaner: strip_outside_staff: erased 38 out-of-band components
+2026-06-11 21:02:38,410 staff_cropper: Replaced 4 x-noteheads with round noteheads
+2026-06-11 21:02:38,502 voice_separator: Separated: 3 up, 2 down, 23 ambiguous
+2026-06-11 21:02:38,502 omr.staff_processor: CoTB_sys7: separated 3 up, 2 down, 23 ambiguous
+2026-06-11 21:02:38,896 omr.runner:   [adaptive] score=35.2 | {'notes': 5, 'rests': 5, 'measures': 5, 'pitches': 3, 'durations': 3, 'chord_notes': 0, 'note_ratio': 0.5, 'notes_per_measure': 1.0}
+2026-06-11 21:02:40,922 omr.runner:   [sharpen] score=35.2 | {'notes': 5, 'rests': 5, 'measures': 5, 'pitches': 3, 'durations': 3, 'chord_notes': 0, 'note_ratio': 0.5, 'notes_per_measure': 1.0}
+2026-06-11 21:02:43,087 omr.runner:   [scale1.5] score=35.2 | {'notes': 5, 'rests': 5, 'measures': 5, 'pitches': 3, 'durations': 3, 'chord_notes': 0, 'note_ratio': 0.5, 'notes_per_measure': 1.0}
+2026-06-11 21:02:43,087 omr.runner: chord strategy: picked original (chords=0, notes=5)
+2026-06-11 21:02:43,089 omr.staff_processor: CoSA_sys7: merged best-strategy score=35.2 (original)
+2026-06-11 21:02:43,089 omr.voice_splitter: split_voices: single voice, no chords — returning as voice1
+### PROGRESS 19%
+2026-06-11 21:02:43,179 staff_detector: Barline connectivity (x=197): [np.True_, np.True_, np.True_, np.False_, np.True_, np.True_, np.True_, np.False_, np.True_, np.True_, np.True_]
+2026-06-11 21:02:43,179 staff_detector: Barline-based systems: [4, 4, 4]
+[32m[INFO] 2026-06-11 21:02:43,231 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:02:43,234 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:02:43,234 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:02:43,260 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:02:43,261 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:02:43,261 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:02:43,275 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:02:43,281 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:02:43,281 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+2026-06-11 21:02:45,367 crop_cleaner: strip_outside_staff: erased 58 out-of-band components
+2026-06-11 21:02:45,368 crop_cleaner: strip_outside_staff: erased 63 out-of-band components
+2026-06-11 21:02:45,371 crop_cleaner: strip_outside_staff: erased 98 out-of-band components
+2026-06-11 21:02:45,384 staff_cropper: Replaced 6 x-noteheads with round noteheads
+2026-06-11 21:02:45,385 staff_cropper: Replaced 6 x-noteheads with round noteheads
+2026-06-11 21:02:45,395 staff_cropper: Replaced 14 x-noteheads with round noteheads
+2026-06-11 21:02:49,745 crop_cleaner: strip_outside_staff: erased 39 out-of-band components
+2026-06-11 21:02:49,747 crop_cleaner: strip_outside_staff: erased 41 out-of-band components
+2026-06-11 21:02:49,762 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:02:49,764 staff_cropper: Replaced 4 x-noteheads with round noteheads
+2026-06-11 21:02:49,775 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:02:49,792 voice_separator: Not enough directed notes (up=3, down=1); skipping separation
+2026-06-11 21:02:49,792 omr.staff_processor: CoSA_sys9: separation returned None, using merged split_voices path
+2026-06-11 21:02:49,801 voice_separator: Not enough directed notes (up=2, down=0); skipping separation
+2026-06-11 21:02:49,801 omr.staff_processor: CoSA_sys10: separation returned None, using merged split_voices path
+2026-06-11 21:02:49,809 crop_cleaner: strip_outside_staff: erased 63 out-of-band components
+2026-06-11 21:02:49,827 staff_cropper: Replaced 6 x-noteheads with round noteheads
+2026-06-11 21:02:49,879 voice_separator: Not enough directed notes (up=1, down=0); skipping separation
+2026-06-11 21:02:49,879 omr.staff_processor: CoSA_sys11: separation returned None, using merged split_voices path
+2026-06-11 21:02:53,766 omr.runner:   [original] score=32.1 | {'notes': 4, 'rests': 3, 'measures': 4, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.57, 'notes_per_measure': 1.0}
+2026-06-11 21:02:53,822 omr.runner:   [original] score=20.9 | {'notes': 2, 'rests': 3, 'measures': 4, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.4, 'notes_per_measure': 0.5}
+2026-06-11 21:02:53,887 omr.runner:   [original] score=39.4 | {'notes': 6, 'rests': 3, 'measures': 5, 'pitches': 5, 'durations': 2, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 1.2}
+2026-06-11 21:02:57,606 omr.runner:   [adaptive] score=32.1 | {'notes': 4, 'rests': 3, 'measures': 4, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.57, 'notes_per_measure': 1.0}
+2026-06-11 21:02:57,709 omr.runner:   [adaptive] score=39.4 | {'notes': 6, 'rests': 3, 'measures': 5, 'pitches': 5, 'durations': 2, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 1.2}
+2026-06-11 21:02:57,719 omr.runner:   [adaptive] score=20.9 | {'notes': 2, 'rests': 3, 'measures': 4, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.4, 'notes_per_measure': 0.5}
+2026-06-11 21:03:02,425 omr.runner:   [sharpen] score=20.9 | {'notes': 2, 'rests': 3, 'measures': 4, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.4, 'notes_per_measure': 0.5}
+2026-06-11 21:03:02,457 omr.runner:   [sharpen] score=32.1 | {'notes': 4, 'rests': 3, 'measures': 4, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.57, 'notes_per_measure': 1.0}
+2026-06-11 21:03:02,653 omr.runner:   [sharpen] score=39.4 | {'notes': 6, 'rests': 3, 'measures': 5, 'pitches': 5, 'durations': 2, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 1.2}
+2026-06-11 21:03:04,917 omr.runner: homr failed: Processing /var/folders/pr/s3jnbyx921dd0dnw1h9z4yy40000gn/T/tmpg8y088yy/scale1.5/input.png
+Starting Inference.
+Segnet Inference time: 1.4189787910145242; batch_size 8
+Filtered 2 of 440 cells
+Creating 
+2026-06-11 21:03:04,917 omr.runner: chord strategy: picked original (chords=3, notes=6)
+2026-06-11 21:03:04,917 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:03:04,919 omr.staff_processor: CoSA_sys11: merged best-strategy score=39.4 (original)
+2026-06-11 21:03:04,919 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:03:04,919 omr.voice_splitter: split_by_chord: split 5 measures into 2 voices
+2026-06-11 21:03:04,941 crop_cleaner: strip_outside_staff: erased 12 out-of-band components
+2026-06-11 21:03:04,956 staff_cropper: Replaced 2 x-noteheads with round noteheads
+2026-06-11 21:03:04,989 voice_separator: Separated: 2 up, 2 down, 17 ambiguous
+2026-06-11 21:03:04,989 omr.staff_processor: CoTB_sys9: separated 2 up, 2 down, 17 ambiguous
+2026-06-11 21:03:06,336 omr.runner:   [scale1.5] score=20.9 | {'notes': 2, 'rests': 3, 'measures': 4, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.4, 'notes_per_measure': 0.5}
+2026-06-11 21:03:06,336 omr.runner: chord strategy: picked original (chords=0, notes=2)
+2026-06-11 21:03:06,338 omr.staff_processor: CoSA_sys9: merged best-strategy score=20.9 (original)
+2026-06-11 21:03:06,338 omr.voice_splitter: split_voices: single voice, no chords — returning as voice1
+2026-06-11 21:03:06,360 crop_cleaner: strip_outside_staff: erased 6 out-of-band components
+2026-06-11 21:03:06,381 staff_cropper: Replaced 2 x-noteheads with round noteheads
+2026-06-11 21:03:06,407 omr.runner:   [scale1.5] score=32.1 | {'notes': 4, 'rests': 3, 'measures': 4, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.57, 'notes_per_measure': 1.0}
+2026-06-11 21:03:06,407 omr.runner: chord strategy: picked original (chords=2, notes=4)
+2026-06-11 21:03:06,409 omr.staff_processor: CoSA_sys10: merged best-strategy score=32.1 (original)
+2026-06-11 21:03:06,409 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:03:06,409 omr.voice_splitter: split_by_chord: split 4 measures into 2 voices
+2026-06-11 21:03:06,418 voice_separator: Not enough directed notes (up=1, down=1); skipping separation
+2026-06-11 21:03:06,418 omr.staff_processor: CoTB_sys10: separation returned None, using merged split_voices path
+2026-06-11 21:03:06,436 crop_cleaner: strip_outside_staff: erased 8 out-of-band components
+2026-06-11 21:03:06,453 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:03:06,500 voice_separator: Not enough directed notes (up=2, down=1); skipping separation
+2026-06-11 21:03:06,500 omr.staff_processor: CoTB_sys11: separation returned None, using merged split_voices path
+2026-06-11 21:03:08,224 omr.chord_voicer: take_voice(upper): reduced 2 chord groups
+2026-06-11 21:03:10,183 omr.runner:   [original] score=32.1 | {'notes': 4, 'rests': 3, 'measures': 4, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.57, 'notes_per_measure': 1.0}
+2026-06-11 21:03:10,309 omr.runner:   [original] score=36.5 | {'notes': 5, 'rests': 3, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.62, 'notes_per_measure': 1.0}
+2026-06-11 21:03:11,337 omr.chord_voicer: take_voice(lower): reduced 2 chord groups
+2026-06-11 21:03:12,835 omr.runner:   [adaptive] score=33.4 | {'notes': 4, 'rests': 3, 'measures': 4, 'pitches': 3, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.57, 'notes_per_measure': 1.0}
+2026-06-11 21:03:13,028 omr.runner:   [adaptive] score=36.5 | {'notes': 5, 'rests': 3, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.62, 'notes_per_measure': 1.0}
+2026-06-11 21:03:15,282 omr.runner:   [sharpen] score=33.4 | {'notes': 4, 'rests': 3, 'measures': 4, 'pitches': 3, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.57, 'notes_per_measure': 1.0}
+2026-06-11 21:03:15,549 omr.runner:   [sharpen] score=36.5 | {'notes': 5, 'rests': 3, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.62, 'notes_per_measure': 1.0}
+2026-06-11 21:03:17,895 omr.runner:   [scale1.5] score=32.1 | {'notes': 4, 'rests': 3, 'measures': 4, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.57, 'notes_per_measure': 1.0}
+2026-06-11 21:03:17,896 omr.runner: chord strategy: picked adaptive (chords=2, notes=4)
+2026-06-11 21:03:17,897 omr.staff_processor: CoTB_sys10: merged best-strategy score=33.4 (adaptive)
+2026-06-11 21:03:17,898 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:03:17,898 omr.voice_splitter: split_by_chord: split 4 measures into 2 voices
+2026-06-11 21:03:18,139 omr.runner:   [scale1.5] score=36.5 | {'notes': 5, 'rests': 3, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.62, 'notes_per_measure': 1.0}
+2026-06-11 21:03:18,139 omr.runner: chord strategy: picked original (chords=2, notes=5)
+2026-06-11 21:03:18,139 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:03:18,141 omr.staff_processor: CoTB_sys11: merged best-strategy score=36.5 (original)
+2026-06-11 21:03:18,141 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:03:18,142 omr.voice_splitter: split_by_chord: split 5 measures into 2 voices
+### PROGRESS 26%
+2026-06-11 21:03:18,234 staff_detector: Barline connectivity (x=197): [np.True_, np.True_, np.True_, np.False_, np.True_, np.True_, np.True_, np.False_, np.True_, np.True_, np.True_]
+2026-06-11 21:03:18,234 staff_detector: Barline-based systems: [4, 4, 4]
+[32m[INFO] 2026-06-11 21:03:18,287 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:03:18,290 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:03:18,291 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:03:18,319 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:03:18,319 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:03:18,319 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:03:18,335 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:03:18,341 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:03:18,341 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+2026-06-11 21:03:20,782 crop_cleaner: strip_outside_staff: erased 36 out-of-band components
+2026-06-11 21:03:20,783 crop_cleaner: strip_outside_staff: erased 54 out-of-band components
+2026-06-11 21:03:20,788 crop_cleaner: strip_outside_staff: erased 79 out-of-band components
+2026-06-11 21:03:20,801 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:03:20,801 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:03:20,816 staff_cropper: Replaced 20 x-noteheads with round noteheads
+2026-06-11 21:03:25,626 crop_cleaner: strip_outside_staff: erased 33 out-of-band components
+2026-06-11 21:03:25,645 staff_cropper: Replaced 3 x-noteheads with round noteheads
+2026-06-11 21:03:25,677 voice_separator: Not enough directed notes (up=2, down=0); skipping separation
+2026-06-11 21:03:25,677 omr.staff_processor: CoSA_sys12: separation returned None, using merged split_voices path
+2026-06-11 21:03:25,912 crop_cleaner: strip_outside_staff: erased 36 out-of-band components
+2026-06-11 21:03:25,928 staff_cropper: Replaced 7 x-noteheads with round noteheads
+2026-06-11 21:03:25,957 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:03:25,983 crop_cleaner: strip_outside_staff: erased 56 out-of-band components
+2026-06-11 21:03:25,986 voice_separator: Separated: 5 up, 3 down, 33 ambiguous
+2026-06-11 21:03:25,987 omr.staff_processor: CoSA_sys13: separated 5 up, 3 down, 33 ambiguous
+2026-06-11 21:03:26,004 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:03:26,051 voice_separator: Not enough directed notes (up=2, down=1); skipping separation
+2026-06-11 21:03:26,051 omr.staff_processor: CoSA_sys14: separation returned None, using merged split_voices path
+2026-06-11 21:03:29,592 omr.runner:   [original] score=20.9 | {'notes': 2, 'rests': 3, 'measures': 4, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.4, 'notes_per_measure': 0.5}
+2026-06-11 21:03:31,157 omr.runner:   [original] score=39.4 | {'notes': 6, 'rests': 3, 'measures': 5, 'pitches': 5, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.67, 'notes_per_measure': 1.2}
+2026-06-11 21:03:31,200 omr.chord_voicer: take_voice(upper): reduced 4 chord groups
+2026-06-11 21:03:34,579 omr.runner:   [adaptive] score=20.9 | {'notes': 2, 'rests': 3, 'measures': 4, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.4, 'notes_per_measure': 0.5}
+2026-06-11 21:03:36,139 omr.chord_voicer: take_voice(lower): reduced 4 chord groups
+2026-06-11 21:03:36,167 crop_cleaner: strip_outside_staff: erased 12 out-of-band components
+2026-06-11 21:03:36,188 staff_cropper: Replaced 3 x-noteheads with round noteheads
+2026-06-11 21:03:36,222 voice_separator: Separated: 2 up, 2 down, 18 ambiguous
+2026-06-11 21:03:36,222 omr.staff_processor: CoTB_sys12: separated 2 up, 2 down, 18 ambiguous
+2026-06-11 21:03:36,368 omr.runner:   [adaptive] score=39.4 | {'notes': 6, 'rests': 3, 'measures': 5, 'pitches': 5, 'durations': 2, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 1.2}
+2026-06-11 21:03:37,840 omr.runner:   [sharpen] score=22.1 | {'notes': 2, 'rests': 3, 'measures': 4, 'pitches': 2, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.4, 'notes_per_measure': 0.5}
+2026-06-11 21:03:39,152 omr.chord_voicer: take_voice(upper): reduced 2 chord groups
+2026-06-11 21:03:39,402 omr.runner:   [sharpen] score=39.4 | {'notes': 6, 'rests': 3, 'measures': 5, 'pitches': 5, 'durations': 2, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 1.2}
+2026-06-11 21:03:40,910 omr.runner:   [scale1.5] score=20.9 | {'notes': 2, 'rests': 3, 'measures': 4, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.4, 'notes_per_measure': 0.5}
+2026-06-11 21:03:40,910 omr.runner: chord strategy: picked sharpen (chords=0, notes=2)
+2026-06-11 21:03:40,912 omr.staff_processor: CoSA_sys12: merged best-strategy score=22.1 (sharpen)
+2026-06-11 21:03:40,912 omr.voice_splitter: split_voices: single voice, no chords — returning as voice1
+2026-06-11 21:03:40,932 crop_cleaner: strip_outside_staff: erased 12 out-of-band components
+2026-06-11 21:03:40,948 staff_cropper: Replaced 4 x-noteheads with round noteheads
+2026-06-11 21:03:40,988 voice_separator: Separated: 2 up, 2 down, 25 ambiguous
+2026-06-11 21:03:40,988 omr.staff_processor: CoTB_sys13: separated 2 up, 2 down, 25 ambiguous
+2026-06-11 21:03:42,095 omr.chord_voicer: take_voice(lower): reduced 1 chord groups
+2026-06-11 21:03:42,138 crop_cleaner: strip_outside_staff: erased 21 out-of-band components
+2026-06-11 21:03:42,168 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:03:42,245 voice_separator: Not enough directed notes (up=2, down=1); skipping separation
+2026-06-11 21:03:42,245 omr.staff_processor: CoTB_sys14: separation returned None, using merged split_voices path
+2026-06-11 21:03:42,406 omr.runner:   [scale1.5] score=39.4 | {'notes': 6, 'rests': 3, 'measures': 5, 'pitches': 5, 'durations': 2, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 1.2}
+2026-06-11 21:03:42,406 omr.runner: chord strategy: picked adaptive (chords=3, notes=6)
+2026-06-11 21:03:42,406 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:03:42,408 omr.staff_processor: CoSA_sys14: merged best-strategy score=39.4 (adaptive)
+2026-06-11 21:03:42,409 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:03:42,409 omr.voice_splitter: split_by_chord: split 5 measures into 2 voices
+2026-06-11 21:03:43,997 omr.chord_voicer: take_voice(upper): reduced 2 chord groups
+2026-06-11 21:03:45,110 omr.runner:   [original] score=28.4 | {'notes': 4, 'rests': 3, 'measures': 5, 'pitches': 3, 'durations': 2, 'chord_notes': 1, 'note_ratio': 0.57, 'notes_per_measure': 0.8}
+2026-06-11 21:03:46,443 omr.chord_voicer: take_voice(lower): reduced 3 chord groups
+2026-06-11 21:03:47,425 omr.runner:   [adaptive] score=28.4 | {'notes': 4, 'rests': 3, 'measures': 5, 'pitches': 3, 'durations': 2, 'chord_notes': 1, 'note_ratio': 0.57, 'notes_per_measure': 0.8}
+2026-06-11 21:03:49,222 omr.runner:   [sharpen] score=28.4 | {'notes': 4, 'rests': 3, 'measures': 5, 'pitches': 3, 'durations': 2, 'chord_notes': 1, 'note_ratio': 0.57, 'notes_per_measure': 0.8}
+2026-06-11 21:03:52,182 omr.runner:   [scale1.5] score=28.4 | {'notes': 4, 'rests': 3, 'measures': 5, 'pitches': 3, 'durations': 2, 'chord_notes': 1, 'note_ratio': 0.57, 'notes_per_measure': 0.8}
+2026-06-11 21:03:52,183 omr.runner: chord strategy: picked original (chords=1, notes=4)
+2026-06-11 21:03:52,183 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:03:52,186 omr.staff_processor: CoTB_sys14: merged best-strategy score=28.4 (original)
+2026-06-11 21:03:52,186 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:03:52,186 omr.voice_splitter: split_by_chord: split 5 measures into 2 voices
+### PROGRESS 32%
+2026-06-11 21:03:52,284 staff_detector: Barline connectivity (x=197): [np.True_, np.True_, np.True_, np.False_, np.True_, np.True_, np.True_, np.False_, np.True_, np.True_, np.True_]
+2026-06-11 21:03:52,284 staff_detector: Barline-based systems: [4, 4, 4]
+[32m[INFO] 2026-06-11 21:03:52,337 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:03:52,340 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:03:52,341 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:03:52,369 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:03:52,370 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:03:52,370 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:03:52,386 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:03:52,392 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:03:52,392 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+2026-06-11 21:03:54,907 crop_cleaner: strip_outside_staff: erased 50 out-of-band components
+2026-06-11 21:03:54,909 crop_cleaner: strip_outside_staff: erased 83 out-of-band components
+2026-06-11 21:03:54,910 crop_cleaner: strip_outside_staff: erased 90 out-of-band components
+2026-06-11 21:03:54,924 staff_cropper: Replaced 9 x-noteheads with round noteheads
+2026-06-11 21:03:54,932 staff_cropper: Replaced 4 x-noteheads with round noteheads
+2026-06-11 21:03:54,932 staff_cropper: Replaced 11 x-noteheads with round noteheads
+2026-06-11 21:03:58,787 crop_cleaner: strip_outside_staff: erased 106 out-of-band components
+2026-06-11 21:03:58,804 staff_cropper: Replaced 6 x-noteheads with round noteheads
+2026-06-11 21:03:58,860 voice_separator: Not enough directed notes (up=6, down=0); skipping separation
+2026-06-11 21:03:58,860 omr.staff_processor: CoSA_sys15: separation returned None, using merged split_voices path
+2026-06-11 21:03:58,875 crop_cleaner: strip_outside_staff: erased 43 out-of-band components
+2026-06-11 21:03:58,892 staff_cropper: Replaced 4 x-noteheads with round noteheads
+2026-06-11 21:03:58,915 crop_cleaner: strip_outside_staff: erased 55 out-of-band components
+2026-06-11 21:03:58,929 voice_separator: Not enough directed notes (up=4, down=0); skipping separation
+2026-06-11 21:03:58,929 omr.staff_processor: CoSA_sys16: separation returned None, using merged split_voices path
+2026-06-11 21:03:58,933 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:03:58,980 voice_separator: Not enough directed notes (up=2, down=1); skipping separation
+2026-06-11 21:03:58,980 omr.staff_processor: CoSA_sys17: separation returned None, using merged split_voices path
+2026-06-11 21:04:02,568 omr.runner:   [original] score=47.2 | {'notes': 13, 'rests': 9, 'measures': 6, 'pitches': 4, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.59, 'notes_per_measure': 2.2}
+2026-06-11 21:04:02,603 omr.runner:   [original] score=34.3 | {'notes': 6, 'rests': 4, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.6, 'notes_per_measure': 1.0}
+2026-06-11 21:04:02,667 omr.runner:   [original] score=39.4 | {'notes': 6, 'rests': 3, 'measures': 5, 'pitches': 5, 'durations': 2, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 1.2}
+2026-06-11 21:04:06,958 omr.runner:   [adaptive] score=34.3 | {'notes': 6, 'rests': 4, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.6, 'notes_per_measure': 1.0}
+2026-06-11 21:04:07,017 omr.runner:   [adaptive] score=47.2 | {'notes': 13, 'rests': 9, 'measures': 6, 'pitches': 4, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.59, 'notes_per_measure': 2.2}
+2026-06-11 21:04:07,092 omr.runner:   [adaptive] score=39.4 | {'notes': 6, 'rests': 3, 'measures': 5, 'pitches': 5, 'durations': 2, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 1.2}
+2026-06-11 21:04:11,165 omr.runner:   [sharpen] score=34.3 | {'notes': 6, 'rests': 4, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.6, 'notes_per_measure': 1.0}
+2026-06-11 21:04:11,382 omr.runner:   [sharpen] score=39.4 | {'notes': 6, 'rests': 3, 'measures': 5, 'pitches': 5, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.67, 'notes_per_measure': 1.2}
+2026-06-11 21:04:11,592 omr.runner:   [sharpen] score=47.2 | {'notes': 13, 'rests': 9, 'measures': 6, 'pitches': 4, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.59, 'notes_per_measure': 2.2}
+2026-06-11 21:04:15,415 omr.runner:   [scale1.5] score=34.3 | {'notes': 6, 'rests': 4, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.6, 'notes_per_measure': 1.0}
+2026-06-11 21:04:15,416 omr.runner: chord strategy: picked original (chords=2, notes=6)
+2026-06-11 21:04:15,420 omr.staff_processor: CoSA_sys16: merged best-strategy score=34.3 (original)
+2026-06-11 21:04:15,420 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:04:15,421 omr.voice_splitter: split_by_chord: split 6 measures into 2 voices
+2026-06-11 21:04:15,473 crop_cleaner: strip_outside_staff: erased 53 out-of-band components
+2026-06-11 21:04:15,489 staff_cropper: Replaced 9 x-noteheads with round noteheads
+2026-06-11 21:04:15,894 voice_separator: Not enough directed notes (up=4, down=1); skipping separation
+2026-06-11 21:04:15,894 omr.staff_processor: CoTB_sys15: separation returned None, using merged split_voices path
+2026-06-11 21:04:16,794 omr.runner:   [scale1.5] score=39.4 | {'notes': 6, 'rests': 3, 'measures': 5, 'pitches': 5, 'durations': 2, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 1.2}
+2026-06-11 21:04:16,794 omr.runner: chord strategy: picked original (chords=3, notes=6)
+2026-06-11 21:04:16,796 omr.staff_processor: CoSA_sys17: merged best-strategy score=39.4 (original)
+2026-06-11 21:04:16,797 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:04:16,797 omr.voice_splitter: split_by_chord: split 5 measures into 2 voices
+2026-06-11 21:04:16,828 crop_cleaner: strip_outside_staff: erased 20 out-of-band components
+2026-06-11 21:04:16,850 staff_cropper: Replaced 3 x-noteheads with round noteheads
+2026-06-11 21:04:16,940 voice_separator: Separated: 2 up, 2 down, 26 ambiguous
+2026-06-11 21:04:16,940 omr.staff_processor: CoTB_sys16: separated 2 up, 2 down, 26 ambiguous
+2026-06-11 21:04:17,452 omr.runner:   [scale1.5] score=47.2 | {'notes': 13, 'rests': 9, 'measures': 6, 'pitches': 4, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.59, 'notes_per_measure': 2.2}
+2026-06-11 21:04:17,452 omr.runner: chord strategy: picked original (chords=4, notes=13)
+2026-06-11 21:04:17,457 omr.staff_processor: CoSA_sys15: merged best-strategy score=47.2 (original)
+2026-06-11 21:04:17,458 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:04:17,459 omr.voice_splitter: split_by_chord: split 6 measures into 2 voices
+2026-06-11 21:04:17,496 crop_cleaner: strip_outside_staff: erased 20 out-of-band components
+2026-06-11 21:04:17,513 staff_cropper: Replaced 4 x-noteheads with round noteheads
+2026-06-11 21:04:17,578 voice_separator: Not enough directed notes (up=3, down=1); skipping separation
+2026-06-11 21:04:17,578 omr.staff_processor: CoTB_sys17: separation returned None, using merged split_voices path
+2026-06-11 21:04:19,808 omr.runner:   [original] score=52.9 | {'notes': 17, 'rests': 9, 'measures': 5, 'pitches': 5, 'durations': 2, 'chord_notes': 8, 'note_ratio': 0.65, 'notes_per_measure': 3.4}
+2026-06-11 21:04:20,289 omr.chord_voicer: take_voice(upper): reduced 4 chord groups
+2026-06-11 21:04:20,530 omr.runner:   [original] score=36.5 | {'notes': 5, 'rests': 3, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.62, 'notes_per_measure': 1.0}
+2026-06-11 21:04:23,129 omr.runner:   [adaptive] score=47.2 | {'notes': 13, 'rests': 9, 'measures': 6, 'pitches': 4, 'durations': 2, 'chord_notes': 5, 'note_ratio': 0.59, 'notes_per_measure': 2.2}
+2026-06-11 21:04:23,307 omr.chord_voicer: take_voice(lower): reduced 4 chord groups
+2026-06-11 21:04:23,379 omr.runner:   [adaptive] score=36.5 | {'notes': 5, 'rests': 3, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.62, 'notes_per_measure': 1.0}
+2026-06-11 21:04:25,572 omr.runner:   [sharpen] score=52.0 | {'notes': 15, 'rests': 9, 'measures': 6, 'pitches': 6, 'durations': 2, 'chord_notes': 6, 'note_ratio': 0.62, 'notes_per_measure': 2.5}
+2026-06-11 21:04:25,653 omr.runner:   [sharpen] score=36.5 | {'notes': 5, 'rests': 3, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.62, 'notes_per_measure': 1.0}
+2026-06-11 21:04:28,091 omr.runner:   [scale1.5] score=28.4 | {'notes': 4, 'rests': 3, 'measures': 5, 'pitches': 3, 'durations': 2, 'chord_notes': 1, 'note_ratio': 0.57, 'notes_per_measure': 0.8}
+2026-06-11 21:04:28,091 omr.runner: chord strategy: picked original (chords=2, notes=5)
+2026-06-11 21:04:28,093 omr.staff_processor: CoTB_sys17: merged best-strategy score=36.5 (original)
+2026-06-11 21:04:28,093 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:04:28,094 omr.voice_splitter: split_by_chord: split 5 measures into 2 voices
+2026-06-11 21:04:28,158 omr.runner:   [scale1.5] score=55.2 | {'notes': 18, 'rests': 9, 'measures': 6, 'pitches': 6, 'durations': 2, 'chord_notes': 9, 'note_ratio': 0.67, 'notes_per_measure': 3.0}
+2026-06-11 21:04:28,158 omr.runner: chord strategy: picked scale1.5 (chords=9, notes=18)
+2026-06-11 21:04:28,160 omr.staff_processor: CoTB_sys15: merged best-strategy score=55.2 (scale1.5)
+2026-06-11 21:04:28,161 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:04:28,162 omr.voice_splitter: split_by_chord: split 6 measures into 2 voices
+### PROGRESS 39%
+2026-06-11 21:04:28,253 staff_detector: Barline connectivity (x=197): [np.True_, np.False_, np.True_, np.True_, np.True_, np.False_, np.True_, np.True_, np.True_, np.False_, np.True_]
+2026-06-11 21:04:28,253 staff_detector: Barline-based systems: [2, 4, 4, 2]
+[32m[INFO] 2026-06-11 21:04:28,303 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:04:28,306 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:04:28,306 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:04:28,332 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:04:28,333 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:04:28,333 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:04:28,347 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:04:28,353 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:04:28,353 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[33m[WARNING] 2026-06-11 21:04:29,729 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:04:30,027 [RapidOCR] main.py:125: The text detection result is empty[0m
+2026-06-11 21:04:30,487 crop_cleaner: strip_outside_staff: erased 42 out-of-band components
+2026-06-11 21:04:30,490 crop_cleaner: strip_outside_staff: erased 77 out-of-band components
+2026-06-11 21:04:30,496 crop_cleaner: strip_outside_staff: erased 139 out-of-band components
+2026-06-11 21:04:30,504 staff_cropper: Replaced 8 x-noteheads with round noteheads
+2026-06-11 21:04:30,507 staff_cropper: Replaced 23 x-noteheads with round noteheads
+2026-06-11 21:04:30,523 staff_cropper: Replaced 19 x-noteheads with round noteheads
+2026-06-11 21:04:34,284 crop_cleaner: strip_outside_staff: erased 78 out-of-band components
+2026-06-11 21:04:34,309 staff_cropper: Replaced 11 x-noteheads with round noteheads
+2026-06-11 21:04:34,431 omr.postprocessor: Stripped 1 repeat barlines
+2026-06-11 21:04:34,442 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:04:34,455 crop_cleaner: strip_outside_staff: erased 44 out-of-band components
+2026-06-11 21:04:34,469 crop_cleaner: strip_outside_staff: erased 58 out-of-band components
+2026-06-11 21:04:34,471 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:04:34,486 staff_cropper: Replaced 8 x-noteheads with round noteheads
+2026-06-11 21:04:34,505 voice_separator: Not enough directed notes (up=3, down=0); skipping separation
+2026-06-11 21:04:34,505 omr.staff_processor: CoSA_sys19: separation returned None, using merged split_voices path
+2026-06-11 21:04:34,537 voice_separator: Not enough directed notes (up=1, down=0); skipping separation
+2026-06-11 21:04:34,537 omr.staff_processor: CoSA_sys20: separation returned None, using merged split_voices path
+2026-06-11 21:04:37,331 crop_cleaner: strip_outside_staff: erased 17 out-of-band components
+2026-06-11 21:04:37,349 staff_cropper: Replaced 2 x-noteheads with round noteheads
+2026-06-11 21:04:37,410 voice_separator: Not enough directed notes (up=2, down=1); skipping separation
+2026-06-11 21:04:37,410 omr.staff_processor: CoTB_sys19: separation returned None, using merged split_voices path
+2026-06-11 21:04:37,750 omr.runner:   [original] score=34.3 | {'notes': 6, 'rests': 4, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.6, 'notes_per_measure': 1.0}
+2026-06-11 21:04:37,840 omr.runner:   [original] score=43.5 | {'notes': 9, 'rests': 3, 'measures': 6, 'pitches': 5, 'durations': 2, 'chord_notes': 5, 'note_ratio': 0.75, 'notes_per_measure': 1.5}
+2026-06-11 21:04:40,637 omr.runner:   [original] score=38.5 | {'notes': 8, 'rests': 4, 'measures': 6, 'pitches': 3, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.67, 'notes_per_measure': 1.3}
+2026-06-11 21:04:41,118 omr.runner:   [adaptive] score=34.3 | {'notes': 6, 'rests': 4, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.6, 'notes_per_measure': 1.0}
+2026-06-11 21:04:41,324 omr.runner:   [adaptive] score=42.2 | {'notes': 8, 'rests': 3, 'measures': 6, 'pitches': 5, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.73, 'notes_per_measure': 1.3}
+2026-06-11 21:04:43,731 omr.runner:   [adaptive] score=38.5 | {'notes': 8, 'rests': 4, 'measures': 6, 'pitches': 3, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.67, 'notes_per_measure': 1.3}
+2026-06-11 21:04:44,134 omr.runner:   [sharpen] score=34.3 | {'notes': 6, 'rests': 4, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.6, 'notes_per_measure': 1.0}
+2026-06-11 21:04:44,333 omr.runner:   [sharpen] score=43.5 | {'notes': 9, 'rests': 3, 'measures': 6, 'pitches': 5, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.75, 'notes_per_measure': 1.5}
+2026-06-11 21:04:46,520 omr.runner:   [sharpen] score=38.5 | {'notes': 8, 'rests': 4, 'measures': 6, 'pitches': 3, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.67, 'notes_per_measure': 1.3}
+2026-06-11 21:04:47,459 omr.runner:   [scale1.5] score=34.3 | {'notes': 6, 'rests': 4, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.6, 'notes_per_measure': 1.0}
+2026-06-11 21:04:47,460 omr.runner: chord strategy: picked original (chords=2, notes=6)
+2026-06-11 21:04:47,463 omr.staff_processor: CoSA_sys19: merged best-strategy score=34.3 (original)
+2026-06-11 21:04:47,463 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:04:47,464 omr.voice_splitter: split_by_chord: split 6 measures into 2 voices
+2026-06-11 21:04:47,496 crop_cleaner: strip_outside_staff: erased 13 out-of-band components
+2026-06-11 21:04:47,522 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:04:47,630 voice_separator: Not enough directed notes (up=2, down=1); skipping separation
+2026-06-11 21:04:47,630 omr.staff_processor: CoTB_sys20: separation returned None, using merged split_voices path
+2026-06-11 21:04:47,819 omr.runner:   [scale1.5] score=42.2 | {'notes': 8, 'rests': 3, 'measures': 6, 'pitches': 5, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.73, 'notes_per_measure': 1.3}
+2026-06-11 21:04:47,820 omr.runner: chord strategy: picked original (chords=5, notes=9)
+2026-06-11 21:04:47,820 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:04:47,822 omr.staff_processor: CoSA_sys20: merged best-strategy score=43.5 (original)
+2026-06-11 21:04:47,822 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:04:47,823 omr.voice_splitter: split_by_chord: split 6 measures into 2 voices
+2026-06-11 21:04:49,129 omr.runner:   [scale1.5] score=38.5 | {'notes': 8, 'rests': 4, 'measures': 6, 'pitches': 3, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.67, 'notes_per_measure': 1.3}
+2026-06-11 21:04:49,129 omr.runner: chord strategy: picked original (chords=4, notes=8)
+2026-06-11 21:04:49,131 omr.staff_processor: CoTB_sys19: merged best-strategy score=38.5 (original)
+2026-06-11 21:04:49,131 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:04:49,132 omr.voice_splitter: split_by_chord: split 6 measures into 2 voices
+2026-06-11 21:04:49,665 omr.runner:   [original] score=30.2 | {'notes': 5, 'rests': 3, 'measures': 6, 'pitches': 3, 'durations': 2, 'chord_notes': 1, 'note_ratio': 0.62, 'notes_per_measure': 0.8}
+2026-06-11 21:04:51,399 omr.runner:   [adaptive] score=30.2 | {'notes': 5, 'rests': 3, 'measures': 6, 'pitches': 3, 'durations': 2, 'chord_notes': 1, 'note_ratio': 0.62, 'notes_per_measure': 0.8}
+2026-06-11 21:04:53,141 omr.runner:   [sharpen] score=30.2 | {'notes': 5, 'rests': 3, 'measures': 6, 'pitches': 3, 'durations': 2, 'chord_notes': 1, 'note_ratio': 0.62, 'notes_per_measure': 0.8}
+2026-06-11 21:04:54,876 omr.runner:   [scale1.5] score=38.1 | {'notes': 6, 'rests': 3, 'measures': 6, 'pitches': 4, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.67, 'notes_per_measure': 1.0}
+2026-06-11 21:04:54,876 omr.runner: chord strategy: picked scale1.5 (chords=2, notes=6)
+2026-06-11 21:04:54,876 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:04:54,878 omr.staff_processor: CoTB_sys20: merged best-strategy score=38.1 (scale1.5)
+2026-06-11 21:04:54,878 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:04:54,879 omr.voice_splitter: split_by_chord: split 6 measures into 2 voices
+### PROGRESS 45%
+2026-06-11 21:04:54,970 staff_detector: Barline connectivity (x=197): [np.True_, np.False_, np.True_, np.True_, np.True_, np.False_, np.True_, np.True_, np.True_, np.False_, np.True_]
+2026-06-11 21:04:54,970 staff_detector: Barline-based systems: [2, 4, 4, 2]
+[32m[INFO] 2026-06-11 21:04:55,021 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:04:55,024 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:04:55,024 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:04:55,051 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:04:55,052 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:04:55,052 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:04:55,067 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:04:55,073 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:04:55,073 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+2026-06-11 21:04:57,088 crop_cleaner: strip_outside_staff: erased 58 out-of-band components
+2026-06-11 21:04:57,090 crop_cleaner: strip_outside_staff: erased 95 out-of-band components
+2026-06-11 21:04:57,091 crop_cleaner: strip_outside_staff: erased 74 out-of-band components
+2026-06-11 21:04:57,105 staff_cropper: Replaced 12 x-noteheads with round noteheads
+2026-06-11 21:04:57,116 staff_cropper: Replaced 9 x-noteheads with round noteheads
+2026-06-11 21:04:57,126 staff_cropper: Replaced 14 x-noteheads with round noteheads
+2026-06-11 21:05:01,408 crop_cleaner: strip_outside_staff: erased 58 out-of-band components
+2026-06-11 21:05:01,427 omr.postprocessor: Stripped 1 repeat barlines
+2026-06-11 21:05:01,429 staff_cropper: Replaced 20 x-noteheads with round noteheads
+2026-06-11 21:05:01,453 crop_cleaner: strip_outside_staff: erased 48 out-of-band components
+2026-06-11 21:05:01,455 crop_cleaner: strip_outside_staff: erased 74 out-of-band components
+2026-06-11 21:05:01,468 staff_cropper: Replaced 6 x-noteheads with round noteheads
+2026-06-11 21:05:01,471 staff_cropper: Replaced 2 x-noteheads with round noteheads
+2026-06-11 21:05:01,509 voice_separator: Not enough directed notes (up=5, down=1); skipping separation
+2026-06-11 21:05:01,509 omr.staff_processor: CoSA_sys23: separation returned None, using merged split_voices path
+2026-06-11 21:05:01,520 voice_separator: Not enough directed notes (up=7, down=1); skipping separation
+2026-06-11 21:05:01,520 omr.staff_processor: CoSA_sys24: separation returned None, using merged split_voices path
+2026-06-11 21:05:04,931 crop_cleaner: strip_outside_staff: erased 19 out-of-band components
+2026-06-11 21:05:04,947 staff_cropper: Replaced 3 x-noteheads with round noteheads
+2026-06-11 21:05:04,961 omr.runner:   [original] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:05:04,991 voice_separator: Not enough directed notes (up=3, down=1); skipping separation
+2026-06-11 21:05:04,991 omr.staff_processor: CoTB_sys23: separation returned None, using merged split_voices path
+2026-06-11 21:05:05,029 omr.runner:   [original] score=42.5 | {'notes': 8, 'rests': 5, 'measures': 5, 'pitches': 5, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.62, 'notes_per_measure': 1.6}
+2026-06-11 21:05:09,045 omr.runner:   [original] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:05:09,046 omr.runner:   [adaptive] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:05:09,170 omr.runner:   [adaptive] score=42.5 | {'notes': 8, 'rests': 5, 'measures': 5, 'pitches': 5, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.62, 'notes_per_measure': 1.6}
+2026-06-11 21:05:13,079 omr.runner:   [adaptive] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:05:13,115 omr.runner:   [sharpen] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:05:13,189 omr.runner:   [sharpen] score=45.1 | {'notes': 9, 'rests': 5, 'measures': 5, 'pitches': 6, 'durations': 3, 'chord_notes': 4, 'note_ratio': 0.64, 'notes_per_measure': 1.8}
+2026-06-11 21:05:17,253 omr.runner:   [sharpen] score=47.3 | {'notes': 9, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 4, 'note_ratio': 0.69, 'notes_per_measure': 2.2}
+2026-06-11 21:05:17,318 omr.runner:   [scale1.5] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:05:17,319 omr.runner: chord strategy: picked original (chords=3, notes=8)
+2026-06-11 21:05:17,321 omr.staff_processor: CoSA_sys23: merged best-strategy score=46.0 (original)
+2026-06-11 21:05:17,321 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:05:17,322 omr.voice_splitter: split_by_chord: split 4 measures into 2 voices
+2026-06-11 21:05:17,343 omr.runner:   [scale1.5] score=42.5 | {'notes': 8, 'rests': 5, 'measures': 5, 'pitches': 5, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.62, 'notes_per_measure': 1.6}
+2026-06-11 21:05:17,343 omr.runner: chord strategy: picked sharpen (chords=4, notes=9)
+2026-06-11 21:05:17,343 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:05:17,345 crop_cleaner: strip_outside_staff: erased 17 out-of-band components
+2026-06-11 21:05:17,346 omr.staff_processor: CoSA_sys24: merged best-strategy score=45.1 (sharpen)
+2026-06-11 21:05:17,346 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:05:17,347 omr.voice_splitter: split_by_chord: split 5 measures into 2 voices
+2026-06-11 21:05:17,362 staff_cropper: Replaced 9 x-noteheads with round noteheads
+2026-06-11 21:05:17,411 voice_separator: Separated: 3 up, 2 down, 32 ambiguous
+2026-06-11 21:05:17,411 omr.staff_processor: CoTB_sys24: separated 3 up, 2 down, 32 ambiguous
+2026-06-11 21:05:19,956 omr.runner:   [scale1.5] score=48.5 | {'notes': 9, 'rests': 4, 'measures': 4, 'pitches': 4, 'durations': 3, 'chord_notes': 4, 'note_ratio': 0.69, 'notes_per_measure': 2.2}
+2026-06-11 21:05:19,956 omr.runner: chord strategy: picked scale1.5 (chords=4, notes=9)
+2026-06-11 21:05:19,958 omr.staff_processor: CoTB_sys23: merged best-strategy score=48.5 (scale1.5)
+2026-06-11 21:05:19,958 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:05:19,959 omr.voice_splitter: split_by_chord: split 4 measures into 2 voices
+2026-06-11 21:05:20,478 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:05:20,479 omr.chord_voicer: take_voice(upper): reduced 3 chord groups
+2026-06-11 21:05:21,956 omr.runner: homr failed: Processing /var/folders/pr/s3jnbyx921dd0dnw1h9z4yy40000gn/T/tmpdnu5jz5r/CoTB_sys24_down.png
+Starting Inference.
+Segnet Inference time: 0.7191152079903986; batch_size 8
+Creating bounds for noteheads
+Cr
+2026-06-11 21:05:21,957 omr.staff_processor: CoTB_sys24 Bass: homr failed, will use fallback
+2026-06-11 21:05:21,957 omr.staff_processor: CoTB_sys24: running merged path for fallback
+2026-06-11 21:05:23,902 omr.runner:   [original] score=42.5 | {'notes': 8, 'rests': 5, 'measures': 5, 'pitches': 5, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.62, 'notes_per_measure': 1.6}
+2026-06-11 21:05:25,608 omr.runner:   [adaptive] score=43.8 | {'notes': 9, 'rests': 5, 'measures': 5, 'pitches': 5, 'durations': 3, 'chord_notes': 4, 'note_ratio': 0.64, 'notes_per_measure': 1.8}
+2026-06-11 21:05:27,271 omr.runner:   [sharpen] score=45.1 | {'notes': 9, 'rests': 5, 'measures': 5, 'pitches': 6, 'durations': 3, 'chord_notes': 4, 'note_ratio': 0.64, 'notes_per_measure': 1.8}
+2026-06-11 21:05:28,915 omr.runner:   [scale1.5] score=43.8 | {'notes': 9, 'rests': 5, 'measures': 5, 'pitches': 5, 'durations': 3, 'chord_notes': 4, 'note_ratio': 0.64, 'notes_per_measure': 1.8}
+2026-06-11 21:05:28,915 omr.runner: chord strategy: picked sharpen (chords=4, notes=9)
+2026-06-11 21:05:28,915 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:05:28,917 omr.staff_processor: CoTB_sys24: merged best-strategy score=45.1 (sharpen)
+2026-06-11 21:05:28,917 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:05:28,918 omr.voice_splitter: split_by_chord: split 5 measures into 2 voices
+### PROGRESS 51%
+2026-06-11 21:05:29,009 staff_detector: Barline connectivity (x=197): [np.True_, np.False_, np.True_, np.False_, np.True_, np.False_, np.True_, np.False_, np.True_, np.True_]
+2026-06-11 21:05:29,009 staff_detector: Barline-based systems: [2, 2, 2, 2, 3]
+[32m[INFO] 2026-06-11 21:05:29,060 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:05:29,063 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:05:29,063 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:05:29,089 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:05:29,090 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:05:29,090 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:05:29,104 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:05:29,110 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:05:29,110 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[33m[WARNING] 2026-06-11 21:05:30,254 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:05:30,396 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:05:30,809 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:05:30,952 [RapidOCR] main.py:125: The text detection result is empty[0m
+2026-06-11 21:05:31,095 crop_cleaner: strip_outside_staff: erased 96 out-of-band components
+2026-06-11 21:05:31,112 staff_cropper: Replaced 32 x-noteheads with round noteheads
+2026-06-11 21:05:32,982 crop_cleaner: strip_outside_staff: erased 100 out-of-band components
+2026-06-11 21:05:33,000 staff_cropper: Replaced 34 x-noteheads with round noteheads
+2026-06-11 21:05:34,880 crop_cleaner: strip_outside_staff: erased 75 out-of-band components
+2026-06-11 21:05:34,898 staff_cropper: Replaced 24 x-noteheads with round noteheads
+2026-06-11 21:05:36,692 omr.postprocessor: Stripped 1 repeat barlines
+2026-06-11 21:05:36,721 crop_cleaner: strip_outside_staff: erased 63 out-of-band components
+2026-06-11 21:05:36,738 staff_cropper: Replaced 12 x-noteheads with round noteheads
+2026-06-11 21:05:38,456 omr.postprocessor: Stripped 2 repeat barlines
+### PROGRESS 58%
+2026-06-11 21:05:38,546 staff_detector: Barline connectivity (x=197): [np.True_, np.True_, np.True_, np.True_, np.False_, np.True_, np.True_, np.True_, np.False_, np.True_, np.True_, np.True_, np.True_]
+2026-06-11 21:05:38,546 staff_detector: Barline-based systems: [5, 4, 5]
+[32m[INFO] 2026-06-11 21:05:38,596 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:05:38,599 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:05:38,599 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:05:38,625 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:05:38,626 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:05:38,626 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:05:38,640 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:05:38,645 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:05:38,646 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[33m[WARNING] 2026-06-11 21:05:39,326 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:05:39,467 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:05:40,034 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:05:40,180 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:05:40,922 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:05:41,063 [RapidOCR] main.py:125: The text detection result is empty[0m
+2026-06-11 21:05:41,200 crop_cleaner: strip_outside_staff: erased 42 out-of-band components
+2026-06-11 21:05:41,200 crop_cleaner: strip_outside_staff: erased 51 out-of-band components
+2026-06-11 21:05:41,202 crop_cleaner: strip_outside_staff: erased 51 out-of-band components
+2026-06-11 21:05:41,207 crop_cleaner: strip_outside_staff: erased 112 out-of-band components
+2026-06-11 21:05:41,215 staff_cropper: Replaced 4 x-noteheads with round noteheads
+2026-06-11 21:05:41,216 staff_cropper: Replaced 10 x-noteheads with round noteheads
+2026-06-11 21:05:41,223 staff_cropper: Replaced 7 x-noteheads with round noteheads
+2026-06-11 21:05:41,232 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:05:41,265 voice_separator: Not enough directed notes (up=3, down=1); skipping separation
+2026-06-11 21:05:41,265 omr.staff_processor: CoSA_sys30: separation returned None, using merged split_voices path
+2026-06-11 21:05:45,936 crop_cleaner: strip_outside_staff: erased 34 out-of-band components
+2026-06-11 21:05:45,952 staff_cropper: Replaced 4 x-noteheads with round noteheads
+2026-06-11 21:05:45,981 crop_cleaner: strip_outside_staff: erased 12 out-of-band components
+2026-06-11 21:05:45,991 omr.runner:   [original] score=18.6 | {'notes': 2, 'rests': 5, 'measures': 6, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.29, 'notes_per_measure': 0.3}
+2026-06-11 21:05:45,992 voice_separator: Not enough directed notes (up=4, down=1); skipping separation
+2026-06-11 21:05:45,993 omr.staff_processor: CoSA_sys32: separation returned None, using merged split_voices path
+2026-06-11 21:05:45,999 staff_cropper: Replaced 3 x-noteheads with round noteheads
+2026-06-11 21:05:46,034 voice_separator: Not enough directed notes (up=2, down=1); skipping separation
+2026-06-11 21:05:46,034 omr.staff_processor: CoTB_sys30: separation returned None, using merged split_voices path
+2026-06-11 21:05:46,060 crop_cleaner: strip_outside_staff: erased 18 out-of-band components
+2026-06-11 21:05:46,075 staff_cropper: Replaced 2 x-noteheads with round noteheads
+2026-06-11 21:05:46,108 voice_separator: Not enough directed notes (up=1, down=1); skipping separation
+2026-06-11 21:05:46,108 omr.staff_processor: CoTB_sys32: separation returned None, using merged split_voices path
+2026-06-11 21:05:50,365 omr.runner:   [adaptive] score=18.6 | {'notes': 2, 'rests': 5, 'measures': 6, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.29, 'notes_per_measure': 0.3}
+2026-06-11 21:05:50,373 omr.runner:   [original] score=25.7 | {'notes': 4, 'rests': 4, 'measures': 5, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.5, 'notes_per_measure': 0.8}
+2026-06-11 21:05:50,373 omr.runner:   [original] score=25.7 | {'notes': 4, 'rests': 4, 'measures': 5, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.5, 'notes_per_measure': 0.8}
+2026-06-11 21:05:50,401 omr.runner:   [original] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:05:54,500 omr.runner:   [sharpen] score=18.6 | {'notes': 2, 'rests': 5, 'measures': 6, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.29, 'notes_per_measure': 0.3}
+2026-06-11 21:05:54,630 omr.runner:   [adaptive] score=25.7 | {'notes': 4, 'rests': 4, 'measures': 5, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.5, 'notes_per_measure': 0.8}
+2026-06-11 21:05:54,722 omr.runner:   [adaptive] score=26.9 | {'notes': 4, 'rests': 4, 'measures': 5, 'pitches': 3, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.5, 'notes_per_measure': 0.8}
+2026-06-11 21:05:54,750 omr.runner:   [adaptive] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:05:58,553 omr.runner:   [scale1.5] score=18.6 | {'notes': 2, 'rests': 5, 'measures': 6, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.29, 'notes_per_measure': 0.3}
+2026-06-11 21:05:58,553 omr.runner: chord strategy: picked original (chords=0, notes=2)
+2026-06-11 21:05:58,558 omr.staff_processor: CoSA_sys30: merged best-strategy score=18.6 (original)
+2026-06-11 21:05:58,558 omr.voice_splitter: split_voices: single voice, no chords — returning as voice1
+2026-06-11 21:05:58,588 crop_cleaner: strip_outside_staff: erased 19 out-of-band components
+2026-06-11 21:05:58,605 staff_cropper: Replaced 6 x-noteheads with round noteheads
+2026-06-11 21:05:58,782 omr.runner:   [sharpen] score=25.7 | {'notes': 4, 'rests': 4, 'measures': 5, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.5, 'notes_per_measure': 0.8}
+2026-06-11 21:05:58,802 omr.runner:   [sharpen] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:05:58,867 omr.runner:   [sharpen] score=25.7 | {'notes': 4, 'rests': 4, 'measures': 5, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.5, 'notes_per_measure': 0.8}
+2026-06-11 21:06:02,873 omr.runner:   [scale1.5] score=25.7 | {'notes': 4, 'rests': 4, 'measures': 5, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.5, 'notes_per_measure': 0.8}
+2026-06-11 21:06:02,873 omr.runner: chord strategy: picked original (chords=2, notes=4)
+2026-06-11 21:06:02,875 omr.staff_processor: CoSA_sys32: merged best-strategy score=25.7 (original)
+2026-06-11 21:06:02,875 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:06:02,876 omr.voice_splitter: split_by_chord: split 5 measures into 2 voices
+2026-06-11 21:06:02,890 omr.runner:   [scale1.5] score=25.7 | {'notes': 4, 'rests': 4, 'measures': 5, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.5, 'notes_per_measure': 0.8}
+2026-06-11 21:06:02,890 omr.runner: chord strategy: picked adaptive (chords=2, notes=4)
+2026-06-11 21:06:02,892 omr.staff_processor: CoTB_sys32: merged best-strategy score=26.9 (adaptive)
+2026-06-11 21:06:02,892 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:06:02,892 omr.voice_splitter: split_by_chord: split 5 measures into 2 voices
+2026-06-11 21:06:02,949 omr.runner:   [scale1.5] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:06:02,949 omr.runner: chord strategy: picked original (chords=2, notes=4)
+2026-06-11 21:06:02,951 omr.staff_processor: CoTB_sys30: merged best-strategy score=24.6 (original)
+2026-06-11 21:06:02,951 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:06:02,952 omr.voice_splitter: split_by_chord: split 6 measures into 2 voices
+### PROGRESS 64%
+2026-06-11 21:06:03,042 staff_detector: Barline connectivity (x=197): [np.True_, np.True_, np.True_, np.False_, np.True_, np.True_, np.True_, np.True_, np.False_, np.True_, np.True_]
+2026-06-11 21:06:03,042 staff_detector: Barline-based systems: [4, 5, 3]
+[32m[INFO] 2026-06-11 21:06:03,093 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:06:03,096 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:06:03,096 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:06:03,123 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:06:03,124 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:06:03,124 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:06:03,138 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:06:03,144 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:06:03,144 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[33m[WARNING] 2026-06-11 21:06:03,670 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:06:03,812 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:06:04,539 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:06:04,679 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:06:05,199 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:06:05,346 [RapidOCR] main.py:125: The text detection result is empty[0m
+2026-06-11 21:06:05,474 crop_cleaner: strip_outside_staff: erased 11 out-of-band components
+2026-06-11 21:06:05,478 crop_cleaner: strip_outside_staff: erased 43 out-of-band components
+2026-06-11 21:06:05,480 crop_cleaner: strip_outside_staff: erased 55 out-of-band components
+2026-06-11 21:06:05,482 crop_cleaner: strip_outside_staff: erased 116 out-of-band components
+2026-06-11 21:06:05,489 staff_cropper: Replaced 3 x-noteheads with round noteheads
+2026-06-11 21:06:05,500 staff_cropper: Replaced 10 x-noteheads with round noteheads
+2026-06-11 21:06:05,506 staff_cropper: Replaced 24 x-noteheads with round noteheads
+2026-06-11 21:06:05,506 staff_cropper: Replaced 13 x-noteheads with round noteheads
+2026-06-11 21:06:09,951 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:06:09,987 crop_cleaner: strip_outside_staff: erased 43 out-of-band components
+2026-06-11 21:06:10,006 staff_cropper: Replaced 3 x-noteheads with round noteheads
+2026-06-11 21:06:10,045 voice_separator: Not enough directed notes (up=1, down=0); skipping separation
+2026-06-11 21:06:10,045 omr.staff_processor: CoSA_sys34: separation returned None, using merged split_voices path
+2026-06-11 21:06:10,052 crop_cleaner: strip_outside_staff: erased 20 out-of-band components
+2026-06-11 21:06:10,071 staff_cropper: Replaced 3 x-noteheads with round noteheads
+2026-06-11 21:06:10,116 voice_separator: Not enough directed notes (up=2, down=0); skipping separation
+2026-06-11 21:06:10,116 omr.staff_processor: CoTB_sys34: separation returned None, using merged split_voices path
+2026-06-11 21:06:12,355 omr.runner:   [original] score=38.1 | {'notes': 6, 'rests': 3, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 1.2}
+2026-06-11 21:06:12,366 omr.runner:   [original] score=38.1 | {'notes': 6, 'rests': 3, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 1.2}
+2026-06-11 21:06:14,738 omr.runner:   [adaptive] score=38.1 | {'notes': 6, 'rests': 3, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 1.2}
+2026-06-11 21:06:14,750 omr.runner:   [adaptive] score=38.1 | {'notes': 6, 'rests': 3, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 1.2}
+2026-06-11 21:06:17,008 omr.runner:   [sharpen] score=38.1 | {'notes': 6, 'rests': 3, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 1.2}
+2026-06-11 21:06:17,051 omr.runner:   [sharpen] score=38.1 | {'notes': 6, 'rests': 3, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 1.2}
+2026-06-11 21:06:19,256 omr.runner:   [scale1.5] score=38.1 | {'notes': 6, 'rests': 3, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 1.2}
+2026-06-11 21:06:19,257 omr.runner: chord strategy: picked original (chords=3, notes=6)
+2026-06-11 21:06:19,258 omr.staff_processor: CoTB_sys34: merged best-strategy score=38.1 (original)
+2026-06-11 21:06:19,258 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:06:19,259 omr.voice_splitter: split_by_chord: split 5 measures into 2 voices
+2026-06-11 21:06:19,340 omr.runner:   [scale1.5] score=38.1 | {'notes': 6, 'rests': 3, 'measures': 5, 'pitches': 4, 'durations': 2, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 1.2}
+2026-06-11 21:06:19,340 omr.runner: chord strategy: picked original (chords=3, notes=6)
+2026-06-11 21:06:19,342 omr.staff_processor: CoSA_sys34: merged best-strategy score=38.1 (original)
+2026-06-11 21:06:19,342 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:06:19,343 omr.voice_splitter: split_by_chord: split 5 measures into 2 voices
+### PROGRESS 71%
+2026-06-11 21:06:19,432 staff_detector: Barline connectivity (x=197): [np.True_, np.False_, np.True_, np.True_, np.True_, np.True_, np.False_, np.True_, np.True_, np.True_]
+2026-06-11 21:06:19,433 staff_detector: Barline-based systems: [2, 5, 4]
+[32m[INFO] 2026-06-11 21:06:19,483 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:06:19,486 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:06:19,486 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:06:19,512 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:06:19,512 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:06:19,512 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:06:19,527 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:06:19,533 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:06:19,533 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[33m[WARNING] 2026-06-11 21:06:20,532 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:06:20,676 [RapidOCR] main.py:125: The text detection result is empty[0m
+2026-06-11 21:06:21,455 crop_cleaner: strip_outside_staff: erased 64 out-of-band components
+2026-06-11 21:06:21,457 crop_cleaner: strip_outside_staff: erased 69 out-of-band components
+2026-06-11 21:06:21,458 crop_cleaner: strip_outside_staff: erased 83 out-of-band components
+2026-06-11 21:06:21,471 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:06:21,479 staff_cropper: Replaced 21 x-noteheads with round noteheads
+2026-06-11 21:06:21,484 staff_cropper: Replaced 11 x-noteheads with round noteheads
+2026-06-11 21:06:25,039 crop_cleaner: strip_outside_staff: erased 71 out-of-band components
+2026-06-11 21:06:25,055 staff_cropper: Replaced 3 x-noteheads with round noteheads
+2026-06-11 21:06:25,067 crop_cleaner: strip_outside_staff: erased 52 out-of-band components
+2026-06-11 21:06:25,084 staff_cropper: Replaced 4 x-noteheads with round noteheads
+2026-06-11 21:06:25,095 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:06:25,103 voice_separator: Not enough directed notes (up=3, down=1); skipping separation
+2026-06-11 21:06:25,103 omr.staff_processor: CoSA_sys37: separation returned None, using merged split_voices path
+2026-06-11 21:06:25,119 crop_cleaner: strip_outside_staff: erased 12 out-of-band components
+2026-06-11 21:06:25,124 voice_separator: Not enough directed notes (up=3, down=1); skipping separation
+2026-06-11 21:06:25,124 omr.staff_processor: CoSA_sys38: separation returned None, using merged split_voices path
+2026-06-11 21:06:25,139 staff_cropper: Replaced 2 x-noteheads with round noteheads
+2026-06-11 21:06:25,172 voice_separator: Not enough directed notes (up=2, down=1); skipping separation
+2026-06-11 21:06:25,172 omr.staff_processor: CoTB_sys37: separation returned None, using merged split_voices path
+2026-06-11 21:06:28,302 omr.runner:   [original] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:06:28,303 omr.runner:   [original] score=20.9 | {'notes': 2, 'rests': 3, 'measures': 4, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.4, 'notes_per_measure': 0.5}
+2026-06-11 21:06:28,313 omr.runner:   [original] score=32.1 | {'notes': 4, 'rests': 3, 'measures': 4, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.57, 'notes_per_measure': 1.0}
+2026-06-11 21:06:31,572 omr.runner:   [adaptive] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:06:31,603 omr.runner:   [adaptive] score=20.9 | {'notes': 2, 'rests': 3, 'measures': 4, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.4, 'notes_per_measure': 0.5}
+2026-06-11 21:06:31,603 omr.runner:   [adaptive] score=32.1 | {'notes': 4, 'rests': 3, 'measures': 4, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.57, 'notes_per_measure': 1.0}
+2026-06-11 21:06:35,065 omr.runner:   [sharpen] score=32.1 | {'notes': 4, 'rests': 3, 'measures': 4, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.57, 'notes_per_measure': 1.0}
+2026-06-11 21:06:35,105 omr.runner:   [sharpen] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:06:35,110 omr.runner:   [sharpen] score=20.9 | {'notes': 2, 'rests': 3, 'measures': 4, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.4, 'notes_per_measure': 0.5}
+2026-06-11 21:06:38,177 omr.runner:   [scale1.5] score=32.1 | {'notes': 4, 'rests': 3, 'measures': 4, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.57, 'notes_per_measure': 1.0}
+2026-06-11 21:06:38,177 omr.runner: chord strategy: picked original (chords=2, notes=4)
+2026-06-11 21:06:38,191 omr.staff_processor: CoTB_sys37: merged best-strategy score=32.1 (original)
+2026-06-11 21:06:38,192 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:06:38,192 omr.voice_splitter: split_by_chord: split 4 measures into 2 voices
+2026-06-11 21:06:38,193 omr.runner:   [scale1.5] score=20.9 | {'notes': 2, 'rests': 3, 'measures': 4, 'pitches': 1, 'durations': 2, 'chord_notes': 0, 'note_ratio': 0.4, 'notes_per_measure': 0.5}
+2026-06-11 21:06:38,193 omr.runner: chord strategy: picked original (chords=0, notes=2)
+2026-06-11 21:06:38,195 omr.staff_processor: CoSA_sys37: merged best-strategy score=20.9 (original)
+2026-06-11 21:06:38,195 omr.voice_splitter: split_voices: single voice, no chords — returning as voice1
+2026-06-11 21:06:38,215 crop_cleaner: strip_outside_staff: erased 18 out-of-band components
+2026-06-11 21:06:38,230 staff_cropper: Replaced 2 x-noteheads with round noteheads
+2026-06-11 21:06:38,255 omr.runner:   [scale1.5] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:06:38,255 omr.runner: chord strategy: picked original (chords=2, notes=4)
+2026-06-11 21:06:38,257 omr.staff_processor: CoSA_sys38: merged best-strategy score=24.6 (original)
+2026-06-11 21:06:38,257 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:06:38,257 omr.voice_splitter: split_by_chord: split 6 measures into 2 voices
+2026-06-11 21:06:38,268 voice_separator: Not enough directed notes (up=1, down=0); skipping separation
+2026-06-11 21:06:38,268 omr.staff_processor: CoTB_sys38: separation returned None, using merged split_voices path
+2026-06-11 21:06:39,927 omr.runner:   [original] score=25.8 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 3, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:06:41,572 omr.runner:   [adaptive] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:06:43,228 omr.runner:   [sharpen] score=25.8 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 3, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:06:44,889 omr.runner:   [scale1.5] score=24.6 | {'notes': 4, 'rests': 5, 'measures': 6, 'pitches': 2, 'durations': 2, 'chord_notes': 2, 'note_ratio': 0.44, 'notes_per_measure': 0.7}
+2026-06-11 21:06:44,889 omr.runner: chord strategy: picked original (chords=2, notes=4)
+2026-06-11 21:06:44,891 omr.staff_processor: CoTB_sys38: merged best-strategy score=25.8 (original)
+2026-06-11 21:06:44,891 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:06:44,892 omr.voice_splitter: split_by_chord: split 6 measures into 2 voices
+### PROGRESS 77%
+2026-06-11 21:06:44,981 staff_detector: Barline connectivity (x=197): [np.True_, np.True_, np.True_, np.True_, np.False_, np.True_, np.True_, np.True_, np.False_, np.True_, np.True_, np.True_]
+2026-06-11 21:06:44,981 staff_detector: Barline-based systems: [5, 4, 4]
+[32m[INFO] 2026-06-11 21:06:45,054 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:06:45,056 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:06:45,057 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:06:45,083 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:06:45,084 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:06:45,084 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:06:45,099 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:06:45,104 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:06:45,104 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[33m[WARNING] 2026-06-11 21:06:45,781 [RapidOCR] main.py:125: The text detection result is empty[0m
+[33m[WARNING] 2026-06-11 21:06:45,927 [RapidOCR] main.py:125: The text detection result is empty[0m
+2026-06-11 21:06:47,326 crop_cleaner: strip_outside_staff: erased 53 out-of-band components
+2026-06-11 21:06:47,329 crop_cleaner: strip_outside_staff: erased 42 out-of-band components
+2026-06-11 21:06:47,331 crop_cleaner: strip_outside_staff: erased 64 out-of-band components
+2026-06-11 21:06:47,340 staff_cropper: Replaced 7 x-noteheads with round noteheads
+2026-06-11 21:06:47,353 staff_cropper: Replaced 16 x-noteheads with round noteheads
+2026-06-11 21:06:47,357 staff_cropper: Replaced 6 x-noteheads with round noteheads
+2026-06-11 21:06:50,695 crop_cleaner: strip_outside_staff: erased 38 out-of-band components
+2026-06-11 21:06:50,711 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:06:50,751 crop_cleaner: strip_outside_staff: erased 70 out-of-band components
+2026-06-11 21:06:50,755 voice_separator: Not enough directed notes (up=1, down=0); skipping separation
+2026-06-11 21:06:50,755 omr.staff_processor: CoSA_sys39: separation returned None, using merged split_voices path
+2026-06-11 21:06:50,772 staff_cropper: Replaced 4 x-noteheads with round noteheads
+2026-06-11 21:06:50,782 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:06:50,804 crop_cleaner: strip_outside_staff: erased 39 out-of-band components
+2026-06-11 21:06:50,811 voice_separator: Not enough directed notes (up=4, down=1); skipping separation
+2026-06-11 21:06:50,811 omr.staff_processor: CoSA_sys40: separation returned None, using merged split_voices path
+2026-06-11 21:06:50,822 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:06:50,862 voice_separator: Not enough directed notes (up=5, down=0); skipping separation
+2026-06-11 21:06:50,862 omr.staff_processor: CoSA_sys41: separation returned None, using merged split_voices path
+2026-06-11 21:06:53,870 omr.runner:   [original] score=52.9 | {'notes': 8, 'rests': 1, 'measures': 3, 'pitches': 5, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.89, 'notes_per_measure': 2.7}
+2026-06-11 21:06:53,911 omr.runner:   [original] score=48.5 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 4, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:06:53,935 omr.runner:   [original] score=51.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 5, 'durations': 4, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:06:57,070 omr.runner:   [adaptive] score=51.5 | {'notes': 9, 'rests': 1, 'measures': 4, 'pitches': 5, 'durations': 2, 'chord_notes': 5, 'note_ratio': 0.9, 'notes_per_measure': 2.2}
+2026-06-11 21:06:57,193 omr.runner:   [adaptive] score=48.5 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 4, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:06:57,193 omr.runner:   [adaptive] score=48.5 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 5, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:06:59,833 omr.runner:   [sharpen] score=51.5 | {'notes': 9, 'rests': 1, 'measures': 4, 'pitches': 5, 'durations': 2, 'chord_notes': 5, 'note_ratio': 0.9, 'notes_per_measure': 2.2}
+2026-06-11 21:07:00,389 omr.runner:   [sharpen] score=48.5 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 4, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:07:00,396 omr.runner:   [sharpen] score=51.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 5, 'durations': 4, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:07:02,382 omr.runner:   [scale1.5] score=50.4 | {'notes': 8, 'rests': 1, 'measures': 4, 'pitches': 5, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.89, 'notes_per_measure': 2.0}
+2026-06-11 21:07:02,382 omr.runner: chord strategy: picked adaptive (chords=5, notes=9)
+2026-06-11 21:07:02,382 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:07:02,384 omr.staff_processor: CoSA_sys39: merged best-strategy score=51.5 (adaptive)
+2026-06-11 21:07:02,384 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:07:02,385 omr.voice_splitter: split_by_chord: split 4 measures into 2 voices
+2026-06-11 21:07:02,440 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:07:02,545 voice_separator: Not enough directed notes (up=3, down=1); skipping separation
+2026-06-11 21:07:02,545 omr.staff_processor: CoTB_sys39: separation returned None, using merged split_voices path
+2026-06-11 21:07:03,252 omr.runner:   [scale1.5] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:07:03,252 omr.runner: chord strategy: picked original (chords=3, notes=8)
+2026-06-11 21:07:03,254 omr.staff_processor: CoSA_sys40: merged best-strategy score=48.5 (original)
+2026-06-11 21:07:03,254 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:07:03,255 omr.voice_splitter: split_by_chord: split 4 measures into 2 voices
+2026-06-11 21:07:03,277 crop_cleaner: strip_outside_staff: erased 37 out-of-band components
+2026-06-11 21:07:03,289 omr.runner:   [scale1.5] score=48.5 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 5, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:07:03,289 omr.runner: chord strategy: picked original (chords=3, notes=8)
+2026-06-11 21:07:03,291 omr.staff_processor: CoSA_sys41: merged best-strategy score=51.0 (original)
+2026-06-11 21:07:03,291 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:07:03,292 omr.voice_splitter: split_by_chord: split 4 measures into 2 voices
+2026-06-11 21:07:03,293 staff_cropper: Replaced 3 x-noteheads with round noteheads
+2026-06-11 21:07:03,312 crop_cleaner: strip_outside_staff: erased 30 out-of-band components
+2026-06-11 21:07:03,328 staff_cropper: Replaced 6 x-noteheads with round noteheads
+2026-06-11 21:07:03,343 voice_separator: Not enough directed notes (up=3, down=1); skipping separation
+2026-06-11 21:07:03,344 omr.staff_processor: CoTB_sys40: separation returned None, using merged split_voices path
+2026-06-11 21:07:03,375 voice_separator: Not enough directed notes (up=4, down=1); skipping separation
+2026-06-11 21:07:03,375 omr.staff_processor: CoTB_sys41: separation returned None, using merged split_voices path
+2026-06-11 21:07:04,984 omr.runner: homr failed: Processing /var/folders/pr/s3jnbyx921dd0dnw1h9z4yy40000gn/T/tmp1t45fsnw/original/input.png
+Starting Inference.
+Segnet Inference time: 1.0178671669855248; batch_size 8
+Creating bounds for noteheads
+Cre
+2026-06-11 21:07:05,090 omr.runner:   [original] score=50.4 | {'notes': 8, 'rests': 1, 'measures': 4, 'pitches': 5, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.89, 'notes_per_measure': 2.0}
+2026-06-11 21:07:05,771 omr.runner:   [original] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:07:06,358 omr.runner: homr failed: Processing /var/folders/pr/s3jnbyx921dd0dnw1h9z4yy40000gn/T/tmp1t45fsnw/adaptive/input.png
+Starting Inference.
+Segnet Inference time: 0.6158954999991693; batch_size 8
+Creating bounds for noteheads
+Cre
+2026-06-11 21:07:07,470 omr.runner:   [adaptive] score=50.4 | {'notes': 8, 'rests': 1, 'measures': 4, 'pitches': 5, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.89, 'notes_per_measure': 2.0}
+2026-06-11 21:07:07,896 omr.runner: homr failed: Processing /var/folders/pr/s3jnbyx921dd0dnw1h9z4yy40000gn/T/tmp1t45fsnw/sharpen/input.png
+Starting Inference.
+Segnet Inference time: 0.7227898749988526; batch_size 8
+Creating bounds for noteheads
+Crea
+2026-06-11 21:07:08,260 omr.runner:   [adaptive] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:07:09,212 omr.runner: homr failed: Processing /var/folders/pr/s3jnbyx921dd0dnw1h9z4yy40000gn/T/tmp1t45fsnw/scale1.5/input.png
+Starting Inference.
+Segnet Inference time: 0.6438607079908252; batch_size 8
+Creating bounds for noteheads
+Cre
+2026-06-11 21:07:09,213 omr.staff_processor: CoTB_sys41: merged best-strategy failed: All OMR strategies failed
+2026-06-11 21:07:09,785 omr.runner:   [sharpen] score=50.4 | {'notes': 8, 'rests': 1, 'measures': 4, 'pitches': 5, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.89, 'notes_per_measure': 2.0}
+2026-06-11 21:07:10,552 omr.runner:   [sharpen] score=48.5 | {'notes': 9, 'rests': 4, 'measures': 4, 'pitches': 4, 'durations': 3, 'chord_notes': 4, 'note_ratio': 0.69, 'notes_per_measure': 2.2}
+2026-06-11 21:07:11,951 omr.runner:   [scale1.5] score=50.4 | {'notes': 8, 'rests': 1, 'measures': 4, 'pitches': 5, 'durations': 2, 'chord_notes': 4, 'note_ratio': 0.89, 'notes_per_measure': 2.0}
+2026-06-11 21:07:11,951 omr.runner: chord strategy: picked original (chords=4, notes=8)
+2026-06-11 21:07:11,952 omr.postprocessor: Stripped 2 repeat barlines
+2026-06-11 21:07:11,953 omr.staff_processor: CoTB_sys39: merged best-strategy score=50.4 (original)
+2026-06-11 21:07:11,954 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:07:11,954 omr.voice_splitter: split_by_chord: split 4 measures into 2 voices
+2026-06-11 21:07:12,618 omr.runner:   [scale1.5] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:07:12,618 omr.runner: chord strategy: picked sharpen (chords=4, notes=9)
+2026-06-11 21:07:12,620 omr.staff_processor: CoTB_sys40: merged best-strategy score=48.5 (sharpen)
+2026-06-11 21:07:12,620 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:07:12,621 omr.voice_splitter: split_by_chord: split 4 measures into 2 voices
+### PROGRESS 84%
+2026-06-11 21:07:12,711 staff_detector: Barline connectivity (x=197): [np.True_, np.True_, np.True_, np.False_, np.True_, np.True_, np.True_]
+2026-06-11 21:07:12,711 staff_detector: Barline-based systems: [4, 4]
+[32m[INFO] 2026-06-11 21:07:12,761 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:07:12,764 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:07:12,765 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:07:12,791 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:07:12,792 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:07:12,792 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:07:12,806 [RapidOCR] base.py:22: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-06-11 21:07:12,812 [RapidOCR] download_file.py:60: File exists and is valid: /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+[32m[INFO] 2026-06-11 21:07:12,812 [RapidOCR] main.py:53: Using /Users/mmecoco/Desktop/musical-practice/tools/omr-server/venv/lib/python3.12/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.onnx[0m
+2026-06-11 21:07:14,176 crop_cleaner: strip_outside_staff: erased 51 out-of-band components
+2026-06-11 21:07:14,179 crop_cleaner: strip_outside_staff: erased 61 out-of-band components
+2026-06-11 21:07:14,184 crop_cleaner: strip_outside_staff: erased 127 out-of-band components
+2026-06-11 21:07:14,192 staff_cropper: Replaced 3 x-noteheads with round noteheads
+2026-06-11 21:07:14,197 staff_cropper: Replaced 8 x-noteheads with round noteheads
+2026-06-11 21:07:14,208 staff_cropper: Replaced 3 x-noteheads with round noteheads
+2026-06-11 21:07:14,246 voice_separator: Not enough directed notes (up=7, down=1); skipping separation
+2026-06-11 21:07:14,246 omr.staff_processor: CoSA_sys42: separation returned None, using merged split_voices path
+2026-06-11 21:07:17,381 omr.runner:   [original] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:07:17,610 crop_cleaner: strip_outside_staff: erased 93 out-of-band components
+2026-06-11 21:07:17,628 staff_cropper: Replaced 4 x-noteheads with round noteheads
+2026-06-11 21:07:17,668 crop_cleaner: strip_outside_staff: erased 26 out-of-band components
+2026-06-11 21:07:17,685 staff_cropper: Replaced 4 x-noteheads with round noteheads
+2026-06-11 21:07:17,688 voice_separator: Not enough directed notes (up=3, down=1); skipping separation
+2026-06-11 21:07:17,688 omr.staff_processor: CoSA_sys43: separation returned None, using merged split_voices path
+2026-06-11 21:07:17,732 voice_separator: Not enough directed notes (up=3, down=0); skipping separation
+2026-06-11 21:07:17,732 omr.staff_processor: CoTB_sys42: separation returned None, using merged split_voices path
+2026-06-11 21:07:19,589 omr.runner:   [adaptive] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:07:20,861 omr.runner:   [original] score=48.5 | {'notes': 9, 'rests': 4, 'measures': 4, 'pitches': 4, 'durations': 3, 'chord_notes': 4, 'note_ratio': 0.69, 'notes_per_measure': 2.2}
+2026-06-11 21:07:20,953 omr.runner:   [original] score=63.8 | {'notes': 21, 'rests': 2, 'measures': 4, 'pitches': 5, 'durations': 3, 'chord_notes': 8, 'note_ratio': 0.91, 'notes_per_measure': 5.2}
+2026-06-11 21:07:22,547 omr.runner:   [sharpen] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:07:23,608 omr.runner:   [adaptive] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:07:24,213 omr.runner:   [adaptive] score=65.9 | {'notes': 22, 'rests': 2, 'measures': 4, 'pitches': 6, 'durations': 3, 'chord_notes': 9, 'note_ratio': 0.92, 'notes_per_measure': 5.5}
+2026-06-11 21:07:25,425 omr.runner:   [scale1.5] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:07:25,426 omr.runner: chord strategy: picked original (chords=3, notes=8)
+2026-06-11 21:07:25,431 omr.staff_processor: CoSA_sys42: merged best-strategy score=46.0 (original)
+2026-06-11 21:07:25,431 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:07:25,433 omr.voice_splitter: split_by_chord: split 4 measures into 2 voices
+2026-06-11 21:07:25,470 crop_cleaner: strip_outside_staff: erased 75 out-of-band components
+2026-06-11 21:07:25,512 staff_cropper: Replaced 5 x-noteheads with round noteheads
+2026-06-11 21:07:25,602 voice_separator: Not enough directed notes (up=3, down=1); skipping separation
+2026-06-11 21:07:25,603 omr.staff_processor: CoTB_sys43: separation returned None, using merged split_voices path
+2026-06-11 21:07:26,113 omr.runner:   [sharpen] score=46.0 | {'notes': 8, 'rests': 4, 'measures': 4, 'pitches': 3, 'durations': 3, 'chord_notes': 3, 'note_ratio': 0.67, 'notes_per_measure': 2.0}
+2026-06-11 21:07:27,170 omr.runner:   [sharpen] score=63.8 | {'notes': 21, 'rests': 2, 'measures': 4, 'pitches': 5, 'durations': 3, 'chord_notes': 8, 'note_ratio': 0.91, 'notes_per_measure': 5.2}
+2026-06-11 21:07:28,740 omr.runner:   [original] score=69.0 | {'notes': 27, 'rests': 2, 'measures': 4, 'pitches': 5, 'durations': 3, 'chord_notes': 14, 'note_ratio': 0.93, 'notes_per_measure': 6.8}
+2026-06-11 21:07:28,929 omr.runner:   [scale1.5] score=48.5 | {'notes': 9, 'rests': 4, 'measures': 4, 'pitches': 4, 'durations': 3, 'chord_notes': 4, 'note_ratio': 0.69, 'notes_per_measure': 2.2}
+2026-06-11 21:07:28,930 omr.runner: chord strategy: picked original (chords=4, notes=9)
+2026-06-11 21:07:28,932 omr.staff_processor: CoTB_sys42: merged best-strategy score=48.5 (original)
+2026-06-11 21:07:28,932 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:07:28,933 omr.voice_splitter: split_by_chord: split 4 measures into 2 voices
+2026-06-11 21:07:29,858 omr.runner:   [scale1.5] score=63.8 | {'notes': 21, 'rests': 2, 'measures': 4, 'pitches': 5, 'durations': 3, 'chord_notes': 8, 'note_ratio': 0.91, 'notes_per_measure': 5.2}
+2026-06-11 21:07:29,858 omr.runner: chord strategy: picked adaptive (chords=9, notes=22)
+2026-06-11 21:07:29,860 omr.staff_processor: CoSA_sys43: merged best-strategy score=65.9 (adaptive)
+2026-06-11 21:07:29,860 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:07:29,861 omr.voice_splitter: split_by_chord: split 4 measures into 2 voices
+2026-06-11 21:07:30,880 omr.runner:   [adaptive] score=68.1 | {'notes': 26, 'rests': 2, 'measures': 4, 'pitches': 5, 'durations': 3, 'chord_notes': 13, 'note_ratio': 0.93, 'notes_per_measure': 6.5}
+2026-06-11 21:07:32,748 omr.runner:   [sharpen] score=70.2 | {'notes': 27, 'rests': 2, 'measures': 4, 'pitches': 6, 'durations': 3, 'chord_notes': 14, 'note_ratio': 0.93, 'notes_per_measure': 6.8}
+2026-06-11 21:07:34,568 omr.runner:   [scale1.5] score=69.0 | {'notes': 27, 'rests': 2, 'measures': 4, 'pitches': 5, 'durations': 3, 'chord_notes': 14, 'note_ratio': 0.93, 'notes_per_measure': 6.8}
+2026-06-11 21:07:34,568 omr.runner: chord strategy: picked sharpen (chords=14, notes=27)
+2026-06-11 21:07:34,570 omr.staff_processor: CoTB_sys43: merged best-strategy score=70.2 (sharpen)
+2026-06-11 21:07:34,571 omr.voice_splitter: split_voices: single voice with chords — splitting by pitch
+2026-06-11 21:07:34,572 omr.voice_splitter: split_by_chord: split 4 measures into 2 voices
+### PROGRESS 90%
+### PROGRESS 95%
+2026-06-11 21:07:34,574 omr.alignment: align_and_flatten: 6 chars × 44 systems → {'Alto': 214, 'Soprano': 214, 'Orph.': 214, 'Herm.': 214, 'Bass': 214, 'Tenor': 214} measures
+2026-06-11 21:07:34,575 omr.xml_writer: combine_chars_to_xml_string: 6 parts, ['Alto', 'Bass', 'Herm.', 'Orph.', 'Soprano', 'Tenor']
+### SUMMARY {"elapsed_min": 6.2, "parts": {"Alto": {"measures": 214, "pitched": 74, "mean_midi": 60.8}, "Bass": {"measures": 214, "pitched": 91, "mean_midi": 49.1}, "Herm.": {"measures": 214, "pitched": 681, "mean_midi": 72.1}, "Orph.": {"measures": 214, "pitched": 16, "mean_midi": 74.8}, "Soprano": {"measures": 214, "pitched": 134, "mean_midi": 63.9}, "Tenor": {"measures": 214, "pitched": 129, "mean_midi": 55.9}}}
+### DONE /Users/mmecoco/Desktop/musical-practice/tools/omr-server/debug_integration/road_to_hell_full14.musicxml

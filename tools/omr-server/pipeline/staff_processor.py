@@ -12,7 +12,7 @@ import numpy as np
 from core.crop_cleaner import strip_outside_staff
 from core.voice_separator import separate_voices_image
 from pipeline.chord_voicer import take_voice
-from pipeline.postprocessor import postprocess as postprocess_musicxml
+from pipeline.postprocessor import postprocess as postprocess_musicxml, mark_x_noteheads_in_xml
 from pipeline.voice_splitter import split_voices
 from pipeline.omr_runner import run_chord_strategy, run_homr
 
@@ -42,15 +42,22 @@ def process_page(
     if output_dir:
         cv2.imwrite(os.path.join(output_dir, f"page{page_num}_cropped.png"), cropped)
 
-    processed = replace_x_noteheads(cropped)
+    processed, x_positions = replace_x_noteheads(cropped)
     processed_path = os.path.join(tmp_dir, f"page{page_num}_processed.png")
     cv2.imwrite(processed_path, processed)
+    if x_positions:
+        log.info(f"Page {page_num}: Detected {len(x_positions)} x-noteheads at x: {x_positions}")
 
     raw_xml = run_homr(processed_path, tmp_dir)
     if raw_xml is None:
         return []
 
     processed_xml = postprocess_musicxml(raw_xml)
+
+    # Mark X-noteheads in the XML if any were detected
+    if x_positions:
+        processed_xml = mark_x_noteheads_in_xml(processed_xml, x_positions)
+        log.info(f"Page {page_num}: Marked {len(x_positions)} X-noteheads in MusicXML")
 
     try:
         root = ET.fromstring(processed_xml)
@@ -62,17 +69,22 @@ def process_page(
     return list(part.findall("measure")) if part is not None else []
 
 
-def _run_merged_best_strategy(processed: np.ndarray, tag: str) -> Optional[str]:
+def _run_merged_best_strategy(processed: np.ndarray, tag: str, x_positions: list[int] | None = None) -> Optional[str]:
     """Run multi-strategy OMR on the merged compound-staff image.
 
     run_chord_strategy tries the preprocessing variants that measurably
     improve homr's chord recall and picks by chord count — chords carry the
-    second voice's content. Already postprocessed. Returns None when every
-    strategy fails.
+    second voice's content. Returns postprocessed XML with x-noteheads marked
+    if x_positions provided. Returns None when every strategy fails.
     """
     try:
         xml, score, strategy = run_chord_strategy(processed)
         log.info(f"{tag}: merged best-strategy score={score:.1f} ({strategy})")
+        xml = postprocess_musicxml(xml)
+        # Mark X-noteheads in the XML if any were detected
+        if x_positions:
+            xml = mark_x_noteheads_in_xml(xml, x_positions)
+            log.info(f"{tag}: Marked {len(x_positions)} X-noteheads in merged XML")
         return xml
     except RuntimeError as exc:
         log.warning(f"{tag}: merged best-strategy failed: {exc}")
@@ -109,7 +121,9 @@ def process_single_staff(
     # Remove out-of-band contamination (clap lanes, neighbor-staff bleed)
     # before x-notehead conversion turns clap heads into fake pitched notes.
     cleaned = strip_outside_staff(staff_image)
-    processed = replace_x_noteheads(cleaned)
+    processed, x_positions = replace_x_noteheads(cleaned)
+    if x_positions:
+        log.info(f"{tag}: Detected {len(x_positions)} x-noteheads at x: {x_positions}")
 
     if character not in COMPOUND_VOICES:
         # Non-compound: existing path
@@ -120,6 +134,10 @@ def process_single_staff(
         if raw_xml is None:
             return {character: []}
         processed_xml = postprocess_musicxml(raw_xml)
+        # Mark X-noteheads in the XML if any were detected
+        if x_positions:
+            processed_xml = mark_x_noteheads_in_xml(processed_xml, x_positions)
+            log.info(f"{tag}: Marked {len(x_positions)} X-noteheads in MusicXML")
         try:
             root = ET.fromstring(processed_xml)
         except ET.ParseError:
@@ -136,7 +154,7 @@ def process_single_staff(
         # Multi-strategy preprocessing maximises homr's chord recall, which is
         # what the chord-split assignment below depends on.
         log.info(f"{tag}: separation returned None, using merged split_voices path")
-        processed_xml = _run_merged_best_strategy(processed, tag)
+        processed_xml = _run_merged_best_strategy(processed, tag, x_positions)
         if processed_xml is None:
             return {v1_name: [], v2_name: []}
         voice_parts = split_voices(processed_xml)
@@ -178,6 +196,10 @@ def process_single_staff(
             log.info(f"{tag} {voice_name}: homr failed, will use fallback")
         else:
             voice_xml = postprocess_musicxml(voice_xml)
+            # Mark X-noteheads in the XML if any were detected
+            if x_positions:
+                voice_xml = mark_x_noteheads_in_xml(voice_xml, x_positions)
+                log.info(f"{tag} {voice_name}: Marked {len(x_positions)} X-noteheads in MusicXML")
             # Shared chords were kept in both images: keep the top line for
             # the up voice and the bottom line for the down voice.
             voice_xml = take_voice(voice_xml, "upper" if voice_idx == "up" else "lower")
@@ -197,7 +219,7 @@ def process_single_staff(
             if not merged_attempted:
                 merged_attempted = True
                 log.info(f"{tag}: running merged path for fallback")
-                merged_xml = _run_merged_best_strategy(processed, tag)
+                merged_xml = _run_merged_best_strategy(processed, tag, x_positions)
                 if merged_xml is not None:
                     merged_voice_parts = split_voices(merged_xml)
             if merged_voice_parts is None:

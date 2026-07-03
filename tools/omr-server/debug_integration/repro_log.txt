@@ -1,0 +1,4 @@
+crop_cleaner: strip_outside_staff: erased 115 out-of-band components
+staff_cropper: Replaced 0 x-noteheads with round noteheads
+omr.postprocessor: Stripped 1 repeat barlines
+RESULT Herm.: 6 measures
