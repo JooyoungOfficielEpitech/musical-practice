@@ -92,8 +92,8 @@ def run(pdf_path: str, output_xml: str | None = None):
                     crop_out = os.path.join(debug_dir, f"{tag}_1_crop.png")
                     cv2.imwrite(crop_out, staff_img)
 
-                    # x-notehead replacement (returns image and x-coordinates)
-                    xfixed, x_positions = replace_x_noteheads(staff_img)
+                    # x-notehead replacement (returns image, x-coordinates sorted left-to-right, and width)
+                    xfixed, x_positions, staff_width = replace_x_noteheads(staff_img)
                     xfix_out = os.path.join(debug_dir, f"{tag}_2_xfix.png")
                     cv2.imwrite(xfix_out, xfixed)
                     if x_positions:
@@ -118,7 +118,7 @@ def run(pdf_path: str, output_xml: str | None = None):
 
                     # Mark X-noteheads in the XML if any were detected
                     if x_positions:
-                        xml = mark_x_noteheads_in_xml(xml, x_positions)
+                        xml = mark_x_noteheads_in_xml(xml, x_positions, staff_width=staff_width)
                         print(f"      [{char} sys{g_idx}] Marked {len(x_positions)} X-noteheads in MusicXML")
 
                     # Save per-staff XML

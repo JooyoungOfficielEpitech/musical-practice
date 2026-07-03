@@ -84,19 +84,22 @@ def enhance_for_omr(img: np.ndarray) -> np.ndarray:
     return sharpened
 
 
-def replace_x_noteheads(img: np.ndarray) -> tuple[np.ndarray, list[int]]:
+def replace_x_noteheads(img: np.ndarray) -> tuple[np.ndarray, list[int], int]:
     """Detect x-noteheads and replace them with filled round noteheads.
 
     X-noteheads are used for spoken rhythm and confuse homr. This function
     replaces them with filled ellipses before OMR and returns the x-coordinates
-    of replaced X-noteheads for downstream marking in MusicXML.
+    of replaced X-noteheads (sorted left-to-right) for downstream marking in MusicXML.
 
     Args:
         img: Input sheet music image (BGR or grayscale).
 
     Returns:
-        Tuple of (processed_image, x_positions) where x_positions is a list
-        of x-coordinates (relative to cropped image) of detected X-noteheads.
+        Tuple of (processed_image, x_positions, image_width) where:
+        - processed_image: Image with X-noteheads replaced by round noteheads
+        - x_positions: List of x-coordinates (sorted ascending, left-to-right)
+                      of detected X-noteheads in the input image
+        - image_width: Width of the input image for coordinate mapping
     """
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img.copy()
     _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
@@ -127,8 +130,12 @@ def replace_x_noteheads(img: np.ndarray) -> tuple[np.ndarray, list[int]]:
         cv2.ellipse(result, (cx, cy), (6, 4), 0, 0, 360, (0, 0, 0), -1)
         x_positions.append(cx)
 
-    log.info(f"Replaced {len(kept)} x-noteheads with round noteheads at x-coordinates: {x_positions}")
-    return result, x_positions
+    # Sort x_positions left-to-right (ascending), not by confidence
+    x_positions_sorted = sorted(x_positions)
+
+    image_width = img.shape[1]
+    log.info(f"Replaced {len(kept)} x-noteheads with round noteheads at x-coordinates: {x_positions_sorted}")
+    return result, x_positions_sorted, image_width
 
 
 def crop_vocal_staff(img: np.ndarray, padding_factor: float = 1.5) -> Optional[np.ndarray]:

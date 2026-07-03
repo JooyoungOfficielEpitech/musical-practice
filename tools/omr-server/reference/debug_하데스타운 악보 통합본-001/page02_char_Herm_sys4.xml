@@ -65,12 +65,17 @@
         <notations />
       </note>
       <note>
+        <pitch>
+          <step>B</step>
+          <alter>-1</alter>
+          <octave>4</octave>
+        </pitch>
         <duration>1</duration>
         <voice>1</voice>
         <type>eighth</type>
         <staff>1</staff>
         <notations />
-      <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched><notehead>x</notehead></note>
+      </note>
       <note>
         <duration>1</duration>
         <voice>1</voice>
@@ -95,19 +100,27 @@
         <notations />
       <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched><notehead>x</notehead></note>
       <note>
+        <pitch>
+          <step>F</step>
+          <octave>5</octave>
+        </pitch>
         <duration>1</duration>
         <voice>1</voice>
         <type>eighth</type>
         <staff>1</staff>
         <notations />
-      <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched><notehead>x</notehead></note>
+      </note>
       <note>
+        <pitch>
+          <step>F</step>
+          <octave>5</octave>
+        </pitch>
         <duration>1</duration>
         <voice>1</voice>
         <type>eighth</type>
         <staff>1</staff>
         <notations />
-      <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched><notehead>x</notehead></note>
+      </note>
       <note>
         <duration>2</duration>
         <voice>1</voice>
@@ -142,40 +155,26 @@
         <notations />
       </note>
       <note>
-        <pitch>
-          <step>E</step>
-          <alter>-1</alter>
-          <octave>5</octave>
-        </pitch>
         <duration>1</duration>
         <voice>1</voice>
         <type>eighth</type>
         <staff>1</staff>
         <notations />
-      </note>
+      <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched><notehead>x</notehead></note>
       <note>
-        <pitch>
-          <step>D</step>
-          <octave>5</octave>
-        </pitch>
         <duration>1</duration>
         <voice>1</voice>
         <type>eighth</type>
         <staff>1</staff>
         <notations />
-      </note>
+      <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched><notehead>x</notehead></note>
       <note>
-        <pitch>
-          <step>E</step>
-          <alter>-1</alter>
-          <octave>5</octave>
-        </pitch>
         <duration>1</duration>
         <voice>1</voice>
         <type>eighth</type>
         <staff>1</staff>
         <notations />
-      </note>
+      <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched><notehead>x</notehead></note>
     </measure>
     <measure number="5">
       <note>

@@ -98,7 +98,7 @@ def _process_simple_page(png_path: str, tmp_dir: str) -> list:
     if cropped is None:
         logger.warning("Staff crop failed for %s, using full image", png_path)
         cropped = img
-    processed = replace_x_noteheads(cropped)
+    processed, x_positions, staff_width = replace_x_noteheads(cropped)
     try:
         xml_str, score, strategy = run_best_strategy(processed)
         logger.info("  Page OMR score=%.1f strategy=%s", score, strategy)

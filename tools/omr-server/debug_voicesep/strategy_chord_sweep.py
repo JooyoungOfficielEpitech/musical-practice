@@ -22,7 +22,7 @@ def chord_stats(xml):
 out = {}
 for crop in ["spike_p13_Co-SA_0.png", "spike_p8_Co-TB_0.png"]:
     img = cv2.imread(os.path.join(os.path.dirname(__file__), crop))
-    processed = replace_x_noteheads(img)
+    processed, x_positions, staff_width = replace_x_noteheads(img)
     out[crop] = {}
     for name, prep in STRATEGIES:
         with tempfile.TemporaryDirectory() as td:

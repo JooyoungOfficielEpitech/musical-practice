@@ -12,7 +12,7 @@ import numpy as np
 from core.crop_cleaner import strip_outside_staff
 from core.voice_separator import separate_voices_image
 from pipeline.chord_voicer import take_voice
-from pipeline.postprocessor import postprocess as postprocess_musicxml, mark_x_noteheads_in_xml
+from pipeline.postprocessor import postprocess as postprocess_musicxml, mark_x_noteheads_in_xml, X_MARKING_ENABLED
 from pipeline.voice_splitter import split_voices
 from pipeline.omr_runner import run_chord_strategy, run_homr
 
@@ -42,7 +42,7 @@ def process_page(
     if output_dir:
         cv2.imwrite(os.path.join(output_dir, f"page{page_num}_cropped.png"), cropped)
 
-    processed, x_positions = replace_x_noteheads(cropped)
+    processed, x_positions, staff_width = replace_x_noteheads(cropped)
     processed_path = os.path.join(tmp_dir, f"page{page_num}_processed.png")
     cv2.imwrite(processed_path, processed)
     if x_positions:
@@ -56,7 +56,8 @@ def process_page(
 
     # Mark X-noteheads in the XML if any were detected
     if x_positions:
-        processed_xml = mark_x_noteheads_in_xml(processed_xml, x_positions)
+        if X_MARKING_ENABLED:
+            processed_xml = mark_x_noteheads_in_xml(processed_xml, x_positions, staff_width=staff_width)
         log.info(f"Page {page_num}: Marked {len(x_positions)} X-noteheads in MusicXML")
 
     try:
@@ -83,7 +84,8 @@ def _run_merged_best_strategy(processed: np.ndarray, tag: str, x_positions: list
         xml = postprocess_musicxml(xml)
         # Mark X-noteheads in the XML if any were detected
         if x_positions:
-            xml = mark_x_noteheads_in_xml(xml, x_positions)
+            if X_MARKING_ENABLED:
+                xml = mark_x_noteheads_in_xml(xml, x_positions)
             log.info(f"{tag}: Marked {len(x_positions)} X-noteheads in merged XML")
         return xml
     except RuntimeError as exc:
@@ -121,7 +123,7 @@ def process_single_staff(
     # Remove out-of-band contamination (clap lanes, neighbor-staff bleed)
     # before x-notehead conversion turns clap heads into fake pitched notes.
     cleaned = strip_outside_staff(staff_image)
-    processed, x_positions = replace_x_noteheads(cleaned)
+    processed, x_positions, staff_width = replace_x_noteheads(cleaned)
     if x_positions:
         log.info(f"{tag}: Detected {len(x_positions)} x-noteheads at x: {x_positions}")
 
@@ -136,7 +138,8 @@ def process_single_staff(
         processed_xml = postprocess_musicxml(raw_xml)
         # Mark X-noteheads in the XML if any were detected
         if x_positions:
-            processed_xml = mark_x_noteheads_in_xml(processed_xml, x_positions)
+            if X_MARKING_ENABLED:
+                processed_xml = mark_x_noteheads_in_xml(processed_xml, x_positions, staff_width=staff_width)
             log.info(f"{tag}: Marked {len(x_positions)} X-noteheads in MusicXML")
         try:
             root = ET.fromstring(processed_xml)
@@ -198,7 +201,8 @@ def process_single_staff(
             voice_xml = postprocess_musicxml(voice_xml)
             # Mark X-noteheads in the XML if any were detected
             if x_positions:
-                voice_xml = mark_x_noteheads_in_xml(voice_xml, x_positions)
+                if X_MARKING_ENABLED:
+                    voice_xml = mark_x_noteheads_in_xml(voice_xml, x_positions)
                 log.info(f"{tag} {voice_name}: Marked {len(x_positions)} X-noteheads in MusicXML")
             # Shared chords were kept in both images: keep the top line for
             # the up voice and the bottom line for the down voice.

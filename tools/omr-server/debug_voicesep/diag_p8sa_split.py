@@ -11,7 +11,7 @@ from pipeline.voice_splitter import split_voices
 from core.staff_cropper import replace_x_noteheads
 
 img = cv2.imread(os.path.join(os.path.dirname(__file__), "spike_p8_Co-SA_0.png"))
-processed = replace_x_noteheads(img)
+processed, x_positions, staff_width = replace_x_noteheads(img)
 with tempfile.TemporaryDirectory() as td:
     p = os.path.join(td, "in.png")
     cv2.imwrite(p, preprocess_scale15(processed))

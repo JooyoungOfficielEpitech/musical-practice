@@ -171,12 +171,16 @@
     </measure>
     <measure number="4">
       <note>
+        <pitch>
+          <step>F</step>
+          <octave>5</octave>
+        </pitch>
         <duration>1</duration>
         <voice>1</voice>
         <type>eighth</type>
         <staff>1</staff>
         <notations><tied type="stop" /></notations>
-      <tie type="stop" /><unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched><notehead>x</notehead></note>
+      <tie type="stop" /></note>
       <note>
         <duration>1</duration>
         <voice>1</voice>
@@ -230,10 +234,6 @@
         </notations>
       <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched><notehead>x</notehead></note>
       <note>
-        <pitch>
-          <step>C</step>
-          <octave>5</octave>
-        </pitch>
         <duration>1</duration>
         <voice>1</voice>
         <type>eighth</type>
@@ -243,7 +243,7 @@
             <accent />
           </articulations>
         </notations>
-      </note>
+      <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched><notehead>x</notehead></note>
     </measure>
   </part>
 </score-partwise>

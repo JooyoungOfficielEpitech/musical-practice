@@ -27,8 +27,8 @@ logging.basicConfig(level=logging.INFO, format="%(name)s %(levelname)s %(message
 class TestReplaceXNotehead_Signature:
     """Test that replace_x_noteheads returns (image, x_positions) tuple."""
 
-    def test_returns_tuple_of_two_elements(self):
-        """replace_x_noteheads(img) should return (image, x_positions_list)."""
+    def test_returns_tuple_of_three_elements(self):
+        """replace_x_noteheads(img) should return (image, x_positions_list, width)."""
         # Create a simple image with staff lines
         img = np.full((300, 500, 3), 255, dtype=np.uint8)
         # Add staff lines
@@ -38,18 +38,20 @@ class TestReplaceXNotehead_Signature:
 
         result = replace_x_noteheads(img)
         assert isinstance(result, tuple), "replace_x_noteheads should return a tuple"
-        assert len(result) == 2, "replace_x_noteheads should return (image, positions)"
+        assert len(result) == 3, "replace_x_noteheads should return (image, positions, width)"
 
-    def test_returns_image_and_list(self):
-        """First element is image (ndarray), second is list."""
+    def test_returns_image_list_and_width(self):
+        """First element is image (ndarray), second is list, third is int (width)."""
         img = np.full((300, 500, 3), 255, dtype=np.uint8)
         for i in range(5):
             y = 100 + i * 30
             cv2.line(img, (20, y), (480, y), (0, 0, 0), 2)
 
-        result_img, result_positions = replace_x_noteheads(img)
+        result_img, result_positions, result_width = replace_x_noteheads(img)
         assert isinstance(result_img, np.ndarray), "First element should be ndarray"
         assert isinstance(result_positions, list), "Second element should be list"
+        assert isinstance(result_width, int), "Third element should be int (width)"
+        assert result_width == 500, f"Width should be 500, got {result_width}"
 
     def test_positions_list_contains_numbers(self):
         """x_positions should be a list of x-coordinates (ints)."""
@@ -58,7 +60,7 @@ class TestReplaceXNotehead_Signature:
             y = 100 + i * 30
             cv2.line(img, (20, y), (480, y), (0, 0, 0), 2)
 
-        result_img, result_positions = replace_x_noteheads(img)
+        result_img, result_positions, result_width = replace_x_noteheads(img)
         for pos in result_positions:
             assert isinstance(pos, (int, float)), f"Expected numeric position, got {type(pos)}"
 
@@ -79,7 +81,7 @@ class TestReplaceXNotehead_Accuracy:
             y = 100 + i * 30
             cv2.line(img, (20, y), (480, y), (0, 0, 0), 2)
 
-        result_img, x_positions = replace_x_noteheads(img)
+        result_img, x_positions, staff_width = replace_x_noteheads(img)
         assert isinstance(x_positions, list), "Should return list even if empty"
         # Can be empty or have values depending on detection, but structure OK
 
@@ -97,7 +99,7 @@ class TestReplaceXNotehead_Accuracy:
         cv2.line(img, (x_center - 5, y_center - 5), (x_center + 5, y_center + 5), (0, 0, 0), 2)
         cv2.line(img, (x_center + 5, y_center - 5), (x_center - 5, y_center + 5), (0, 0, 0), 2)
 
-        result_img, x_positions = replace_x_noteheads(img)
+        result_img, x_positions, staff_width = replace_x_noteheads(img)
         # Should detect at least one X
         assert len(x_positions) >= 1, "Should detect at least 1 X-notehead"
         # The x_position should be roughly near 150
@@ -121,7 +123,7 @@ class TestReplaceXNotehead_Accuracy:
             cv2.line(img, (x_center - 5, y_center - 5), (x_center + 5, y_center + 5), (0, 0, 0), 2)
             cv2.line(img, (x_center + 5, y_center - 5), (x_center - 5, y_center + 5), (0, 0, 0), 2)
 
-        result_img, x_positions = replace_x_noteheads(img)
+        result_img, x_positions, staff_width = replace_x_noteheads(img)
         # Should detect at least 3 X's (might detect more if template matching is sensitive)
         assert len(x_positions) >= 3, \
             f"Should detect at least 3 X-noteheads, got {len(x_positions)}"
@@ -293,7 +295,7 @@ class TestXNotehead_Integration:
             cv2.line(img, (x_center + 5, y_center - 5), (x_center - 5, y_center + 5), (0, 0, 0), 2)
 
         # Step 2: Call replace_x_noteheads, get positions
-        result_img, detected_positions = replace_x_noteheads(img)
+        result_img, detected_positions, staff_width_test = replace_x_noteheads(img)
 
         # Verify we detected X's
         assert len(detected_positions) > 0, "Should detect at least one X"

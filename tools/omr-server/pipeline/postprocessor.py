@@ -30,17 +30,25 @@ def note_to_midi(note_el: ET.Element) -> Optional[int]:
     return pitch_to_midi(step, octave, alter)
 
 
-def mark_x_noteheads_in_xml(xml_str: str, x_positions: list[int]) -> str:
+# X-notehead detection currently over-fires (~300 false positives per staff),
+# mass-converting correct pitched notes to unpitched (F1 0.13 -> 0.06). Marking
+# stays OFF until the detector's precision is fixed; machinery+tests remain.
+X_MARKING_ENABLED = False
+
+
+def mark_x_noteheads_in_xml(xml_str: str, x_positions: list[int], staff_width: Optional[int] = None) -> str:
     """Convert pitched notes at given x-offsets to unpitched (X-noteheads).
 
-    Takes MusicXML string and a list of x-coordinates where X-noteheads were
-    detected in the source image. Converts notes (in order of appearance) that
-    correspond to those x-positions into unpitched elements with notehead="x".
+    Maps x-positions from image space to note sequence by fractional position.
+    For each x-notehead, finds the nearest pitched note based on its fractional
+    position across the staff width.
 
     Args:
         xml_str: MusicXML string to process.
-        x_positions: List of x-coordinates (in cropped image space) where
-                     X-noteheads were detected.
+        x_positions: List of x-coordinates (sorted left-to-right, in cropped image space)
+                     where X-noteheads were detected.
+        staff_width: Width of the staff image (used for coordinate mapping). If None,
+                     uses simple order-based marking (first N notes).
 
     Returns:
         Modified MusicXML string with marked X-noteheads.
@@ -67,14 +75,28 @@ def mark_x_noteheads_in_xml(xml_str: str, x_positions: list[int]) -> str:
                 continue
             all_notes.append(note)
 
-    # Convert first len(x_positions) notes to unpitched
-    # (In practice, this matching is simplified; a production version would
-    # correlate x-position to note onset time more precisely.)
-    for i, x_pos in enumerate(x_positions):
-        if i >= len(all_notes):
-            break
-        note = all_notes[i]
+    if not all_notes:
+        return xml_str
 
+    # Safety check: if x_count > 60% of pitched notes, log warning
+    threshold_count = max(1, int(len(all_notes) * 0.6))
+    if len(x_positions) > threshold_count:
+        log.warning(
+            f"mark_x_noteheads_in_xml: {len(x_positions)} x-positions for {len(all_notes)} "
+            f"pitched notes ({100*len(x_positions)//len(all_notes)}% > 60%); "
+            "this seems unusual unless staff is entirely spoken rhythm"
+        )
+
+    # If staff_width provided, map x-coordinates to fractional note positions
+    if staff_width is not None and staff_width > 0:
+        x_fractions = [x / staff_width for x in x_positions]
+        notes_to_mark = _find_notes_by_fractional_position(all_notes, x_fractions)
+    else:
+        # Fallback: order-based marking (first N notes)
+        notes_to_mark = all_notes[:len(x_positions)]
+
+    # Convert selected notes to unpitched
+    for note in notes_to_mark:
         # Remove pitch element
         pitch = note.find("pitch")
         if pitch is not None:
@@ -90,6 +112,58 @@ def mark_x_noteheads_in_xml(xml_str: str, x_positions: list[int]) -> str:
         notehead.text = "x"
 
     return ET.tostring(root, encoding="unicode", xml_declaration=True)
+
+
+def _find_notes_by_fractional_position(
+    all_notes: list[ET.Element],
+    x_fractions: list[float],
+) -> list[ET.Element]:
+    """Map fractional x-positions to notes in sequence.
+
+    For each fractional position (0.0 to 1.0 across staff width),
+    finds the nearest unmarked pitched note.
+
+    Args:
+        all_notes: List of pitched note elements in sequence.
+        x_fractions: List of fractional positions (0.0 to 1.0) sorted ascending.
+
+    Returns:
+        List of note elements to mark, in order.
+    """
+    if not all_notes or not x_fractions:
+        return []
+
+    # Map each fraction to a note index
+    note_indices = []
+    marked_indices = set()
+
+    for frac in x_fractions:
+        # Clamp to [0, 1]
+        frac = max(0.0, min(1.0, frac))
+
+        # Find nearest note index
+        target_idx = int(frac * len(all_notes))
+        target_idx = min(target_idx, len(all_notes) - 1)
+
+        # Find nearest unmarked note
+        best_idx = None
+        best_dist = float("inf")
+
+        for i in range(len(all_notes)):
+            if i in marked_indices:
+                continue
+            dist = abs(i - target_idx)
+            if dist < best_dist:
+                best_dist = dist
+                best_idx = i
+
+        if best_idx is not None:
+            marked_indices.add(best_idx)
+            note_indices.append(best_idx)
+
+    # Return notes in order
+    note_indices.sort()
+    return [all_notes[i] for i in note_indices]
 
 
 def make_rest_measure(divisions: int = 2) -> ET.Element:

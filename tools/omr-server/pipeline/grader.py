@@ -133,17 +133,30 @@ def _compute_f1(p: float, r: float) -> float:
     return 0.0 if p + r == 0 else 2 * p * r / (p + r)
 
 
-def grade(musicxml_path: str, gt_json_path: str, part_id: str) -> dict:
-    """Grade OMR accuracy: pitch F1, rhythm F1, measure accuracy, per-measure breakdown."""
+def grade(musicxml_path: str, gt_json_path: str, part_id: str, measure_offset: int = 0) -> dict:
+    """Grade OMR accuracy: pitch F1, rhythm F1, measure accuracy, per-measure breakdown.
+
+    Args:
+        musicxml_path: Path to produced MusicXML file.
+        gt_json_path: Path to ground truth JSON file.
+        part_id: Part ID or part-name to extract from MusicXML.
+        measure_offset: Offset to add to produced measure numbers for alignment.
+                       (default: 0, no offset)
+
+    Returns:
+        Dict with pitch_f1, rhythm_f1, measure_accuracy, per_measure breakdown.
+    """
     produced_notes = extract_notes_from_xml(musicxml_path, part_id)
     with open(gt_json_path) as f:
         gt_data = json.load(f)
     gt_measures = {m["n"]: m["notes"] for m in gt_data["measures"]}
     produced_by_measure = {}
     for measure_num, onset, pitch, duration in produced_notes:
-        if measure_num not in produced_by_measure:
-            produced_by_measure[measure_num] = []
-        produced_by_measure[measure_num].append((onset, pitch, duration))
+        # Apply offset for alignment with ground truth
+        aligned_measure_num = measure_num + measure_offset
+        if aligned_measure_num not in produced_by_measure:
+            produced_by_measure[aligned_measure_num] = []
+        produced_by_measure[aligned_measure_num].append((onset, pitch, duration))
 
     per_measure = []
     tp, fp, fn_p, tp_r, fp_r, fn_r = 0, 0, 0, 0, 0, 0
@@ -208,7 +221,8 @@ def grade(musicxml_path: str, gt_json_path: str, part_id: str) -> dict:
 
 if __name__ == "__main__":
     import sys
-    if len(sys.argv) != 4:
-        print("Usage: python -m pipeline.grader <xml> <gt.json> <part>")
+    if len(sys.argv) < 4:
+        print("Usage: python -m pipeline.grader <xml> <gt.json> <part> [measure_offset]")
         sys.exit(1)
-    print(json.dumps(grade(sys.argv[1], sys.argv[2], sys.argv[3]), indent=2))
+    measure_offset = int(sys.argv[4]) if len(sys.argv) > 4 else 0
+    print(json.dumps(grade(sys.argv[1], sys.argv[2], sys.argv[3], measure_offset), indent=2))
