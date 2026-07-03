@@ -7,6 +7,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
+import { hapticFeedback } from "@/lib/hapticFeedback";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { Fonts, ClayShadow, Spacing, BorderRadius } from "@/constants/theme";
 
@@ -35,7 +36,10 @@ export function SuccessView({ onViewLibrary }: SuccessViewProps): React.JSX.Elem
       </Text>
       <Pressable
         style={[styles.primaryButton, { backgroundColor: colors.primary }]}
-        onPress={onViewLibrary}
+        onPress={() => {
+          void hapticFeedback.triggerMedium();
+          onViewLibrary();
+        }}
         accessibilityLabel="View library with imported scores"
         accessibilityRole="button"
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -87,7 +91,10 @@ export function ErrorView({
       </Text>
       <Pressable
         style={[styles.primaryButton, { backgroundColor: colors.primary }]}
-        onPress={onRetry}
+        onPress={() => {
+          void hapticFeedback.triggerMedium();
+          onRetry();
+        }}
         accessibilityLabel={isUploadError ? "Retry upload" : "Try again"}
         accessibilityRole="button"
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -98,7 +105,10 @@ export function ErrorView({
       </Pressable>
       <Pressable
         style={styles.secondaryButton}
-        onPress={onCancel}
+        onPress={() => {
+          void hapticFeedback.triggerLight();
+          onCancel();
+        }}
         accessibilityLabel="Cancel and go back"
         accessibilityRole="button"
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}

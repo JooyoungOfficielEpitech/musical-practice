@@ -1,0 +1,35 @@
+{
+  "song": "Road To Hell I (Hadestown)",
+  "page": 1,
+  "part": "Company T/B",
+  "source": "verified against 하데스타운 악보 통합본-001.png (2026-07-04)",
+  "key_fifths": -2,
+  "time": "4/4",
+  "tempo_qpm": 188,
+  "verified": true,
+  "verifier_corrections": [
+    {
+      "measure": 11,
+      "original": "[\"G3+Bb3\", 4]",
+      "corrected": "[\"rest\", 4]",
+      "reason": "Sheet shows rest in Company T/B at m.11; 'Mmm...' text is in m.9-10, not m.11"
+    }
+  ],
+  "measures": [
+    {"n": 1, "notes": [["rest", 4]]},
+    {"n": 2, "notes": [["rest", 4]]},
+    {"n": 3, "notes": [["Bb3+Eb4", 4]], "comment": "ON CUE, harmonic support for Hermes"},
+    {"n": 4, "notes": [["Bb3+Eb4", 2], ["rest", 2]]},
+    {"n": 5, "notes": [["rest", 4]]},
+    {"n": 6, "notes": [["rest", 4]]},
+    {"n": 7, "notes": [["rest", 4]]},
+    {"n": 8, "notes": [["rest", 4]]},
+    {"n": 9, "notes": [["rest", 4]]},
+    {"n": 10, "notes": [["rest", 4]]},
+    {"n": 11, "notes": [["rest", 4]], "comment": "Mmm... text is in m.9-10; m.11 is rest"},
+    {"n": 12, "notes": [["X3", 0.5], ["X3", 0.5], ["X3", 0.5], ["X3", 0.5], ["X3", 0.5], ["X3", 0.5], ["X3", 0.5], ["X3", 0.5]], "comment": "x-noteheads, spoken Chuck-a"},
+    {"n": 13, "notes": [["X3", 0.5], ["X3", 0.5], ["X3", 0.5], ["X3", 0.5], ["X3", 0.5], ["X3", 0.5], ["X3", 0.5], ["X3", 0.5]], "comment": "x-noteheads, spoken"},
+    {"n": 14, "notes": [["X3", 0.5], ["X3", 0.5], ["X3", 0.5], ["X3", 0.5], ["X3", 0.5], ["X3", 0.5], ["X3", 0.5], ["X3", 0.5]], "comment": "x-noteheads, spoken"}
+  ],
+  "notation": "notes = [pitch|rest|X(spoken), quarter-note beats]; chords = multiple pitches in one tuple; X pitch = notated staff line (unpitched)"
+}

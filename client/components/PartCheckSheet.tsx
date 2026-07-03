@@ -3,6 +3,7 @@ import { StyleSheet, View, Modal, Pressable, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
+import { hapticFeedback } from "@/lib/hapticFeedback";
 import { PartCheckCard } from "@/components/PartCheckCard";
 import { Spacing, BorderRadius, ClayShadow, Fonts, Colors } from "@/constants/theme";
 import type { PartInfo } from "@/types/music";
@@ -45,9 +46,12 @@ export function PartCheckSheet({
           onTogglePart={onTogglePart}
         />
         <Pressable
-          onPress={onDismiss}
+          onPress={() => {
+            void hapticFeedback.triggerMedium();
+            onDismiss();
+          }}
           accessibilityRole="button"
-          style={({ pressed }) => [styles.doneBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.9 : 1 }]}
+          style={({ pressed }) => [styles.doneBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
         >
           <Text style={[styles.doneText, { color: colors.buttonText }]}>Done</Text>
         </Pressable>

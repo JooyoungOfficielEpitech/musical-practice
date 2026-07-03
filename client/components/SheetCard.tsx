@@ -2,8 +2,8 @@ import React, { useCallback } from "react";
 import { StyleSheet, Text, View, Pressable, useWindowDimensions, Platform } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
+import { hapticFeedback } from "@/lib/hapticFeedback";
 import { Spacing, BorderRadius, Typography, Shadows } from "@/constants/theme";
 import type { SheetMusic } from "@/lib/storage";
 import { omrStatusLabel, formatAccuracy } from "@/lib/practiceCardUtils";
@@ -25,12 +25,12 @@ function SheetCardComponent({ sheet, onPress, onFavorite, compact, lastAccuracy 
   const compactImageHeight = isTablet ? 130 : 100;
 
   const handleCardPress = useCallback(() => {
-    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    void hapticFeedback.triggerLight();
     onPress();
   }, [onPress]);
 
   const handleFavoritePress = useCallback(() => {
-    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    void hapticFeedback.triggerMedium();
     onFavorite?.();
   }, [onFavorite]);
 

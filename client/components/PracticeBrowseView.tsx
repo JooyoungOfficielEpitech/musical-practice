@@ -1,13 +1,16 @@
 import React, { useState, useMemo, useCallback } from "react";
 import {
   StyleSheet, Text, View, ScrollView, Pressable,
-  ActivityIndicator, RefreshControl, useWindowDimensions,
+  RefreshControl, useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
+import { hapticFeedback } from "@/lib/hapticFeedback";
 import { InteractiveScore } from "@/components/InteractiveScore";
 import { PartCheckSheet } from "@/components/PartCheckSheet";
 import { ScoreFullscreenModal } from "@/components/ScoreFullscreenModal";
+import { LoadingSkeleton } from "@/components/LoadingSkeleton";
+import { ErrorState } from "@/components/ErrorState";
 import { Spacing, BorderRadius, Typography, Fonts } from "@/constants/theme";
 import type { SheetMusic } from "@/lib/storage";
 import type { PracticeDetailState } from "@/hooks/usePracticeDetail";
@@ -95,10 +98,7 @@ function PracticeBrowseViewComponent({
             {/* Score display */}
             <View style={styles.heroWrap}>
               {musicXmlLoading ? (
-                <View style={[styles.heroLoading, { backgroundColor: colors.surface }]}>
-                  <ActivityIndicator size="small" color={colors.primary} />
-                  <Text style={[styles.heroLoadingText, { color: colors.textSecondary }]}>Loading score...</Text>
-                </View>
+                <LoadingSkeleton height={heroHeight} />
               ) : musicXmlContent ? (
                 <View style={[styles.hero, { height: heroHeight }]}>
                   <InteractiveScore
@@ -118,9 +118,14 @@ function PracticeBrowseViewComponent({
                   </Pressable>
                 </View>
               ) : (
-                <View style={[styles.heroLoading, { backgroundColor: colors.surface }]}>
-                  <Ionicons name="alert-circle-outline" size={20} color={colors.textSecondary} />
-                  <Text style={[styles.heroLoadingText, { color: colors.textSecondary }]}>Failed to load score</Text>
+                <View style={styles.errorStateWrap}>
+                  <ErrorState
+                    title="Failed to load score"
+                    message="The score could not be parsed. Try re-importing the PDF."
+                    retryLabel="Reload"
+                    onRetry={onRefresh}
+                    icon="alert-circle-outline"
+                  />
                 </View>
               )}
             </View>
@@ -131,10 +136,13 @@ function PracticeBrowseViewComponent({
                 <Text style={[styles.transportLabel, { color: colors.textSecondary }]}>PLAYBACK</Text>
                 <View style={[styles.controlsRow, { backgroundColor: colors.surface }]}>
                   <Pressable
-                    onPress={handleSynthPlayPause}
+                    onPress={() => {
+                      void hapticFeedback.triggerMedium();
+                      handleSynthPlayPause();
+                    }}
                     accessibilityLabel={synthPlayer.isPlaying ? "Pause" : "Play"}
                     accessibilityRole="button"
-                    style={({ pressed }) => [styles.playBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 }]}
+                    style={({ pressed }) => [styles.playBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] }]}
                   >
                     <Ionicons name={synthPlayer.isPlaying ? "pause" : "play"} size={20} color={colors.buttonText} />
                   </Pressable>
@@ -144,7 +152,10 @@ function PracticeBrowseViewComponent({
                     </Text>
                     <View style={styles.tempoButtons}>
                       <Pressable
-                        onPress={() => synthPlayer.setTempo(Math.max(0.5, synthPlayer.tempo - 0.1))}
+                        onPress={() => {
+                          void hapticFeedback.triggerLight();
+                          synthPlayer.setTempo(Math.max(0.5, synthPlayer.tempo - 0.1));
+                        }}
                         style={[styles.tempoBtn, { backgroundColor: colors.surface }]}
                         accessibilityLabel="Decrease tempo"
                         accessibilityRole="button"
@@ -152,7 +163,10 @@ function PracticeBrowseViewComponent({
                         <Ionicons name="remove" size={16} color={colors.text} />
                       </Pressable>
                       <Pressable
-                        onPress={() => synthPlayer.setTempo(Math.min(2.0, synthPlayer.tempo + 0.1))}
+                        onPress={() => {
+                          void hapticFeedback.triggerLight();
+                          synthPlayer.setTempo(Math.min(2.0, synthPlayer.tempo + 0.1));
+                        }}
                         style={[styles.tempoBtn, { backgroundColor: colors.surface }]}
                         accessibilityLabel="Increase tempo"
                         accessibilityRole="button"
@@ -169,8 +183,11 @@ function PracticeBrowseViewComponent({
             {partInfos.length > 1 && (
               <View style={styles.partsSection}>
                 <Pressable
-                  onPress={() => setPartSheetVisible(true)}
-                  style={[styles.partsButton, { backgroundColor: colors.primary }]}
+                  onPress={() => {
+                    void hapticFeedback.triggerMedium();
+                    setPartSheetVisible(true);
+                  }}
+                  style={({ pressed }) => [styles.partsButton, { backgroundColor: colors.primary, opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
                   accessibilityRole="button"
                   accessibilityLabel="Select parts to practice"
                 >
@@ -238,8 +255,7 @@ const styles = StyleSheet.create({
   content: { paddingBottom: 100 },
   heroWrap: { marginHorizontal: Spacing.lg, marginVertical: Spacing.md },
   hero: { borderRadius: BorderRadius.md, overflow: "hidden", position: "relative" },
-  heroLoading: { justifyContent: "center", alignItems: "center", gap: Spacing.sm, paddingVertical: Spacing.xl },
-  heroLoadingText: { ...Typography.body },
+  errorStateWrap: { marginVertical: Spacing.lg },
   expandBtn: { position: "absolute", bottom: Spacing.md, right: Spacing.md, width: 40, height: 40, borderRadius: BorderRadius.sm, alignItems: "center", justifyContent: "center" },
   transport: { paddingHorizontal: Spacing.lg, marginVertical: Spacing.lg },
   transportLabel: { ...Typography.label, marginBottom: Spacing.md },

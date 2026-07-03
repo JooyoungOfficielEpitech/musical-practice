@@ -1,0 +1,28 @@
+{
+  "song": "Road To Hell I (Hadestown)",
+  "page": 1,
+  "part": "Hermes",
+  "source": "verified against 하데스타운 악보 통합본-001.png (2026-07-04)",
+  "key_fifths": -2,
+  "time": "4/4",
+  "tempo_qpm": 188,
+  "verified": true,
+  "verifier_corrections": [],
+  "measures": [
+    {"n": 1, "notes": [["rest", 4]]},
+    {"n": 2, "notes": [["rest", 4]]},
+    {"n": 3, "notes": [["Bb4", 4]]},
+    {"n": 4, "notes": [["Bb4", 2], ["rest", 2]]},
+    {"n": 5, "notes": [["rest", 4]]},
+    {"n": 6, "notes": [["rest", 4]]},
+    {"n": 7, "notes": [["D5", 1.5], ["D5", 0.5], ["D5", 2]]},
+    {"n": 8, "notes": [["D5", 2], ["rest", 2]]},
+    {"n": 9, "notes": [["rest", 4]]},
+    {"n": 10, "notes": [["rest", 4]]},
+    {"n": 11, "notes": [["rest", 4]]},
+    {"n": 12, "notes": [["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5]], "comment": "x-noteheads, spoken"},
+    {"n": 13, "notes": [["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5]], "comment": "x-noteheads, spoken"},
+    {"n": 14, "notes": [["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5]], "comment": "x-noteheads, spoken"}
+  ],
+  "notation": "notes = [pitch|rest|X(spoken), quarter-note beats]; X pitch = notated staff line (unpitched)"
+}

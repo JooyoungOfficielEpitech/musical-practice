@@ -162,17 +162,6 @@ jest.mock("../../client/context/PracticeContext", () => ({
 }));
 
 // Mock hooks
-jest.mock("../../client/hooks/useAudioPlayer", () => ({
-  useAudioPlayer: () => ({
-    isLoaded: false,
-    loadSound: jest.fn(),
-    unload: jest.fn(),
-    play: jest.fn(),
-    pause: jest.fn(),
-    seekTo: jest.fn(),
-  }),
-}));
-
 jest.mock("../../client/hooks/useTimer", () => ({
   useTimer: () => ({
     seconds: 0,
@@ -189,11 +178,6 @@ jest.mock("../../client/components/SheetFormModal", () => ({
   __esModule: true,
 }));
 
-// Mock AudioPlayer
-jest.mock("../../client/components/AudioPlayer", () => ({
-  AudioPlayer: () => null,
-}));
-
 // New mocks needed after usePracticeDetail extraction
 jest.mock("react-native-webview", () => ({ WebView: "WebView" }));
 
@@ -205,16 +189,6 @@ jest.mock("../../client/hooks/useSynthPlayer", () => ({
   }),
 }));
 
-jest.mock("../../client/hooks/useOmr", () => ({
-  useOmr: () => ({ isProcessing: false, processImage: jest.fn(), error: null }),
-}));
-
-jest.mock("../../client/hooks/useNoteEditor", () => ({
-  useNoteEditor: () => ({
-    editedMusicXml: "", selectedIndex: null, selectedPitch: null,
-    hasEdits: false, selectNote: jest.fn(), applyPitch: jest.fn(), dismiss: jest.fn(),
-  }),
-}));
 
 jest.mock("../../client/hooks/usePracticeDetail", () => ({
   usePracticeDetail: () => ({

@@ -66,26 +66,6 @@ jest.mock("../../../client/lib/omrQueue", () => ({
 }));
 
 // ─── Sub-hooks ────────────────────────────────────────────────────────────────
-jest.mock("../../../client/hooks/useAudioPlayer", () => ({
-  useAudioPlayer: () => ({
-    isLoaded: false,
-    isPlaying: false,
-    loadSound: jest.fn(),
-    unload: jest.fn(),
-    play: jest.fn(),
-    pause: jest.fn(),
-    seekTo: jest.fn(),
-  }),
-}));
-
-
-jest.mock("../../../client/hooks/useOmr", () => ({
-  useOmr: () => ({
-    isProcessing: false,
-    processImage: jest.fn(),
-    error: null,
-  }),
-}));
 
 jest.mock("../../../client/hooks/useSynthPlayer", () => ({
   useSynthPlayer: () => ({
@@ -101,18 +81,6 @@ jest.mock("../../../client/hooks/useSynthPlayer", () => ({
     tempo: 1.0,
     positionMs: 0,
     durationMs: 0,
-  }),
-}));
-
-jest.mock("../../../client/hooks/useNoteEditor", () => ({
-  useNoteEditor: () => ({
-    editedMusicXml: "",
-    selectedIndex: null,
-    selectedPitch: null,
-    hasEdits: false,
-    selectNote: jest.fn(),
-    applyPitch: jest.fn(),
-    dismiss: jest.fn(),
   }),
 }));
 

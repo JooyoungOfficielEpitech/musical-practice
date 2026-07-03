@@ -11,10 +11,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTheme } from "@/hooks/useTheme";
+import { hapticFeedback } from "@/lib/hapticFeedback";
 import { usePractice } from "@/context/PracticeContext";
 import { SheetCard } from "@/components/SheetCard";
 import { SheetFormModal } from "@/components/SheetFormModal";
@@ -35,6 +35,7 @@ export default function LibraryScreen() {
   const { sheets, removeSheet, addSheet } = usePractice();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [pressedCardId, setPressedCardId] = useState<string | null>(null);
 
   const handleDeletePress = useCallback((id: string, title: string) => {
     setDeleteTarget({ id, title });
@@ -48,6 +49,7 @@ export default function LibraryScreen() {
   }, [deleteTarget, removeSheet]);
 
   const handleAddPress = useCallback(() => {
+    void hapticFeedback.triggerMedium();
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
         { options: ["Import PDF", "Cancel"], cancelButtonIndex: 1, userInterfaceStyle: "dark" },
@@ -66,13 +68,17 @@ export default function LibraryScreen() {
   const renderItem = useCallback(({ item }: { item: SheetMusic }) => (
     <Pressable
       onLongPress={() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        void hapticFeedback.triggerMedium();
         handleDeletePress(item.id, item.title);
+        setPressedCardId(null);
       }}
+      onPressIn={() => setPressedCardId(item.id)}
+      onPressOut={() => setPressedCardId(null)}
       delayLongPress={500}
       accessibilityLabel={`Open ${item.title}`}
       accessibilityRole="button"
       accessibilityHint="Long press to delete"
+      style={({ pressed }) => [pressed && { opacity: 0.7 }]}
     >
       <SheetCard
         sheet={item}
@@ -86,13 +92,10 @@ export default function LibraryScreen() {
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Library</Text>
         <Pressable
-          onPress={() => {
-            handleAddPress();
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }}
+          onPress={handleAddPress}
           accessibilityLabel="Add new score"
           accessibilityRole="button"
-          style={({ pressed }) => [styles.addBtn, { width: 44, height: 44, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.8 : 1 }]}
+          style={({ pressed }) => [styles.addBtn, { width: 44, height: 44, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] }]}
         >
           <Ionicons name="add-circle" size={28} color={colors.primary} />
         </Pressable>

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { AccessibilityInfo } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { hapticFeedback } from "@/lib/hapticFeedback";
 import { usePdfImport } from "@/hooks/usePdfImport";
 import { useMultiOmrJobs } from "@/hooks/useMultiOmrJobs";
 import { usePractice } from "@/context/PracticeContext";
@@ -25,6 +26,7 @@ export default function PdfImportScreen() {
 
   // Auto-start on mount
   useEffect(() => {
+    void hapticFeedback.triggerLight();
     startImport();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -40,6 +42,7 @@ export default function PdfImportScreen() {
   useEffect(() => {
     if ((state === "uploading" || multiOmrJobs.overallStatus === "uploading") && !showUploadTimeout) {
       const timeoutId = setTimeout(() => {
+        void hapticFeedback.triggerHeavy();
         setShowUploadTimeout(true);
         AccessibilityInfo.announceForAccessibility(
           "Upload is taking longer than expected. You can cancel and try again.",
@@ -119,6 +122,9 @@ export default function PdfImportScreen() {
 
   // ── Done ─────────────────────────────────────────────────────────────────
   if (multiOmrJobs.overallStatus === "done") {
+    useEffect(() => {
+      void hapticFeedback.triggerMedium();
+    }, []);
     return (
       <SuccessView
         onViewLibrary={() => navigation.goBack()}

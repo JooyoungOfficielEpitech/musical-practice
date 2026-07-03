@@ -53,9 +53,7 @@ jest.mock("react-native-webview", () => ({ WebView: "WebView" }));
 jest.mock("expo-image", () => ({ Image: "Image" }));
 
 jest.mock("../../client/components/SheetMusicPager", () => ({ SheetMusicPager: () => null }));
-jest.mock("../../client/components/AudioPlayer", () => ({ AudioPlayer: () => null }));
 jest.mock("../../client/components/InteractiveScore", () => ({ InteractiveScore: () => null }));
-jest.mock("../../client/components/Metronome", () => ({ Metronome: () => null }));
 
 const baseSheet = {
   id: "s1", title: "La Traviata", artist: "Verdi",

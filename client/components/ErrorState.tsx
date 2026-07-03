@@ -5,38 +5,48 @@ import { useTheme } from "@/hooks/useTheme";
 import { hapticFeedback } from "@/lib/hapticFeedback";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 
-interface EmptyStateProps {
-  icon: keyof typeof Ionicons.glyphMap;
+interface ErrorStateProps {
   title: string;
   message: string;
-  actionLabel?: string;
-  onAction?: () => void;
+  retryLabel?: string;
+  onRetry?: () => void;
+  icon?: keyof typeof Ionicons.glyphMap;
 }
 
-export function EmptyState({ icon, title, message, actionLabel, onAction }: EmptyStateProps) {
+export function ErrorState({
+  title,
+  message,
+  retryLabel = "Try Again",
+  onRetry,
+  icon = "alert-circle-outline",
+}: ErrorStateProps) {
   const { colors } = useTheme();
+
+  const handleRetryPress = () => {
+    void hapticFeedback.triggerMedium();
+    onRetry?.();
+  };
 
   return (
     <View style={styles.container}>
-      <View style={[styles.iconWrap, { backgroundColor: colors.backgroundSecondary }]}>
-        <Ionicons name={icon} size={40} color={colors.textSecondary} />
-      </View>
+      <Ionicons name={icon} size={48} color={colors.error} />
       <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
       <Text style={[styles.message, { color: colors.textSecondary }]}>{message}</Text>
-      {actionLabel && onAction && (
+      {onRetry && (
         <Pressable
-          onPress={() => {
-            void void hapticFeedback.triggerLight();
-            onAction();
-          }}
-          accessibilityLabel={actionLabel}
+          onPress={handleRetryPress}
+          accessibilityLabel={retryLabel}
           accessibilityRole="button"
           style={({ pressed }) => [
             styles.button,
-            { backgroundColor: colors.primary, opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+            {
+              backgroundColor: colors.primary,
+              opacity: pressed ? 0.9 : 1,
+              transform: [{ scale: pressed ? 0.98 : 1 }],
+            },
           ]}
         >
-          <Text style={[styles.buttonText, { color: colors.buttonText }]}>{actionLabel}</Text>
+          <Text style={[styles.buttonText, { color: colors.buttonText }]}>{retryLabel}</Text>
         </Pressable>
       )}
     </View>
@@ -45,14 +55,6 @@ export function EmptyState({ icon, title, message, actionLabel, onAction }: Empt
 
 const styles = StyleSheet.create({
   container: { padding: Spacing["5xl"], gap: Spacing.md, alignItems: "center" },
-  iconWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: Spacing.sm,
-  },
   title: { ...Typography.subtitle, textAlign: "center" },
   message: { ...Typography.body, textAlign: "center" },
   button: {

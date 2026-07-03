@@ -1,0 +1,44 @@
+{
+  "song": "Road To Hell I (Hadestown)",
+  "page": 2,
+  "part": "Hermes",
+  "source": "transcribed from 하데스타운 악보 통합본-002.png (2026-07-04)",
+  "key_fifths": -2,
+  "time": "4/4",
+  "tempo_qpm": 188,
+  "verified": true,
+  "verifier_corrections": [
+    {
+      "measure": 16,
+      "original": "[6 × [pitch, 0.5]]",
+      "corrected": "[6 × [pitch, 0.5], [rest, 1]]",
+      "reason": "6 eighth notes = 3 beats; need 1 beat rest to complete measure"
+    },
+    {
+      "measure": 29,
+      "original": "[[\"Bb5\", 1], [\"A5\", 1]]",
+      "corrected": "[[\"Bb5\", 2], [\"A5\", 2]]",
+      "reason": "Visual shows half notes (2 beats each), not quarter notes (1 beat each)"
+    }
+  ],
+  "measures": [
+    {"n": 15, "notes": [["D5", 0.5], ["E5", 0.5], ["F5", 0.5], ["G5", 0.5], ["A5", 0.5], ["Bb5", 0.5], ["C6", 0.5], ["D6", 0.5]], "comment": "Once up-on a time there was a"},
+    {"n": 16, "notes": [["Bb5", 0.5], ["A5", 0.5], ["G5", 0.5], ["F5", 0.5], ["E5", 0.5], ["D5", 0.5], ["rest", 1]], "comment": "rail road line"},
+    {"n": 17, "notes": [["D5", 1.5], ["D5", 0.5], ["E5", 0.5], ["F5", 0.5]], "comment": "text continues"},
+    {"n": 18, "notes": [["rest", 4]]},
+    {"n": 19, "notes": [["rest", 4]]},
+    {"n": 20, "notes": [["Bb5", 0.5], ["D6", 0.5], ["E6", 0.5], ["F6", 0.5], ["G6", 0.5], ["Bb6", 0.5], ["A6", 0.5], ["G6", 0.5]], "comment": "Don't ask where, broth-er, don't ask_"},
+    {"n": 21, "notes": [["rest", 4]]},
+    {"n": 22, "notes": [["rest", 4]]},
+    {"n": 23, "notes": [["rest", 1.5], ["rest", 0.25], ["D5", 0.5], ["E5", 0.5], ["F5", 0.5]], "comment": "It was the"},
+    {"n": 24, "notes": [["G5", 0.5], ["Bb5", 1.5], ["Bb5", 0.5]], "comment": "road to hell"},
+    {"n": 25, "notes": [["rest", 1], ["D5", 0.5], ["E5", 0.5], ["F5", 0.5]], "comment": "it was hard"},
+    {"n": 26, "notes": [["G5", 1], ["Bb5", 1]], "comment": "times"},
+    {"n": 27, "notes": [["rest", 4]]},
+    {"n": 28, "notes": [["rest", 1.5], ["rest", 0.5], ["Bb5", 0.5], ["D6", 0.5], ["E6", 0.5]], "comment": "It was a"},
+    {"n": 29, "notes": [["Bb5", 2], ["A5", 2]], "comment": "world of gods"},
+    {"n": 30, "notes": [["rest", 2], ["rest", 1], ["X5", 0.5]], "comment": "and men (spoken)"},
+    {"n": 31, "notes": [["rest", 1], ["X5", 0.5], ["rest", 1.5]], "comment": "It's an (spoken)"}
+  ],
+  "notation": "notes = [pitch|rest|X(spoken), quarter-note beats]; X pitch = notated staff line (unpitched)"
+}
