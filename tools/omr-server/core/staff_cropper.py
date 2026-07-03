@@ -109,7 +109,8 @@ def replace_x_noteheads(img: np.ndarray) -> tuple[np.ndarray, list[int], int]:
     for size in (9, 11, 13):
         template = _make_x_template(size)
         res = cv2.matchTemplate(binary, template, cv2.TM_CCOEFF_NORMED)
-        locs = np.where(res >= 0.4)
+        # Raised threshold from 0.4 to 0.5 to filter staff-line noise
+        locs = np.where(res >= 0.5)
         for pt_y, pt_x in zip(*locs):
             cx = pt_x + size // 2
             cy = pt_y + size // 2
@@ -120,8 +121,10 @@ def replace_x_noteheads(img: np.ndarray) -> tuple[np.ndarray, list[int], int]:
 
     matches.sort(key=lambda m: -m[3])
     kept = []
+    # Improved NMS clustering: increased threshold from 10px to 15px
+    nms_threshold = 15
     for cx, cy, sz, score in matches:
-        if not any(abs(cx - kx) < 10 and abs(cy - ky) < 10 for kx, ky, _, _ in kept):
+        if not any(abs(cx - kx) < nms_threshold and abs(cy - ky) < nms_threshold for kx, ky, _, _ in kept):
             kept.append((cx, cy, sz, score))
 
     result = img.copy()
