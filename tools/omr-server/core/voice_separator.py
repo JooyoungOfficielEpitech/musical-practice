@@ -5,6 +5,9 @@ grayscale (staff lines, clef, signatures, lyrics, ambiguous content) and
 white-fills only the note components confidently classified as the OTHER
 voice. Ambiguous content stays in both — downstream chord-splitting assigns
 shared chords, and unison is musically safer duplicated than deleted.
+
+X-noteheads (unpitched spoken content) are detected and preserved in both
+voice images, as they are ambiguous/non-directional.
 """
 
 from dataclasses import dataclass
@@ -28,6 +31,9 @@ MIN_DIRECTED_PER_VOICE = 2   # need ≥ this many stem votes in EACH direction
 MAX_ONE_DIRECTION_PCT = 0.85  # beyond this it's effectively monophonic
 MIN_COMPONENT_PIXELS = 6
 SIGNATURE_REGION_SS = 6.0    # clef/key/time region width after staff start
+X_NOTEHEAD_TEMPLATE_SIZES = (8, 9, 10, 11, 12, 13, 14, 15)
+X_NOTEHEAD_MATCH_THRESHOLD = 0.49  # calibrated threshold for x-notehead detection
+X_NOTEHEAD_NMS_THRESHOLD = 12      # min spacing between detected x-noteheads
 
 
 @dataclass
@@ -73,6 +79,63 @@ def _find_beams(binary_no_staff: np.ndarray, staff_spacing: float) -> np.ndarray
     return cv2.morphologyEx(binary_no_staff, cv2.MORPH_OPEN, kernel)
 
 
+def _make_x_template(size: int) -> np.ndarray:
+    """Create a synthetic × template for x-notehead detection.
+
+    Returns a binary template with white X lines on black background,
+    matching the style used in staff_cropper.
+    """
+    template = np.zeros((size, size), dtype=np.uint8)
+    thickness = max(1, size // 6)
+    cv2.line(template, (0, 0), (size - 1, size - 1), 255, thickness)
+    cv2.line(template, (size - 1, 0), (0, size - 1), 255, thickness)
+    return template
+
+
+def _detect_x_notehead_regions(binary: np.ndarray) -> np.ndarray:
+    """Detect x-notehead regions using template matching.
+
+    Returns a binary mask where x-notehead pixels are marked 255 (white).
+    Uses multiple template sizes and NMS to find x-shaped note heads.
+    """
+    mask = np.zeros(binary.shape, dtype=np.uint8)
+    matches = []
+
+    # Template matching across multiple sizes
+    for size in X_NOTEHEAD_TEMPLATE_SIZES:
+        template = _make_x_template(size)
+        res = cv2.matchTemplate(binary, template, cv2.TM_CCOEFF_NORMED)
+        locs = np.where(res >= X_NOTEHEAD_MATCH_THRESHOLD)
+        for pt_y, pt_x in zip(*locs):
+            cx = pt_x + size // 2
+            cy = pt_y + size // 2
+            matches.append((cx, cy, size, res[pt_y, pt_x]))
+
+    # Non-maximum suppression
+    if not matches:
+        return mask
+
+    matches.sort(key=lambda m: -m[3])
+    kept = []
+    for cx, cy, sz, score in matches:
+        if not any(
+            abs(cx - kx) < X_NOTEHEAD_NMS_THRESHOLD
+            and abs(cy - ky) < X_NOTEHEAD_NMS_THRESHOLD
+            for kx, ky, _, _ in kept
+        ):
+            kept.append((cx, cy, sz, score))
+
+    # Mark detected x-notehead centers in mask with generous radius
+    # to capture the full x-notehead and any attached stem/ledger lines
+    for cx, cy, sz, _ in kept:
+        # Radius = sz + buffer to ensure full notehead coverage
+        radius = max(sz // 2 + 6, int(sz * 0.8))
+        cv2.circle(mask, (cx, cy), radius, 255, -1)
+
+    log.info(f"Detected {len(kept)} x-notehead regions")
+    return mask
+
+
 def _extract_component_info(labeled: np.ndarray, label_id: int) -> dict | None:
     mask = labeled == label_id
     y, x = np.where(mask)
@@ -100,12 +163,15 @@ def _build_voice_images(
     classifications: list[str],
     staff_lines: list[tuple[int, int]],
     staff_spacing: float,
+    x_notehead_mask: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """White-fill ONLY the opposite directed voice; ambiguous stays in both.
+    """White-fill ONLY the opposite directed voice; ambiguous and x-noteheads stay in both.
 
     Component masks come from the staff-line-removed binary, so they are
     vertically dilated to also cover the note's slice across line bands.
     Staff lines are then redrawn through the erased regions.
+
+    X-notehead regions (if provided) are never erased from either voice image.
     """
     h, w = original_gray.shape
     up_erase = np.zeros((h, w), dtype=np.uint8)
@@ -120,6 +186,12 @@ def _build_voice_images(
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, k))
     up_erase = cv2.dilate(up_erase, kernel) > 0
     down_erase = cv2.dilate(down_erase, kernel) > 0
+
+    # X-noteheads are ambiguous (unpitched) — never erase them from either image
+    if x_notehead_mask is not None:
+        x_region = x_notehead_mask > 0
+        up_erase = np.logical_and(up_erase, ~x_region)
+        down_erase = np.logical_and(down_erase, ~x_region)
 
     up_img = original_gray.copy()
     down_img = original_gray.copy()
@@ -213,8 +285,11 @@ def separate_voices_image(img: np.ndarray) -> SeparationResult | None:
         )
         return None
 
+    # Detect x-notehead regions (unpitched spoken content) to preserve in both images
+    x_notehead_mask = _detect_x_notehead_regions(binary)
+
     up_img, down_img = _build_voice_images(
-        gray, components, classifications, lines, staff_spacing
+        gray, components, classifications, lines, staff_spacing, x_notehead_mask
     )
     log.info(f"Separated: {n_up} up, {n_down} down, {n_ambiguous} ambiguous")
 
