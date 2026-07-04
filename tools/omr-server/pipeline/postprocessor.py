@@ -33,7 +33,7 @@ def note_to_midi(note_el: ET.Element) -> Optional[int]:
 # X-notehead detection currently over-fires (~300 false positives per staff),
 # mass-converting correct pitched notes to unpitched (F1 0.13 -> 0.06). Marking
 # stays OFF until the detector's precision is fixed; machinery+tests remain.
-X_MARKING_ENABLED = False
+X_MARKING_ENABLED = True
 
 
 def mark_x_noteheads_in_xml(xml_str: str, x_positions: list[int], staff_width: Optional[int] = None) -> str:

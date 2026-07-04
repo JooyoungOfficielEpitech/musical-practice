@@ -199,11 +199,11 @@ def process_single_staff(
             log.info(f"{tag} {voice_name}: homr failed, will use fallback")
         else:
             voice_xml = postprocess_musicxml(voice_xml)
-            # Mark X-noteheads in the XML if any were detected
-            if x_positions:
-                if X_MARKING_ENABLED:
-                    voice_xml = mark_x_noteheads_in_xml(voice_xml, x_positions)
-                log.info(f"{tag} {voice_name}: Marked {len(x_positions)} X-noteheads in MusicXML")
+            # NOTE: Do NOT mark X-noteheads here. The x_positions were detected from
+            # the merged image, but this voice_xml came from a separated image (up_img
+            # or down_img). Marking the same x_positions on both separated voice XMLs
+            # would duplicate the marks in the final output (each voice gets all positions).
+            # X-marking only happens in the merged fallback path (line 226), which is correct.
             # Shared chords were kept in both images: keep the top line for
             # the up voice and the bottom line for the down voice.
             voice_xml = take_voice(voice_xml, "upper" if voice_idx == "up" else "lower")

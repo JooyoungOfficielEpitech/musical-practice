@@ -83,6 +83,9 @@ def extract_notes_from_xml(xml_path: str, part_id: str) -> list[tuple]:
             duration = int(dur_elem.text) / divisions
             if note_elem.find("rest") is not None:
                 pitch = "rest"
+            elif note_elem.find("unpitched") is not None:
+                octave = note_elem.findtext("unpitched/display-octave", "4")
+                pitch = f"X{octave}"
             else:
                 pitch_elem = note_elem.find("pitch")
                 if pitch_elem is None:
@@ -162,7 +165,10 @@ def grade(musicxml_path: str, gt_json_path: str, part_id: str, measure_offset: i
     tp, fp, fn_p, tp_r, fp_r, fn_r = 0, 0, 0, 0, 0, 0
     perfect_count = 0
 
-    for measure_num in sorted(set(produced_by_measure.keys()) | set(gt_measures.keys())):
+    # Grade only the measure range the ground truth covers — the produced score
+    # may span many more pages, and counting those notes as false positives
+    # buries the real page accuracy.
+    for measure_num in sorted(gt_measures.keys()):
         produced = produced_by_measure.get(measure_num, [])
         gt_parsed = []
         gt_onset = 0.0
