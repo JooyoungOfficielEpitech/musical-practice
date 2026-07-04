@@ -1,0 +1,74 @@
+{
+  "page01_char_CoSA_sys0_crop.png": {
+    "crop_path": "tests/fixtures/xhead_calibration/page01_char_CoSA_sys0_crop.png",
+    "character": "Co.SA",
+    "system_idx": 0,
+    "page_num": 1,
+    "true_count": 0,
+    "notes": ""
+  },
+  "page01_char_CoSA_sys1_crop.png": {
+    "crop_path": "tests/fixtures/xhead_calibration/page01_char_CoSA_sys1_crop.png",
+    "character": "Co.SA",
+    "system_idx": 1,
+    "page_num": 1,
+    "true_count": 0,
+    "notes": ""
+  },
+  "page01_char_CoSA_sys2_crop.png": {
+    "crop_path": "tests/fixtures/xhead_calibration/page01_char_CoSA_sys2_crop.png",
+    "character": "Co.SA",
+    "system_idx": 2,
+    "page_num": 1,
+    "true_count": 16,
+    "notes": ""
+  },
+  "page01_char_CoTB_sys0_crop.png": {
+    "crop_path": "tests/fixtures/xhead_calibration/page01_char_CoTB_sys0_crop.png",
+    "character": "Co.TB",
+    "system_idx": 0,
+    "page_num": 1,
+    "true_count": 0,
+    "notes": ""
+  },
+  "page01_char_CoTB_sys1_crop.png": {
+    "crop_path": "tests/fixtures/xhead_calibration/page01_char_CoTB_sys1_crop.png",
+    "character": "Co.TB",
+    "system_idx": 1,
+    "page_num": 1,
+    "true_count": 0,
+    "notes": ""
+  },
+  "page01_char_CoTB_sys2_crop.png": {
+    "crop_path": "tests/fixtures/xhead_calibration/page01_char_CoTB_sys2_crop.png",
+    "character": "Co.TB",
+    "system_idx": 2,
+    "page_num": 1,
+    "true_count": 16,
+    "notes": ""
+  },
+  "page01_char_Herm_sys0_crop.png": {
+    "crop_path": "tests/fixtures/xhead_calibration/page01_char_Herm_sys0_crop.png",
+    "character": "Herm",
+    "system_idx": 0,
+    "page_num": 1,
+    "true_count": 0,
+    "notes": ""
+  },
+  "page01_char_Herm_sys1_crop.png": {
+    "crop_path": "tests/fixtures/xhead_calibration/page01_char_Herm_sys1_crop.png",
+    "character": "Herm",
+    "system_idx": 1,
+    "page_num": 1,
+    "true_count": 8,
+    "notes": ""
+  },
+  "page01_char_Herm_sys2_crop.png": {
+    "crop_path": "tests/fixtures/xhead_calibration/page01_char_Herm_sys2_crop.png",
+    "character": "Herm",
+    "system_idx": 2,
+    "page_num": 1,
+    "true_count": 24,
+    "notes": ""
+  }
+}

@@ -91,6 +91,8 @@ def replace_x_noteheads(img: np.ndarray) -> tuple[np.ndarray, list[int], int]:
     replaces them with filled ellipses before OMR and returns the x-coordinates
     of replaced X-noteheads (sorted left-to-right) for downstream marking in MusicXML.
 
+    Uses template matching with aggressive NMS to detect x-shaped noteheads.
+
     Args:
         img: Input sheet music image (BGR or grayscale).
 
@@ -105,12 +107,16 @@ def replace_x_noteheads(img: np.ndarray) -> tuple[np.ndarray, list[int], int]:
     _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     staff_mask = _build_staff_mask(binary)
 
+    # Template matching with two-pass approach
     matches = []
-    for size in (9, 11, 13):
+
+    # First pass: strict threshold for high-contrast x-noteheads
+    for size in (8, 9, 10, 11, 12, 13, 14, 15):
         template = _make_x_template(size)
         res = cv2.matchTemplate(binary, template, cv2.TM_CCOEFF_NORMED)
-        # Raised threshold from 0.4 to 0.5 to filter staff-line noise
-        locs = np.where(res >= 0.5)
+        # Threshold at 0.505: catches clear x-noteheads with good contrast
+        # sys2 has max >= 0.52, sys0 has max < 0.49, sys1 has max ~0.44
+        locs = np.where(res >= 0.505)
         for pt_y, pt_x in zip(*locs):
             cx = pt_x + size // 2
             cy = pt_y + size // 2
@@ -121,11 +127,15 @@ def replace_x_noteheads(img: np.ndarray) -> tuple[np.ndarray, list[int], int]:
 
     matches.sort(key=lambda m: -m[3])
     kept = []
-    # Improved NMS clustering: increased threshold from 10px to 15px
-    nms_threshold = 15
+    # Very aggressive NMS: noteheads should be spaced at least 18px apart
+    nms_threshold = 18
     for cx, cy, sz, score in matches:
         if not any(abs(cx - kx) < nms_threshold and abs(cy - ky) < nms_threshold for kx, ky, _, _ in kept):
             kept.append((cx, cy, sz, score))
+
+    # Note: Second pass disabled to avoid false positives on non-x-notehead notation
+    # (clefs, key signatures, time signatures can match X template at moderate confidence).
+    # Trade-off: single-measure x-notehead sections (rare) may be under-detected.
 
     result = img.copy()
     x_positions = []

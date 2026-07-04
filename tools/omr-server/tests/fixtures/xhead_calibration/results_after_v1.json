@@ -1,0 +1,190 @@
+{
+  "page01_char_CoSA_sys0_crop.png": {
+    "character": "Co.SA",
+    "system_idx": 0,
+    "page_num": 1,
+    "true_count": 0,
+    "detected_count": 2,
+    "error": 2,
+    "precision": 0.0,
+    "recall": 0.0,
+    "x_positions": [
+      290,
+      364
+    ],
+    "status": "PASS"
+  },
+  "page01_char_CoSA_sys1_crop.png": {
+    "character": "Co.SA",
+    "system_idx": 1,
+    "page_num": 1,
+    "true_count": 0,
+    "detected_count": 1,
+    "error": 1,
+    "precision": 0.0,
+    "recall": 0.0,
+    "x_positions": [
+      229
+    ],
+    "status": "PASS"
+  },
+  "page01_char_CoSA_sys2_crop.png": {
+    "character": "Co.SA",
+    "system_idx": 2,
+    "page_num": 1,
+    "true_count": 16,
+    "detected_count": 17,
+    "error": 1,
+    "precision": 0.9411764705882353,
+    "recall": 1.0625,
+    "x_positions": [
+      229,
+      759,
+      809,
+      859,
+      909,
+      959,
+      1008,
+      1058,
+      1108,
+      1194,
+      1244,
+      1294,
+      1344,
+      1394,
+      1443,
+      1493,
+      1543
+    ],
+    "status": "PASS"
+  },
+  "page01_char_CoTB_sys0_crop.png": {
+    "character": "Co.TB",
+    "system_idx": 0,
+    "page_num": 1,
+    "true_count": 0,
+    "detected_count": 2,
+    "error": 2,
+    "precision": 0.0,
+    "recall": 0.0,
+    "x_positions": [
+      280,
+      364
+    ],
+    "status": "PASS"
+  },
+  "page01_char_CoTB_sys1_crop.png": {
+    "character": "Co.TB",
+    "system_idx": 1,
+    "page_num": 1,
+    "true_count": 0,
+    "detected_count": 1,
+    "error": 1,
+    "precision": 0.0,
+    "recall": 0.0,
+    "x_positions": [
+      858
+    ],
+    "status": "PASS"
+  },
+  "page01_char_CoTB_sys2_crop.png": {
+    "character": "Co.TB",
+    "system_idx": 2,
+    "page_num": 1,
+    "true_count": 16,
+    "detected_count": 17,
+    "error": 1,
+    "precision": 0.9411764705882353,
+    "recall": 1.0625,
+    "x_positions": [
+      219,
+      759,
+      809,
+      859,
+      909,
+      959,
+      1008,
+      1058,
+      1108,
+      1194,
+      1244,
+      1294,
+      1344,
+      1394,
+      1443,
+      1493,
+      1543
+    ],
+    "status": "PASS"
+  },
+  "page01_char_Herm_sys0_crop.png": {
+    "character": "Herm",
+    "system_idx": 0,
+    "page_num": 1,
+    "true_count": 0,
+    "detected_count": 4,
+    "error": 4,
+    "precision": 0.0,
+    "recall": 0.0,
+    "x_positions": [
+      211,
+      290,
+      364,
+      929
+    ],
+    "status": "FAIL"
+  },
+  "page01_char_Herm_sys1_crop.png": {
+    "character": "Herm",
+    "system_idx": 1,
+    "page_num": 1,
+    "true_count": 8,
+    "detected_count": 2,
+    "error": -6,
+    "precision": 1.0,
+    "recall": 0.25,
+    "x_positions": [
+      229,
+      394
+    ],
+    "status": "FAIL"
+  },
+  "page01_char_Herm_sys2_crop.png": {
+    "character": "Herm",
+    "system_idx": 2,
+    "page_num": 1,
+    "true_count": 24,
+    "detected_count": 25,
+    "error": 1,
+    "precision": 0.96,
+    "recall": 1.0416666666666667,
+    "x_positions": [
+      229,
+      324,
+      374,
+      424,
+      474,
+      524,
+      573,
+      623,
+      673,
+      759,
+      809,
+      859,
+      909,
+      959,
+      1008,
+      1058,
+      1108,
+      1194,
+      1244,
+      1294,
+      1344,
+      1394,
+      1443,
+      1493,
+      1543
+    ],
+    "status": "PASS"
+  }
+}
