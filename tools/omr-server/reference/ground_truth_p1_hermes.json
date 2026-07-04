@@ -7,7 +7,14 @@
   "time": "4/4",
   "tempo_qpm": 188,
   "verified": true,
-  "verifier_corrections": [],
+  "verifier_corrections": [
+    {
+      "measure": 11,
+      "original": "[\"rest\", 4]",
+      "corrected": "8 x X-noteheads @ 0.5 beats each",
+      "reason": "Sheet image shows Hermes m.11 has X-noteheads with spoken syllables (not rest); production XML confirms 8 unpitched notes in m.11"
+    }
+  ],
   "measures": [
     {"n": 1, "notes": [["rest", 4]]},
     {"n": 2, "notes": [["rest", 4]]},
@@ -19,7 +26,7 @@
     {"n": 8, "notes": [["D5", 2], ["rest", 2]]},
     {"n": 9, "notes": [["rest", 4]]},
     {"n": 10, "notes": [["rest", 4]]},
-    {"n": 11, "notes": [["rest", 4]]},
+    {"n": 11, "notes": [["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5]], "comment": "x-noteheads, spoken"},
     {"n": 12, "notes": [["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5]], "comment": "x-noteheads, spoken"},
     {"n": 13, "notes": [["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5]], "comment": "x-noteheads, spoken"},
     {"n": 14, "notes": [["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5]], "comment": "x-noteheads, spoken"}
