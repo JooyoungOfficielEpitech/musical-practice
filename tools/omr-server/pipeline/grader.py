@@ -31,7 +31,11 @@ def _get_semitone_class(pitch_str: str) -> Optional[str]:
 
 
 def pitches_match(p1: Optional[str], p2: Optional[str]) -> bool:
-    """Check if pitches match (including enharmonic equivalence)."""
+    """Check if pitches match (including enharmonic equivalence).
+
+    Supports both single pitches and combined pitches with "+".
+    For combined pitches, all component pitches must match (in any order).
+    """
     if p1 is None or p2 is None:
         return False
     if p1 == "rest" and p2 == "rest":
@@ -40,7 +44,20 @@ def pitches_match(p1: Optional[str], p2: Optional[str]) -> bool:
         return True
     if p1 == "rest" or p2 == "rest":
         return p1.startswith("X") or p2.startswith("X")
-    return _get_semitone_class(p1) == _get_semitone_class(p2)
+
+    # Handle combined pitches (with "+")
+    p1_parts = p1.split("+")
+    p2_parts = p2.split("+")
+
+    # Both must have same number of pitches
+    if len(p1_parts) != len(p2_parts):
+        return False
+
+    # All pitches must match (compare semitone classes)
+    p1_semitones = sorted([_get_semitone_class(p) for p in p1_parts])
+    p2_semitones = sorted([_get_semitone_class(p) for p in p2_parts])
+
+    return p1_semitones == p2_semitones
 
 
 def durations_match(d1: Optional[float], d2: Optional[float]) -> bool:
@@ -53,10 +70,38 @@ def durations_match(d1: Optional[float], d2: Optional[float]) -> bool:
 def extract_notes_from_xml(xml_path: str, part_id: str) -> list[tuple]:
     """Extract (measure_num, onset_beat, pitch, duration_beat) from MusicXML.
 
-    part_id accepts a part @id (P3) or a part-name/abbreviation ("Herm.").
+    part_id accepts:
+    - A part @id (P3)
+    - A part-name/abbreviation ("Herm.")
+    - A combined part expression like "Soprano+Alto" or "Tenor+Bass"
+
+    For combined parts, extracts both parts and merges notes per measure by onset.
+    Same onset = chord pitches combined with "+".
     """
     tree = ET.parse(xml_path)
     root = tree.getroot()
+
+    # Check if part_id contains "+"  (combined part)
+    if "+" in part_id:
+        part_names = part_id.split("+")
+        parts_data = {}
+        for pname in part_names:
+            pname = pname.strip()
+            part = _find_part(root, pname)
+            if part is None:
+                raise ValueError(f"Part {pname} not found in {part_id}")
+            parts_data[pname] = _extract_notes_from_part(part)
+        return _merge_parts(parts_data)
+
+    # Single part: existing logic
+    part = _find_part(root, part_id)
+    if part is None:
+        raise ValueError(f"Part {part_id} not found")
+    return _extract_notes_from_part(part)
+
+
+def _find_part(root: ET.Element, part_id: str) -> Optional[ET.Element]:
+    """Find a part by @id or by part-name/part-abbreviation."""
     part = root.find(f".//part[@id='{part_id}']")
     if part is None:
         for sp in root.findall(".//score-part"):
@@ -65,9 +110,11 @@ def extract_notes_from_xml(xml_path: str, part_id: str) -> list[tuple]:
                 sp_id = sp.get("id")
                 part = root.find(f".//part[@id='{sp_id}']")
                 break
-    if part is None:
-        raise ValueError(f"Part {part_id} not found")
+    return part
 
+
+def _extract_notes_from_part(part: ET.Element) -> list[tuple]:
+    """Extract (measure_num, onset_beat, pitch, duration_beat) from a single part."""
     notes, divisions = [], 4
     for measure in part.findall("measure"):
         div_elem = measure.find(".//divisions")
@@ -102,6 +149,48 @@ def extract_notes_from_xml(xml_path: str, part_id: str) -> list[tuple]:
                 onset += duration
 
     return notes
+
+
+def _merge_parts(parts_data: dict[str, list[tuple]]) -> list[tuple]:
+    """Merge multiple parts by measure and onset, combining pitches at same onset.
+
+    Args:
+        parts_data: {part_name: [(measure_num, onset, pitch, duration), ...], ...}
+
+    Returns:
+        Merged list with pitches combined at same onset as "pitch1+pitch2+...".
+        Rests are omitted unless all voices at that onset are rests.
+    """
+    # Group by measure
+    measures_dict = {}
+    for part_name, notes in parts_data.items():
+        for measure_num, onset, pitch, duration in notes:
+            if measure_num not in measures_dict:
+                measures_dict[measure_num] = {}
+            if onset not in measures_dict[measure_num]:
+                measures_dict[measure_num][onset] = {"pitches": [], "duration": duration}
+            measures_dict[measure_num][onset]["pitches"].append(pitch)
+
+    # Build merged list
+    merged = []
+    for measure_num in sorted(measures_dict.keys()):
+        measure_data = measures_dict[measure_num]
+        for onset in sorted(measure_data.keys()):
+            pitches = measure_data[onset]["pitches"]
+            duration = measure_data[onset]["duration"]
+
+            # Filter out rests if any pitched note exists
+            non_rests = [p for p in pitches if p != "rest"]
+            if non_rests:
+                # Combine with "+"
+                combined_pitch = "+".join(non_rests)
+            else:
+                # All rests
+                combined_pitch = "rest"
+
+            merged.append((measure_num, onset, combined_pitch, duration))
+
+    return merged
 
 
 def _align_notes(produced: list[tuple], gt: list[tuple]) -> tuple[list[tuple], list[tuple]]:
