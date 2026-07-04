@@ -245,19 +245,13 @@ def split_voices(xml_string: str) -> dict[str, str]:
     )
     rest_notes = sum(1 for note in all_notes if note.find("rest") is not None)
 
-    # If monophonic and heavily dominated by unpitched (x-noteheads) or rests,
-    # it's shared rhythm content → duplicate to both voices.
-    # Threshold: if unpitched+rest > 90% of notes, it's shared rhythm.
-    if pitched_notes == 0 or ((unpitched_notes + rest_notes) / len(all_notes) > 0.9):
-        log.info(
-            f"split_voices: monophonic shared rhythm "
-            f"(pitched={pitched_notes}, unpitched={unpitched_notes}, rest={rest_notes}) "
-            "— duplicating to both voices"
-        )
-        return {
-            "voice1": xml_string,
-            "voice2": xml_string,
-        }
-
-    log.info("split_voices: single voice, no chords — returning as voice1")
-    return {"voice1": xml_string}
+    # Monophonic, no chords, no voice numbers: on a compound staff (S/A, T/B)
+    # a single line means both voices perform it in unison — shared rhythm
+    # (x-noteheads/rests) and unison melody alike. Duplicate to both voices;
+    # returning voice1 only would starve the second part into empty measures.
+    log.info(
+        f"split_voices: monophonic line "
+        f"(pitched={pitched_notes}, unpitched={unpitched_notes}, rest={rest_notes}) "
+        "— duplicating to both voices"
+    )
+    return {"voice1": xml_string, "voice2": xml_string}

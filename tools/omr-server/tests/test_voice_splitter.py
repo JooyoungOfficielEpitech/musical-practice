@@ -44,10 +44,41 @@ TWO_VOICE_XML = """\
 
 
 class TestSplitVoices:
-    def test_single_voice_returns_one_key(self):
+    def test_single_voice_duplicates_to_both_voices(self):
+        # split_voices is only called on compound staves (S/A, T/B): a single
+        # monophonic line there is a unison — both voices must receive it.
+        # Returning voice1 only starves the second part into empty measures.
         result = split_voices(SINGLE_VOICE_XML)
-        assert len(result) == 1
-        assert "voice1" in result
+        assert set(result.keys()) == {"voice1", "voice2"}
+        for key in ("voice1", "voice2"):
+            root = ET.fromstring(result[key])
+            pitches = root.findall(".//pitch")
+            assert len(pitches) == 1, f"{key} lost the unison line"
+
+    def test_mixed_pitched_and_unpitched_duplicates_to_both_voices(self):
+        # Production case: merged T/B XML with mostly x-noteheads (unpitched)
+        # plus a couple of pitched notes fell through the >90% shared-rhythm
+        # threshold and Bass/Alto got nothing.
+        xml = """\
+<?xml version='1.0' encoding='utf-8'?>
+<score-partwise version="3.1">
+  <part-list><score-part id="P1"><part-name>TB</part-name></score-part></part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>2</divisions></attributes>
+      <note><voice>1</voice><unpitched><display-step>A</display-step><display-octave>4</display-octave></unpitched><duration>1</duration></note>
+      <note><voice>1</voice><unpitched><display-step>A</display-step><display-octave>4</display-octave></unpitched><duration>1</duration></note>
+      <note><voice>1</voice><pitch><step>B</step><octave>3</octave></pitch><duration>2</duration></note>
+      <note><voice>1</voice><pitch><step>E</step><octave>3</octave></pitch><duration>2</duration></note>
+      <note><voice>1</voice><pitch><step>D</step><octave>3</octave></pitch><duration>2</duration></note>
+    </measure>
+  </part>
+</score-partwise>"""
+        result = split_voices(xml)
+        assert set(result.keys()) == {"voice1", "voice2"}
+        for key in ("voice1", "voice2"):
+            root = ET.fromstring(result[key])
+            assert len(root.findall(".//unpitched")) == 2, f"{key} lost x-noteheads"
 
     def test_two_voice_returns_two_keys(self):
         result = split_voices(TWO_VOICE_XML)

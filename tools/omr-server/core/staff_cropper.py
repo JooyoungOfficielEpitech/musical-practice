@@ -34,6 +34,36 @@ def _make_x_template(size: int) -> np.ndarray:
     return template
 
 
+def _estimate_staff_spacing(binary: np.ndarray) -> int:
+    """Estimate the staff line spacing (px between adjacent lines).
+
+    Staff lines span most of the image width, so rows whose ink covers more
+    than half the width are line rows; the median gap between consecutive
+    line rows is the spacing. Falls back to 10 (the legacy assumption) when
+    fewer than two lines are found.
+    """
+    h, w = binary.shape
+    row_ink = np.count_nonzero(binary, axis=1)
+    threshold = w * 0.5
+
+    line_rows = []
+    in_line = False
+    start = 0
+    for i, ink in enumerate(row_ink):
+        if ink > threshold and not in_line:
+            in_line = True
+            start = i
+        elif ink <= threshold and in_line:
+            in_line = False
+            line_rows.append((start + i) // 2)
+
+    gaps = sorted(
+        g for g in (line_rows[i + 1] - line_rows[i] for i in range(len(line_rows) - 1))
+        if 3 < g < 60
+    )
+    return gaps[len(gaps) // 2] if gaps else 10
+
+
 def _build_staff_mask(binary: np.ndarray) -> np.ndarray:
     """Build a mask that is 255 in staff-line regions, 0 elsewhere."""
     h, w = binary.shape
@@ -149,10 +179,25 @@ def replace_x_noteheads(img: np.ndarray) -> tuple[np.ndarray, list[int], int]:
     # (clefs, key signatures, time signatures can match X template at moderate confidence).
     # Trade-off: single-measure x-notehead sections (rare) may be under-detected.
 
+    # Size the replacement head from the staff spacing so it fully covers the
+    # x-strokes at any render DPI; a fixed-size head left the x visible at
+    # 300 DPI and homr found zero noteheads on x-only systems.
+    spacing = _estimate_staff_spacing(binary)
+    head_rx = max(6, round(spacing * 0.65))
+    head_ry = max(4, round(spacing * 0.5))
+
     result = img.copy()
     x_positions = []
     for cx, cy, sz, score in kept:
-        cv2.ellipse(result, (cx, cy), (6, 4), 0, 0, 360, (0, 0, 0), -1)
+        # Erase the x-strokes (slightly padded, sized to the larger of the
+        # matched template and the staff spacing) before drawing the head, so
+        # stroke corners can't peek out past the ellipse.
+        ext = max(sz, spacing)
+        half = ext // 2
+        stroke = max(2, ext // 6 + 2)
+        cv2.line(result, (cx - half, cy - half), (cx + half, cy + half), (255, 255, 255), stroke)
+        cv2.line(result, (cx + half, cy - half), (cx - half, cy + half), (255, 255, 255), stroke)
+        cv2.ellipse(result, (cx, cy), (head_rx, head_ry), 0, 0, 360, (0, 0, 0), -1)
         x_positions.append(cx)
 
     # Sort x_positions left-to-right (ascending), not by confidence
