@@ -195,6 +195,10 @@ def _add_whole_rest(measure: ET.Element, whole_duration: int) -> None:
 def split_voices(xml_string: str) -> dict[str, str]:
     """Split multi-voice MusicXML into separate single-voice MusicXML strings.
 
+    For compound staves (T/B, S/A) with only shared content (rests, unpitched
+    x-noteheads), duplicating to both voices is musically correct: both parts
+    perform the same rhythm.
+
     Returns:
         Dict like {"voice1": xml_str, "voice2": xml_str}.
         Falls back to {"voice1": xml_string} on parse error.
@@ -226,6 +230,34 @@ def split_voices(xml_string: str) -> dict[str, str]:
     if has_chords:
         log.info("split_voices: single voice with chords — splitting by pitch")
         return _split_by_chord(part, root)
+
+    # Single voice, no chords: check for shared rhythm content (rests/unpitched).
+    # For compound staves (T/B, S/A) that are entirely rests or unpitched x-noteheads,
+    # both voices perform the same rhythm, so duplicate to both.
+    all_notes = part.findall(".//note")
+    pitched_notes = sum(
+        1 for note in all_notes
+        if note.find("rest") is None and note.find("pitch") is not None
+    )
+    unpitched_notes = sum(
+        1 for note in all_notes
+        if note.find("rest") is None and note.find("unpitched") is not None
+    )
+    rest_notes = sum(1 for note in all_notes if note.find("rest") is not None)
+
+    # If monophonic and heavily dominated by unpitched (x-noteheads) or rests,
+    # it's shared rhythm content → duplicate to both voices.
+    # Threshold: if unpitched+rest > 90% of notes, it's shared rhythm.
+    if pitched_notes == 0 or ((unpitched_notes + rest_notes) / len(all_notes) > 0.9):
+        log.info(
+            f"split_voices: monophonic shared rhythm "
+            f"(pitched={pitched_notes}, unpitched={unpitched_notes}, rest={rest_notes}) "
+            "— duplicating to both voices"
+        )
+        return {
+            "voice1": xml_string,
+            "voice2": xml_string,
+        }
 
     log.info("split_voices: single voice, no chords — returning as voice1")
     return {"voice1": xml_string}

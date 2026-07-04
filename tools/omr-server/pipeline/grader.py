@@ -62,7 +62,8 @@ def extract_notes_from_xml(xml_path: str, part_id: str) -> list[tuple]:
         for sp in root.findall(".//score-part"):
             names = [sp.findtext("part-name") or "", sp.findtext("part-abbreviation") or ""]
             if any(part_id.lower() in n.lower() or n.lower() in part_id.lower() for n in names if n):
-                part = root.find(f".//part[@id=\'{sp.get("id")}\']")
+                sp_id = sp.get("id")
+                part = root.find(f".//part[@id='{sp_id}']")
                 break
     if part is None:
         raise ValueError(f"Part {part_id} not found")
