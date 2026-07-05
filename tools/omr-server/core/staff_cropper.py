@@ -135,32 +135,40 @@ def replace_x_noteheads(img: np.ndarray) -> tuple[np.ndarray, list[int], int]:
     """
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img.copy()
     _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    staff_mask = _build_staff_mask(binary)
 
-    # Template matching with two-pass approach
+    spacing = _estimate_staff_spacing(binary)
+    # Spoken-rhythm x-noteheads sit on the staff. Gate candidates to the staff
+    # band (lyric text below and clef ornaments outside it match the template).
+    row_ink = np.count_nonzero(binary, axis=1)
+    line_rows = [i for i, v in enumerate(row_ink) if v > binary.shape[1] * 0.5]
+    band_top = (min(line_rows) - 0.6 * spacing) if line_rows else 0
+    band_bot = (max(line_rows) + 0.6 * spacing) if line_rows else binary.shape[0]
+    # Score threshold is DPI-dependent (measured per-head maxima over the full
+    # 8-page sweep): at 300 DPI (spacing >=15) real x-heads score 0.57-0.79
+    # while clef "8" glyphs and text score <=0.55; at reference DPI real heads
+    # only reach ~0.52.
+    score_threshold = 0.56 if spacing >= 15 else 0.49
+
     matches = []
-
-    # First pass: calibrated threshold for x-noteheads across saturation levels
     for size in (8, 9, 10, 11, 12, 13, 14, 15):
         template = _make_x_template(size)
         res = cv2.matchTemplate(binary, template, cv2.TM_CCOEFF_NORMED)
-        # Threshold at 0.49: catches Company T/B x-noteheads (max score ~0.49)
-        # while avoiding false positives on Co.SA and other systems with no x-noteheads.
-        # Calibrated against xhead_calibration test fixtures.
-        locs = np.where(res >= 0.49)
+        locs = np.where(res >= score_threshold)
         for pt_y, pt_x in zip(*locs):
             cx = pt_x + size // 2
             cy = pt_y + size // 2
-            if cy < staff_mask.shape[0] and cx < staff_mask.shape[1]:
-                if staff_mask[cy, cx] == 0:
-                    continue
+            if not (band_top <= cy <= band_bot):
+                continue
             matches.append((cx, cy, size, res[pt_y, pt_x]))
 
+    # NMS radius scales with staff spacing: an x-head is ~1 staff-space tall,
+    # so template matches (across sizes) for the SAME head can land over 12px
+    # apart at 300 DPI — a fixed 12px radius kept duplicates, and every
+    # duplicate became a spurious unpitched note downstream. Real neighbouring
+    # x-noteheads (eighths) sit ~3 spaces apart, so 1.5 spaces is safe.
+    nms_threshold = max(12, round(spacing * 1.5))
     matches.sort(key=lambda m: -m[3])
     kept = []
-    # Moderate NMS: noteheads should be spaced at least 12px apart
-    # (tighter than 18px to avoid over-merging in dense sections)
-    nms_threshold = 12
     for cx, cy, sz, score in matches:
         if not any(abs(cx - kx) < nms_threshold and abs(cy - ky) < nms_threshold for kx, ky, _, _ in kept):
             kept.append((cx, cy, sz, score))
@@ -182,7 +190,6 @@ def replace_x_noteheads(img: np.ndarray) -> tuple[np.ndarray, list[int], int]:
     # Size the replacement head from the staff spacing so it fully covers the
     # x-strokes at any render DPI; a fixed-size head left the x visible at
     # 300 DPI and homr found zero noteheads on x-only systems.
-    spacing = _estimate_staff_spacing(binary)
     head_rx = max(6, round(spacing * 0.65))
     head_ry = max(4, round(spacing * 0.5))
 
