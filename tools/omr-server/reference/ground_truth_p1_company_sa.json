@@ -1,35 +1,233 @@
 {
   "song": "Road To Hell I (Hadestown)",
   "page": 1,
-  "part": "Company S/A",
-  "source": "verified against 하데스타운 악보 통합본-001.png (2026-07-04)",
   "key_fifths": -2,
   "time": "4/4",
   "tempo_qpm": 188,
   "verified": true,
+  "part": "Company S/A",
+  "source": "re-verified against job PDF page-1 render (2026-07-05): last system is m12-14; m12 is a whole rest for Company parts (only Hermes speaks m11-14); m9-10 carry the D4+Bb3 'Mmm' echo of Hermes m7-8",
   "verifier_corrections": [
     {
-      "measure": 11,
-      "original": "[\"G4+Bb4\", 4]",
-      "corrected": "[\"rest\", 4]",
-      "reason": "Sheet shows rest in Company S/A at m.11; 'Mmm...' text is in m.9-10, not m.11"
+      "measure": 9,
+      "original": "rest",
+      "corrected": "D4+Bb3 dotted-q / eighth / half (tied)",
+      "reason": "Company echoes Hermes m7-8 phrase one octave down; chord heads straddle the C4 ledger line (pixel-grid verified)"
+    },
+    {
+      "measure": 10,
+      "original": "rest",
+      "corrected": "D4+Bb3 half (tie end) + half rest",
+      "reason": "tie resolves on downbeat of m10"
+    },
+    {
+      "measure": 12,
+      "original": "8 x X @ 0.5",
+      "corrected": "whole rest",
+      "reason": "page render shows Company staves rest in m12; chuck-a starts at m13 (Hermes alone speaks from m11)"
     }
   ],
   "measures": [
-    {"n": 1, "notes": [["rest", 4]]},
-    {"n": 2, "notes": [["rest", 4]]},
-    {"n": 3, "notes": [["Bb4+Eb5", 4]], "comment": "ON CUE, harmonic support for Hermes"},
-    {"n": 4, "notes": [["Bb4+Eb5", 2], ["rest", 2]]},
-    {"n": 5, "notes": [["rest", 4]]},
-    {"n": 6, "notes": [["rest", 4]]},
-    {"n": 7, "notes": [["rest", 4]]},
-    {"n": 8, "notes": [["rest", 4]]},
-    {"n": 9, "notes": [["rest", 4]]},
-    {"n": 10, "notes": [["rest", 4]]},
-    {"n": 11, "notes": [["rest", 4]], "comment": "Mmm... text is in m.9-10; m.11 is rest"},
-    {"n": 12, "notes": [["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5]], "comment": "x-noteheads, spoken Chuck-a"},
-    {"n": 13, "notes": [["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5]], "comment": "x-noteheads, spoken"},
-    {"n": 14, "notes": [["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5], ["X4", 0.5]], "comment": "x-noteheads, spoken"}
+    {
+      "n": 1,
+      "notes": [
+        [
+          "rest",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 2,
+      "notes": [
+        [
+          "rest",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 3,
+      "notes": [
+        [
+          "Bb4+Eb5",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 4,
+      "notes": [
+        [
+          "Bb4+Eb5",
+          2
+        ],
+        [
+          "rest",
+          2
+        ]
+      ]
+    },
+    {
+      "n": 5,
+      "notes": [
+        [
+          "rest",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 6,
+      "notes": [
+        [
+          "rest",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 7,
+      "notes": [
+        [
+          "rest",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 8,
+      "notes": [
+        [
+          "rest",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 9,
+      "notes": [
+        [
+          "D4+Bb3",
+          1.5
+        ],
+        [
+          "D4+Bb3",
+          0.5
+        ],
+        [
+          "D4+Bb3",
+          2
+        ]
+      ]
+    },
+    {
+      "n": 10,
+      "notes": [
+        [
+          "D4+Bb3",
+          2
+        ],
+        [
+          "rest",
+          2
+        ]
+      ]
+    },
+    {
+      "n": 11,
+      "notes": [
+        [
+          "rest",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 12,
+      "notes": [
+        [
+          "rest",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 13,
+      "notes": [
+        [
+          "X4",
+          0.5
+        ],
+        [
+          "X4",
+          0.5
+        ],
+        [
+          "X4",
+          0.5
+        ],
+        [
+          "X4",
+          0.5
+        ],
+        [
+          "X4",
+          0.5
+        ],
+        [
+          "X4",
+          0.5
+        ],
+        [
+          "X4",
+          0.5
+        ],
+        [
+          "X4",
+          0.5
+        ]
+      ],
+      "comment": "x-noteheads, spoken"
+    },
+    {
+      "n": 14,
+      "notes": [
+        [
+          "X4",
+          0.5
+        ],
+        [
+          "X4",
+          0.5
+        ],
+        [
+          "X4",
+          0.5
+        ],
+        [
+          "X4",
+          0.5
+        ],
+        [
+          "X4",
+          0.5
+        ],
+        [
+          "X4",
+          0.5
+        ],
+        [
+          "X4",
+          0.5
+        ],
+        [
+          "X4",
+          0.5
+        ]
+      ],
+      "comment": "x-noteheads, spoken"
+    }
   ],
-  "notation": "notes = [pitch|rest|X(spoken), quarter-note beats]; chords = multiple pitches in one tuple"
+  "notation": "notes = [pitch|rest|X(spoken), quarter-note beats]; chords joined with +; X pitch = notated staff line (unpitched)"
 }
