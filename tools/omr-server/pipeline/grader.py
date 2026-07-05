@@ -182,8 +182,10 @@ def _merge_parts(parts_data: dict[str, list[tuple]]) -> list[tuple]:
             # Filter out rests if any pitched note exists
             non_rests = [p for p in pitches if p != "rest"]
             if non_rests:
-                # Combine with "+"
-                combined_pitch = "+".join(non_rests)
+                # Dedupe unisons: split_voices duplicates a shared line to both
+                # voices, but GT models a unison as a single note.
+                unique = list(dict.fromkeys(non_rests))
+                combined_pitch = "+".join(unique)
             else:
                 # All rests
                 combined_pitch = "rest"

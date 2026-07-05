@@ -279,3 +279,21 @@ class TestGradeWithPartCombination:
         finally:
             Path(xml_path).unlink()
             Path(gt_path).unlink()
+
+
+class TestUnisonDedup:
+    def test_unison_across_voices_merges_to_single_pitch(self):
+        """Two voices singing the same pitch (unison duplication from
+        split_voices) must merge to one pitch, not 'Bb3+Bb3' — GT models
+        a unison as a single note."""
+        soprano = _make_measure(1, 4, [((("B", -1, 3), 4))])
+        alto = _make_measure(1, 4, [((("B", -1, 3), 4))])
+        score = _make_score({"Soprano": [soprano], "Alto": [alto]})
+        xml_path = _save_xml(score)
+        try:
+            notes = extract_notes_from_xml(xml_path, "Soprano+Alto")
+            assert len(notes) == 1
+            _, _, pitch, _ = notes[0]
+            assert pitch == "Bb3"
+        finally:
+            Path(xml_path).unlink()

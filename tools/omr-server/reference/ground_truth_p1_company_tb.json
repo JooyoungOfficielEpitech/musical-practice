@@ -6,7 +6,7 @@
   "tempo_qpm": 188,
   "verified": true,
   "part": "Company T/B",
-  "source": "re-verified against job PDF page-1 render (2026-07-05): last system is m12-14; m12 is a whole rest for Company parts (only Hermes speaks m11-14); m9-10 carry the D4+Bb3 'Mmm' echo of Hermes m7-8",
+  "source": "re-verified against job PDF page-1 render (2026-07-05, incl. top system m3-6): last system is m12-14; m12 is a whole rest for Company parts (only Hermes speaks m11-14); m9-10 carry the D4+Bb3 'Mmm' echo of Hermes m7-8",
   "verifier_corrections": [
     {
       "measure": 9,
@@ -25,6 +25,12 @@
       "original": "8 x X @ 0.5",
       "corrected": "whole rest",
       "reason": "page render shows Company staves rest in m12; chuck-a starts at m13 (Hermes alone speaks from m11)"
+    },
+    {
+      "measure": "3-6",
+      "original": "chord at m3-4 (copied from Hermes ON CUE timing), rest m5-6",
+      "corrected": "rest m3-4; Bb3+Bb2 whole at m5 (mf Mmm, tied) + half/rest at m6",
+      "reason": "top-system render pixel-grid verified: only Hermes sings m3-4; Company enters at m5-6 \u2014 SA single Bb3 below staff, TB Bb3+Bb2 octave"
     }
   ],
   "measures": [
@@ -50,7 +56,7 @@
       "n": 3,
       "notes": [
         [
-          "Bb3+Eb4",
+          "rest",
           4
         ]
       ]
@@ -59,12 +65,8 @@
       "n": 4,
       "notes": [
         [
-          "Bb3+Eb4",
-          2
-        ],
-        [
           "rest",
-          2
+          4
         ]
       ]
     },
@@ -72,7 +74,7 @@
       "n": 5,
       "notes": [
         [
-          "rest",
+          "Bb3+Bb2",
           4
         ]
       ]
@@ -81,8 +83,12 @@
       "n": 6,
       "notes": [
         [
+          "Bb3+Bb2",
+          2
+        ],
+        [
           "rest",
-          4
+          2
         ]
       ]
     },
