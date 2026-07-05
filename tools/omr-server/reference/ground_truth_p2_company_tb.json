@@ -1,38 +1,178 @@
 {
   "song": "Road To Hell I (Hadestown)",
   "page": 2,
-  "part": "Company T/B",
-  "source": "transcribed from 하데스타운 악보 통합본-002.png (2026-07-04)",
   "key_fifths": -2,
   "time": "4/4",
   "tempo_qpm": 188,
   "verified": true,
-  "verifier_corrections": [
-    {
-      "measure": 19,
-      "original": "[[\"F4+Bb4\", 1], [\"Bb4+Eb4\", 1]]",
-      "corrected": "[[\"F4+Bb4\", 2], [\"Bb4+Eb4\", 2]]",
-      "reason": "Visual shows half notes (2 beats each), not quarter notes"
-    }
-  ],
+  "source": "full visual re-transcription from job PDF page-2 render (2026-07-05): computational notehead extraction (staff-line-relative centroids) + pixel-grid pitch verification + lead-sheet barline segmentation; key flats (Bb, Eb) applied",
+  "notation": "notes = [pitch|rest|X(spoken), quarter-note beats]; chords joined with +; X pitch = notated staff position (unpitched)",
+  "part": "Company T/B",
   "measures": [
-    {"n": 15, "notes": [["rest", 4]]},
-    {"n": 16, "notes": [["rest", 4]]},
-    {"n": 17, "notes": [["rest", 4]]},
-    {"n": 18, "notes": [["rest", 4]]},
-    {"n": 19, "notes": [["F4+Bb4", 2], ["Bb4+Eb4", 2]], "comment": "Mmm..."},
-    {"n": 20, "notes": [["rest", 4]]},
-    {"n": 21, "notes": [["rest", 4]]},
-    {"n": 22, "notes": [["rest", 4]]},
-    {"n": 23, "notes": [["rest", 4]]},
-    {"n": 24, "notes": [["rest", 4]]},
-    {"n": 25, "notes": [["rest", 4]]},
-    {"n": 26, "notes": [["rest", 4]]},
-    {"n": 27, "notes": [["rest", 4]]},
-    {"n": 28, "notes": [["rest", 4]]},
-    {"n": 29, "notes": [["Bb3+Eb4", 2], ["Bb3+Eb4", 2]], "comment": "Mmm... (whole measure)"},
-    {"n": 30, "notes": [["rest", 4]]},
-    {"n": 31, "notes": [["rest", 4]]}
-  ],
-  "notation": "notes = [pitch|rest|X(spoken), quarter-note beats]; chords = multiple pitches in one tuple; X pitch = notated staff line (unpitched)"
+    {
+      "n": 15,
+      "notes": [
+        [
+          "rest",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 16,
+      "notes": [
+        [
+          "rest",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 17,
+      "notes": [
+        [
+          "Bb3+Bb2",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 18,
+      "notes": [
+        [
+          "Bb3+Bb2",
+          2
+        ],
+        [
+          "rest",
+          2
+        ]
+      ]
+    },
+    {
+      "n": 19,
+      "notes": [
+        [
+          "rest",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 20,
+      "notes": [
+        [
+          "rest",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 21,
+      "notes": [
+        [
+          "D4+Bb2",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 22,
+      "notes": [
+        [
+          "D4+Bb2",
+          2
+        ],
+        [
+          "rest",
+          2
+        ]
+      ]
+    },
+    {
+      "n": 23,
+      "notes": [
+        [
+          "rest",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 24,
+      "notes": [
+        [
+          "rest",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 25,
+      "notes": [
+        [
+          "rest",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 26,
+      "notes": [
+        [
+          "rest",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 27,
+      "notes": [
+        [
+          "Db4+Ab2",
+          2
+        ],
+        [
+          "Eb4+Bb2",
+          2
+        ]
+      ]
+    },
+    {
+      "n": 28,
+      "notes": [
+        [
+          "Eb4+Bb2",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 29,
+      "notes": [
+        [
+          "Eb4+Bb2",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 30,
+      "notes": [
+        [
+          "rest",
+          4
+        ]
+      ]
+    },
+    {
+      "n": 31,
+      "notes": [
+        [
+          "rest",
+          4
+        ]
+      ]
+    }
+  ]
 }
