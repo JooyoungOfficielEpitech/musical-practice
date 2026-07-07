@@ -92,12 +92,15 @@ def _refine_page_with_audiveris(png_path: str, char_sys: dict) -> None:
         if aud_root is None:
             return
         for char, sys_measures in char_sys.items():
-            page_measures = [
-                m for s in sorted(sys_measures) for m in sys_measures[s]
-            ]
-            changed = refine_measures_with_audiveris(page_measures, aud_root)
-            if changed:
-                logger.info("ensemble: refined %d measures for %s on %s", changed, char, png_path.split("/")[-1])
+            # Per SYSTEM: homr and Audiveris disagree on per-staff measure
+            # counts, so window-match each system chunk independently.
+            for s in sorted(sys_measures):
+                changed = refine_measures_with_audiveris(sys_measures[s], aud_root)
+                if changed:
+                    logger.info(
+                        "ensemble: refined %d measures for %s sys%d on %s",
+                        changed, char, s, png_path.split("/")[-1],
+                    )
     except Exception as exc:
         logger.warning("ensemble pass failed for %s: %s — keeping homr output", png_path, exc)
 

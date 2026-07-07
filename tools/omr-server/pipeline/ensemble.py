@@ -175,11 +175,13 @@ def _adopt_rhythm(
 def refine_measures_with_audiveris(
     measures: list[ET.Element], aud_root: ET.Element
 ) -> int:
-    """Refine one staff-voice's page-local measure list in place.
+    """Refine one staff-SYSTEM's measure chunk in place.
 
-    Picks the Audiveris part whose index-aligned measures best step-match
-    ours, then applies the gated alter/rhythm merges. Returns the number of
-    measures modified.
+    homr and Audiveris disagree about measure counts per staff, so callers
+    pass one system's measures at a time and we search every Audiveris part
+    for the contiguous window where EVERY pitched measure of the chunk
+    step-matches. No unique full-match window -> no-op. Rest-only and
+    x-notehead measures are never modified. Returns measures modified.
     """
     if aud_root is None or not measures:
         return 0
@@ -193,35 +195,62 @@ def refine_measures_with_audiveris(
         has_unpitched = any(n.find("unpitched") is not None for n in m.findall("note"))
         our_parsed.append((m, _measure_beats(m, our_divisions), has_unpitched))
 
-    best: tuple[float, Optional[list[list[dict]]]] = (0.0, None)
+    pitched_idx = [
+        i for i, (_, ev, unp) in enumerate(our_parsed)
+        if not unp and any(e["kind"] == "note" for e in ev)
+    ]
+    if not pitched_idx:
+        return 0
+
+    # Find every full-match window across all parts; act only when the
+    # matched pitched CONTENT is unambiguous.
+    k = len(our_parsed)
+    windows: list[list[list[dict]]] = []
     for part in aud_root.findall(".//part"):
         aud_div = _part_divisions(part)
         aud_measures = [_measure_beats(m, aud_div) for m in part.findall("measure")]
-        pitched_idx = [
-            i for i in range(min(len(our_parsed), len(aud_measures)))
-            if not our_parsed[i][2]
-            and any(e["kind"] == "note" for e in our_parsed[i][1])
-        ]
-        if not pitched_idx:
-            continue
-        matches = sum(
-            1 for i in pitched_idx if _steps_match(our_parsed[i][1], aud_measures[i])
-        )
-        score = matches / len(pitched_idx)
-        if matches and score > best[0]:
-            best = (score, aud_measures)
-
-    if best[1] is None or best[0] < MIN_PART_SCORE:
+        for start in range(0, len(aud_measures) - k + 1):
+            if all(
+                _steps_match(our_parsed[i][1], aud_measures[start + i])
+                for i in pitched_idx
+            ):
+                windows.append([aud_measures[start + i] for i in range(k)])
+    if not windows:
         return 0
+    if len(windows) > 1:
+        # Multiple candidate windows are fine only if they would produce the
+        # SAME adoption: identical beat structure and identical explicit
+        # alters on the pitched measures. Otherwise skip — ambiguous.
+        def key(win):
+            out = []
+            for i in pitched_idx:
+                our_steps = {
+                    sig[0]
+                    for e in our_parsed[i][1] if e["kind"] == "note"
+                    for n in e["notes"]
+                    if (sig := _note_sig(n))
+                }
+                beats = [(e["kind"], round(e["beats"], 4)) for e in win[i]]
+                # Only alters we could actually adopt (steps our notes have)
+                alters = sorted({
+                    (sig[0], sig[2])
+                    for e in win[i] if e["kind"] == "note"
+                    for n in e["notes"]
+                    if (sig := _note_sig(n)) and sig[2] is not None and sig[0] in our_steps
+                })
+                out.append((beats, alters))
+            return out
+        first = key(windows[0])
+        if any(key(w) != first for w in windows[1:]):
+            log.info("ensemble: ambiguous window match — skipping chunk")
+            return 0
 
-    aud_measures = best[1]
+    window = windows[0]
     changed = 0
-    for i in range(min(len(our_parsed), len(aud_measures))):
-        measure, our_events, has_unpitched = our_parsed[i]
-        if has_unpitched or not _steps_match(our_events, aud_measures[i]):
-            continue
-        modified = _adopt_alters(our_events, aud_measures[i]) > 0
-        if _adopt_rhythm(measure, our_events, aud_measures[i], our_divisions):
+    for i in pitched_idx:
+        measure, our_events, _ = our_parsed[i]
+        modified = _adopt_alters(our_events, window[i]) > 0
+        if _adopt_rhythm(measure, our_events, window[i], our_divisions):
             modified = True
         if modified:
             changed += 1
