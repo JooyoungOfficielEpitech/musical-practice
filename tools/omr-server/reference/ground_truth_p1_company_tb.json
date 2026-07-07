@@ -31,6 +31,12 @@
       "original": "chord at m3-4 (copied from Hermes ON CUE timing), rest m5-6",
       "corrected": "rest m3-4; Bb3+Bb2 whole at m5 (mf Mmm, tied) + half/rest at m6",
       "reason": "top-system render pixel-grid verified: only Hermes sings m3-4; Company enters at m5-6 \u2014 SA single Bb3 below staff, TB Bb3+Bb2 octave"
+    },
+    {
+      "measure": "9-10",
+      "original": "D4+Bb3",
+      "corrected": "D4+Bb2",
+      "reason": "pixel re-measure (head center y=2141 = B2 line): bass sings an octave below; matches p2 m21-22 voicing; independently corroborated by homr AND Audiveris both reading Bb2"
     }
   ],
   "measures": [
@@ -114,15 +120,15 @@
       "n": 9,
       "notes": [
         [
-          "D4+Bb3",
+          "D4+Bb2",
           1.5
         ],
         [
-          "D4+Bb3",
+          "D4+Bb2",
           0.5
         ],
         [
-          "D4+Bb3",
+          "D4+Bb2",
           2
         ]
       ]
@@ -131,7 +137,7 @@
       "n": 10,
       "notes": [
         [
-          "D4+Bb3",
+          "D4+Bb2",
           2
         ],
         [
