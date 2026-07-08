@@ -48,8 +48,10 @@ def _rest_measure(n, div=None):
 
 
 def _tenor_sys1_chunk():
-    """homr Tenor p1 sys1 (m7-11): rests around the 'Mmm' echo; m9 misread
-    as dotted-8th+16th+half+pad-rest (true rhythm: dotted-q, 8th, half)."""
+    """homr Tenor p1 sys1 (m7-11) as seen PRE bar-grid: rests around the
+    'Mmm' echo; m9 misread as dotted-8th+16th+half — an UNDERFULL measure
+    (3 beats), the pad rest is only added downstream (true: dotted-q, 8th,
+    half)."""
     return [
         _rest_measure(7, div=96),
         _rest_measure(8),
@@ -57,7 +59,6 @@ def _tenor_sys1_chunk():
             ("D4", None, 72, "eighth"),
             ("D4", None, 24, "16th"),
             ("D4", None, 192, "half"),
-            (None, None, 96, "quarter"),
         ]),
         _measure(10, [("D4", None, 192, "half"), (None, None, 192, "half")]),
         _rest_measure(11),
@@ -76,6 +77,18 @@ class TestRhythmAdoption:
         assert m9.findall("note")[0].findtext("type") == "quarter"
         assert m9.findall("note")[0].find("dot") is not None
         assert all(n.find("rest") is None for n in m9.findall("note"))
+
+    def test_padded_variant_also_repaired(self):
+        # Post-grid shape: same misread plus the pad rest already appended.
+        ms = _tenor_sys1_chunk()
+        m9 = ms[2]
+        pad = ET.SubElement(m9, "note")
+        ET.SubElement(pad, "rest")
+        ET.SubElement(pad, "duration").text = "96"
+        changed = refine_measures_with_audiveris(ms, _aud(1))
+        assert changed >= 1
+        durs = [int(n.findtext("duration")) for n in m9.findall("note")]
+        assert durs == [144, 48, 192], durs
 
     def test_agreeing_rhythm_untouched(self):
         ms = _tenor_sys1_chunk()

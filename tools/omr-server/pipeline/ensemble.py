@@ -115,10 +115,17 @@ def _adopt_rhythm(
 ) -> bool:
     """Rebuild the measure's timing from Audiveris when homr's is broken.
 
-    Gates: our measure ends in pad rest(s), the Audiveris measure sums to a
-    full bar, and pitched counts already matched upstream.
+    Broken homr timing shows up two ways depending on where we run: before
+    bar-grid enforcement the measure is UNDERFULL (sums to less than a bar);
+    after it, the gap has been padded with a trailing rest. Either signature
+    opens the gate — an exact-length measure never does.
     """
-    if not our_events or our_events[-1]["kind"] != "rest":
+    if not our_events:
+        return False
+    our_sum = sum(e["beats"] for e in our_events)
+    ends_padded = our_events[-1]["kind"] == "rest"
+    underfull = our_sum < 4.0 - BEAT_EPS
+    if not (ends_padded or underfull):
         return False
     aud_sum = sum(e["beats"] for e in aud_events)
     if abs(aud_sum - 4.0) > BEAT_EPS:
