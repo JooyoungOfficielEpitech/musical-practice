@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, Pressable, FlatList, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
+import { hapticFeedback } from "@/lib/hapticFeedback";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { JobRowItem } from "@/components/JobRowItem";
 import { Fonts, ClayShadow, Spacing, BorderRadius } from "@/constants/theme";
@@ -68,11 +69,14 @@ export function UploadingView({
 interface ProcessingViewProps {
   jobs: SectionJobState[];
   onRetry: (index: number) => void;
+  /** Imports persist once queued — the user may safely leave this screen. */
+  onContinueInBackground?: () => void;
 }
 
 export function ProcessingView({
   jobs,
   onRetry,
+  onContinueInBackground,
 }: ProcessingViewProps): React.JSX.Element {
   const { colors } = useTheme();
   const overallPercent =
@@ -97,6 +101,22 @@ export function ProcessingView({
         style={styles.jobsList}
         scrollEnabled={false}
       />
+      {onContinueInBackground && (
+        <Pressable
+          onPress={() => {
+            void hapticFeedback.triggerLight();
+            onContinueInBackground();
+          }}
+          style={styles.backgroundButton}
+          accessibilityLabel="Continue in background and go to library"
+          accessibilityRole="button"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={[styles.secondaryButtonText, { color: colors.primary }]}>
+            Continue in background
+          </Text>
+        </Pressable>
+      )}
     </SafeAreaView>
   );
 }
@@ -124,4 +144,11 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: { fontSize: 15, fontFamily: Fonts.body },
   jobsList: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, gap: 8, maxHeight: 240 },
+  backgroundButton: {
+    paddingVertical: Spacing.md,
+    alignItems: "center",
+    marginBottom: Spacing.lg,
+    minHeight: 44,
+    justifyContent: "center",
+  },
 });

@@ -27,6 +27,9 @@ export interface JobSubscriptionDeps {
   sectionTitle: (index: number) => string;
   registerChannel: (channel: { unsubscribe: () => void }) => void;
   registerPoll: (id: ReturnType<typeof setInterval>) => void;
+  /** Notify the owner that this job failed — used to flip the persisted sheet
+   *  to omrStatus "failed". */
+  onJobFailed?: (index: number, error: string) => void;
 }
 
 export function subscribeOmrJob(
@@ -87,6 +90,7 @@ export function subscribeOmrJob(
           ? `File write failed: ${errorMsg}`
           : `Network: ${errorMsg}`;
         deps.settleJob(index, { status: "failed", error });
+        deps.onJobFailed?.(index, error);
         AccessibilityInfo.announceForAccessibility(
           `Recognition failed for ${deps.sectionTitle(index)}: ${error}`,
         );
@@ -97,6 +101,7 @@ export function subscribeOmrJob(
         { status: "failed", error },
         `Recognition failed for ${deps.sectionTitle(index)}: ${error}`,
       );
+      deps.onJobFailed?.(index, error);
     }
   };
 

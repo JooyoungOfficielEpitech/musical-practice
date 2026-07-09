@@ -6,7 +6,27 @@ import { useTheme } from "@/hooks/useTheme";
 import { hapticFeedback } from "@/lib/hapticFeedback";
 import { Spacing, BorderRadius, Typography, Shadows } from "@/constants/theme";
 import type { SheetMusic } from "@/lib/storage";
-import { omrStatusLabel, formatAccuracy } from "@/lib/practiceCardUtils";
+import { omrStatusLabel, formatAccuracy, formatImportDate } from "@/lib/practiceCardUtils";
+
+/** Sheet-music styled stand-in shown until the score's preview image arrives. */
+function ScoreCoverPlaceholder({ height }: { height: number }) {
+  const { colors } = useTheme();
+  const staffLines = [0.3, 0.4, 0.5, 0.6, 0.7];
+  return (
+    <View style={[styles.image, styles.imagePlaceholder, { backgroundColor: colors.backgroundSecondary, height }]}>
+      {staffLines.map((pos) => (
+        <View
+          key={pos}
+          style={[
+            styles.staffLine,
+            { top: height * pos, backgroundColor: colors.borderLight },
+          ]}
+        />
+      ))}
+      <Ionicons name="musical-notes-outline" size={40} color={colors.textSecondary} />
+    </View>
+  );
+}
 
 interface SheetCardProps {
   sheet: SheetMusic;
@@ -77,11 +97,9 @@ function SheetCardComponent({ sheet, onPress, onFavorite, compact, lastAccuracy 
         accessibilityLabel={`${sheet.title}, ${sheet.imageUris.length} page${sheet.imageUris.length !== 1 ? "s" : ""}${sheet.audioUri ? ", audio available" : ""}${(() => { const omr = omrStatusLabel(sheet.omrStatus ?? "none"); return omr ? `, ${omr.label}` : ""; })()}`}
       >
         {sheet.imageUris[0] ? (
-          <Image source={{ uri: sheet.imageUris[0] }} style={[styles.image, { backgroundColor: colors.backgroundSecondary, height: imageHeight }]} contentFit="cover" />
+          <Image source={{ uri: sheet.imageUris[0] }} style={[styles.image, { backgroundColor: colors.backgroundSecondary, height: imageHeight }]} contentFit="cover" contentPosition="top" />
         ) : (
-          <View style={[styles.image, styles.imagePlaceholder, { backgroundColor: colors.backgroundSecondary, height: imageHeight }]}>
-            <Ionicons name="musical-notes-outline" size={40} color={colors.textSecondary} />
-          </View>
+          <ScoreCoverPlaceholder height={imageHeight} />
         )}
         {sheet.imageUris.length > 1 && (
           <View style={[styles.pagesBadge, { backgroundColor: colors.accent }]} accessible={false}>
@@ -133,8 +151,8 @@ function SheetCardComponent({ sheet, onPress, onFavorite, compact, lastAccuracy 
         </View>
         <View style={styles.metaRow}>
           <View style={styles.metaItem}>
-            <Ionicons name="folder-outline" size={14} color={colors.textSecondary} />
-            <Text style={[styles.metaText, { color: colors.textSecondary }]}>{sheet.folder}</Text>
+            <Ionicons name="calendar-clear-outline" size={13} color={colors.textSecondary} />
+            <Text style={[styles.metaText, { color: colors.textSecondary }]}>{formatImportDate(sheet.createdAt)}</Text>
           </View>
           {formatAccuracy(lastAccuracy) !== null && (
             <View style={styles.metaItem}>
@@ -169,7 +187,8 @@ const styles = StyleSheet.create({
   compactInfo: { padding: Spacing.sm + 2 },
   compactTitle: { ...Typography.small, fontFamily: "Nunito_600SemiBold", fontWeight: "600" },
   compactArtist: { ...Typography.label, marginTop: 2 },
-  imagePlaceholder: { alignItems: "center", justifyContent: "center" },
+  imagePlaceholder: { alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  staffLine: { position: "absolute", left: Spacing.xl, right: Spacing.xl, height: 1 },
   pagesBadge: {
     position: "absolute",
     top: 8,

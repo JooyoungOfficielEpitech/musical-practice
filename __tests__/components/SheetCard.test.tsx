@@ -39,6 +39,7 @@ jest.mock("expo-image", () => ({
 
 // Mock practiceCardUtils
 jest.mock("../../client/lib/practiceCardUtils", () => ({
+  formatImportDate: () => "Jun 20",
   omrStatusLabel: (status: string) => {
     if (status === "none") return null;
     const map: Record<string, { label: string; variant: string }> = {

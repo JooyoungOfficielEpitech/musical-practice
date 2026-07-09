@@ -34,27 +34,24 @@ export function usePdfImport(): UsePdfImportReturn {
     setState("picking");
     setError(null);
     try {
-      const uri = await pickPdf();
-      if (!uri) {
+      const picked = await pickPdf();
+      if (!picked) {
         setState("error");
         setError("No file selected");
         AccessibilityInfo.announceForAccessibility("File selection cancelled");
         return;
       }
       setState("uploading");
-      const b64 = await readFileAsBase64(uri);
+      const b64 = await readFileAsBase64(picked.uri);
       pdfB64Ref.current = b64;
+      fileNameRef.current = picked.name;
 
-      // Extract filename from URI (last path component)
-      const fileName = uri.split("/").pop() || "Score";
-      fileNameRef.current = fileName;
-
-      // Auto-name from filename
-      const autoTitle = autoNameFromFile(fileName);
-      setSectionTitles([autoTitle]);
+      // Auto-name from the document's real name, not the UUID cache filename
+      const autoTitle = autoNameFromFile(picked.name);
+      setSectionTitles([autoTitle || "Score"]);
       // state stays "uploading" — PdfImportScreen auto-triggers submitAll via useEffect
       AccessibilityInfo.announceForAccessibility(
-        `File ${fileName} uploaded, preparing for music recognition`,
+        `File ${picked.name} uploaded, preparing for music recognition`,
       );
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";

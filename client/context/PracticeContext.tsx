@@ -1,22 +1,24 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import {
   type SheetMusic,
   getSheets,
   saveSheet,
   updateSheet,
+  patchSheet as patchSheetStorage,
   deleteSheet as deleteSheetStorage,
   generateId,
 } from "@/lib/storage";
 import { copyImagesToStorage, copyToLocalStorage, isDocumentUri } from "@/lib/fileStorage";
 import { migrateFileUrisToDocument } from "@/lib/migration";
-import { processSheetMusicImage } from "@/lib/omr";
+import { reconcileOmrSheet } from "@/lib/omrReconcile";
+import { downloadPreview } from "@/lib/omrQueue";
 
 interface PracticeContextType {
   sheets: SheetMusic[];
   loading: boolean;
   addSheet: (sheet: Omit<SheetMusic, "id" | "createdAt" | "isFavorite">) => Promise<SheetMusic>;
   editSheet: (sheet: SheetMusic) => Promise<void>;
+  patchSheet: (id: string, patch: Partial<SheetMusic>) => Promise<void>;
   removeSheet: (id: string) => Promise<void>;
   persistPartSelection: (id: string, partIds: string[]) => Promise<void>;
   refreshData: () => Promise<void>;
@@ -27,6 +29,32 @@ const PracticeContext = createContext<PracticeContextType | undefined>(undefined
 export function PracticeProvider({ children }: { children: ReactNode }) {
   const [sheets, setSheets] = useState<SheetMusic[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const patchSheet = useCallback(async (id: string, patch: Partial<SheetMusic>) => {
+    const patched = await patchSheetStorage(id, patch);
+    if (patched) {
+      setSheets((prev) => prev.map((s) => (s.id === id ? patched : s)));
+    }
+  }, []);
+
+  /** Sheets stuck in "processing" whose job finished while the app was away —
+   *  check the server and flip them to ready/failed. Fire-and-forget. */
+  const reconcilePendingSheets = useCallback(
+    (loaded: SheetMusic[]) => {
+      loaded
+        .filter((s) => s.omrStatus === "processing" && s.omrJobId)
+        .forEach((sheet) => {
+          reconcileOmrSheet(sheet)
+            .then((patch) => {
+              if (patch) return patchSheet(sheet.id, patch);
+            })
+            .catch(() => {
+              // Offline or transient — try again on the next refresh.
+            });
+        });
+    },
+    [patchSheet],
+  );
 
   const refreshData = useCallback(async () => {
     try {
@@ -48,14 +76,41 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
       }
 
       setSheets(migratedSheets);
+      reconcilePendingSheets(migratedSheets);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [reconcilePendingSheets]);
 
   useEffect(() => {
     refreshData();
   }, [refreshData]);
+
+  // Ready sheets without a thumbnail: fetch the page-1 preview the worker
+  // uploads beside the result. Once per sheet per session — a miss (legacy
+  // result with no preview yet) retries on the next app launch.
+  const previewAttemptedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    sheets
+      .filter(
+        (s) =>
+          s.omrStatus === "ready" &&
+          s.resultStoragePath &&
+          s.imageUris.length === 0 &&
+          !previewAttemptedRef.current.has(s.id),
+      )
+      .forEach((sheet) => {
+        previewAttemptedRef.current.add(sheet.id);
+        downloadPreview(sheet.resultStoragePath!, sheet.id)
+          .then((uri) => {
+            if (uri) return patchSheet(sheet.id, { imageUris: [uri] });
+          })
+          .catch(() => {
+            // Offline — allow a retry within this session.
+            previewAttemptedRef.current.delete(sheet.id);
+          });
+      });
+  }, [sheets, patchSheet]);
 
   const addSheet = useCallback(
     async (data: Omit<SheetMusic, "id" | "createdAt" | "isFavorite">) => {
@@ -75,27 +130,6 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
       };
       await saveSheet(sheet);
       setSheets((prev) => [sheet, ...prev]);
-
-      // Trigger OMR processing in background if sheet has images
-      if (sheet.imageUris.length > 0 && !sheet.musicXmlUri) {
-        processSheetMusicImage(sheet.imageUris[0], sheet.id)
-          .then(async (result) => {
-            const updated: SheetMusic = {
-              ...sheet,
-              musicXmlUri: result.musicXmlUri,
-              noteSequenceUri: result.noteSequenceUri,
-              omrStatus: "ready",
-            };
-            await updateSheet(updated);
-            setSheets((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-          })
-          .catch(async () => {
-            const failed: SheetMusic = { ...sheet, omrStatus: "failed" };
-            await updateSheet(failed);
-            setSheets((prev) => prev.map((s) => (s.id === failed.id ? failed : s)));
-          });
-      }
-
       return sheet;
     },
     [],
@@ -126,13 +160,9 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
 
   const persistPartSelection = useCallback(
     async (id: string, partIds: string[]) => {
-      const sheet = sheets.find((s) => s.id === id);
-      if (!sheet) return;
-      const updated = { ...sheet, selectedPartIds: partIds };
-      await updateSheet(updated);
-      setSheets((prev) => prev.map((s) => (s.id === id ? updated : s)));
+      await patchSheet(id, { selectedPartIds: partIds });
     },
-    [sheets],
+    [patchSheet],
   );
 
   return (
@@ -142,6 +172,7 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
         loading,
         addSheet,
         editSheet,
+        patchSheet,
         removeSheet,
         persistPartSelection,
         refreshData,

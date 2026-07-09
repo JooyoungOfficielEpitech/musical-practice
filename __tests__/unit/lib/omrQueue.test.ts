@@ -45,6 +45,12 @@ global.FileReader = class {
       this.onload?.();
     }).catch(() => this.onerror?.());
   }
+  readAsDataURL(blob: Blob) {
+    blob.text().then((text) => {
+      this.result = "data:image/jpeg;base64," + Buffer.from(text, "binary").toString("base64");
+      this.onload?.();
+    }).catch(() => this.onerror?.());
+  }
 } as unknown as typeof FileReader;
 
 jest.mock("expo-file-system", () => ({
@@ -64,6 +70,8 @@ import {
   uploadPdfToStorage,
   submitOmrJob,
   downloadResult,
+  downloadPreview,
+  previewStoragePath,
 } from "../../../client/lib/omrQueue";
 
 beforeEach(() => {
@@ -168,5 +176,30 @@ describe("OmrQueueError", () => {
     const err = new OmrQueueError("test");
     expect(err).toBeInstanceOf(Error);
     expect(err.message).toBe("test");
+  });
+});
+
+describe("previewStoragePath", () => {
+  it("maps a result path to its preview sibling", () => {
+    expect(previewStoragePath("user-1/job-9.musicxml")).toBe("user-1/job-9.preview.jpg");
+  });
+});
+
+describe("downloadPreview", () => {
+  it("downloads the preview and writes it to local storage", async () => {
+    mockDownload.mockResolvedValue({ data: new Blob(["jpegbytes"]), error: null });
+
+    const uri = await downloadPreview("user-1/job-9.musicxml", "sheet-1");
+
+    expect(mockDownload).toHaveBeenCalledWith("user-1/job-9.preview.jpg");
+    expect(uri).not.toBeNull();
+  });
+
+  it("returns null when the preview does not exist (legacy result)", async () => {
+    mockDownload.mockResolvedValue({ data: null, error: { message: "Object not found" } });
+
+    const uri = await downloadPreview("user-1/old-job.musicxml", "sheet-2");
+
+    expect(uri).toBeNull();
   });
 });

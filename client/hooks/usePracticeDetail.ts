@@ -9,7 +9,7 @@ import { downloadResult } from "@/lib/omrQueue";
 import { dlog } from "@/lib/debug/debugLog";
 import { countNotesByPart, resolveInitialVisibleParts } from "@/lib/audio/partSelection";
 import { resolveExistingUri } from "@/lib/fileStorage";
-import type { SheetFormData } from "@/lib/storage";
+import type { RenameData } from "@/components/RenameModal";
 import type { NoteSequence, PartInfo } from "@/types/music";
 
 export interface PracticeDetailState {
@@ -28,12 +28,12 @@ export interface PracticeDetailState {
   handleSynthPlayPause: () => Promise<void>;
   handleDeletePress: () => void;
   handleDeleteConfirm: () => Promise<void>;
-  handleEdit: (data: SheetFormData) => Promise<void>;
+  handleEdit: (data: RenameData) => Promise<void>;
 }
 
 export function usePracticeDetail(sheetId: string): PracticeDetailState {
   const navigation = useNavigation();
-  const { sheets, editSheet, removeSheet, refreshData, persistPartSelection } = usePractice();
+  const { sheets, patchSheet, removeSheet, persistPartSelection } = usePractice();
   const sheet = useMemo(() => sheets.find((s) => s.id === sheetId), [sheets, sheetId]);
 
   const [showEdit, setShowEdit] = useState(false);
@@ -84,7 +84,7 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
     if (!sheet || synthPlayer.tempo === persistedTempoRef.current) return;
     persistedTempoRef.current = synthPlayer.tempo;
     dlog("load", "persist tempo", { multiplier: synthPlayer.tempo });
-    editSheet({ ...sheet, savedTempoMultiplier: synthPlayer.tempo }).catch(() => {});
+    patchSheet(sheet.id, { savedTempoMultiplier: synthPlayer.tempo }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [synthPlayer.tempo]);
 
@@ -176,11 +176,11 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
     navigation.goBack();
   }, [sheet, removeSheet, navigation]);
 
-  const handleEdit = useCallback(async (data: SheetFormData) => {
+  const handleEdit = useCallback(async (data: RenameData) => {
     if (!sheet) return;
-    await editSheet({ ...sheet, ...data });
+    await patchSheet(sheet.id, data);
     setShowEdit(false);
-  }, [sheet, editSheet]);
+  }, [sheet, patchSheet]);
 
   return {
     showEdit, setShowEdit,

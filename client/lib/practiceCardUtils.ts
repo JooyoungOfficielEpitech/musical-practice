@@ -29,3 +29,14 @@ export function omrStatusLabel(
   if (status === "none") return null;
   return STATUS_MAP[status];
 }
+
+/** "Jun 20" for this year, "Jun 20, 2025" for older imports. */
+export function formatImportDate(createdAt: number, now: number = Date.now()): string {
+  const date = new Date(createdAt);
+  const sameYear = date.getFullYear() === new Date(now).getFullYear();
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    ...(sameYear ? {} : { year: "numeric" }),
+  });
+}

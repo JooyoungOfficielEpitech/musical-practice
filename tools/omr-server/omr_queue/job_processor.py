@@ -13,6 +13,7 @@ from omr_io.xml_writer import merge_pages
 from omr_queue.errors import OmrQueueError
 from omr_queue.vocal_pipeline import run_vocal_score_pipeline
 from pipeline.omr_runner import run_best_strategy
+from pipeline.preview import make_preview_jpeg, preview_storage_path
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,9 @@ def process_job(job: dict, client: Client) -> str:
         user_id = job.get("user_id")
         result_path = f"{user_id}/{job_id}.musicxml" if user_id else f"{job_id}.musicxml"
         _upload_result(client, result_path, result_xml)
+
+        first_png = chunks[0][0] if chunks and chunks[0] else None
+        _upload_preview(client, result_path, first_png)
 
     return result_path
 
@@ -150,6 +154,23 @@ def _run_simple_pipeline(
         raise OmrQueueError("OMR produced no output — all pages failed or were unreadable")
 
     return merge_pages(page_measure_lists, title=title)
+
+
+def _upload_preview(client: Client, result_path: str, png_path: str | None) -> None:
+    """Upload a page-1 thumbnail beside the result. Failures are non-fatal."""
+    if not png_path:
+        return
+    try:
+        data = make_preview_jpeg(png_path)
+        if data is None:
+            return
+        client.storage.from_(RESULT_BUCKET).upload(
+            preview_storage_path(result_path),
+            data,
+            {"content-type": "image/jpeg", "upsert": "true"},
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Preview upload failed (non-fatal): %s", exc)
 
 
 def _upload_result(client: Client, result_path: str, xml_content: str) -> None:

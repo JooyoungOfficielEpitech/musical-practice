@@ -6,20 +6,17 @@ import * as pdfImport from "../../../client/lib/pdfImport";
 jest.mock("../../../client/lib/pdfImport", () => ({
   pickPdf: jest.fn(),
   readFileAsBase64: jest.fn(),
-  fetchPdfChunks: jest.fn(),
 }));
 
 const mockPickPdf = pdfImport.pickPdf as jest.Mock;
 const mockReadFileAsBase64 = pdfImport.readFileAsBase64 as jest.Mock;
-const mockFetchPdfChunks = pdfImport.fetchPdfChunks as jest.Mock;
 
 beforeEach(() => {
   jest.clearAllMocks();
   mockReadFileAsBase64.mockResolvedValue("pdfBase64");
-  mockFetchPdfChunks.mockResolvedValue({ chunks: [] });
 });
 
-describe("usePdfImport — Phase 2", () => {
+describe("usePdfImport", () => {
   it("initial state is idle, pdfB64 is null, error is null", () => {
     const { result } = renderHook(() => usePdfImport());
 
@@ -42,8 +39,11 @@ describe("usePdfImport — Phase 2", () => {
     expect(result.current.error).toBe("No file selected");
   });
 
-  it("startImport: transitions picking→uploading, auto-names from filename", async () => {
-    mockPickPdf.mockResolvedValue("file:///documents/Symphony-No-5.pdf");
+  it("startImport: auto-names from the document's real name, not the cache URI", async () => {
+    mockPickPdf.mockResolvedValue({
+      uri: "file:///cache/DocumentPicker/7F9A2B1C-3D4E.pdf",
+      name: "Symphony-No-5.pdf",
+    });
 
     const { result } = renderHook(() => usePdfImport());
 
@@ -55,12 +55,13 @@ describe("usePdfImport — Phase 2", () => {
     expect(result.current.fileName).toBe("Symphony-No-5.pdf");
     expect(result.current.sectionTitles[0]).toBe("Symphony No 5");
     expect(mockPickPdf).toHaveBeenCalledTimes(1);
-    expect(mockReadFileAsBase64).toHaveBeenCalledWith("file:///documents/Symphony-No-5.pdf");
+    expect(mockReadFileAsBase64).toHaveBeenCalledWith(
+      "file:///cache/DocumentPicker/7F9A2B1C-3D4E.pdf",
+    );
   });
 
-  it("startImport: when fetchPdfChunks throws (offline) → proceeds to uploading with fallback", async () => {
-    mockPickPdf.mockResolvedValue("file:///test.pdf");
-    mockFetchPdfChunks.mockRejectedValue(new Error("Network request failed"));
+  it("startImport: falls back to 'Score' when the name strips to empty", async () => {
+    mockPickPdf.mockResolvedValue({ uri: "file:///cache/x.pdf", name: "-.pdf" });
 
     const { result } = renderHook(() => usePdfImport());
 
@@ -68,13 +69,11 @@ describe("usePdfImport — Phase 2", () => {
       await result.current.startImport();
     });
 
-    // Should still reach uploading state (fallback mode)
-    expect(result.current.state).toBe("uploading");
-    expect(result.current.sectionTitles[0]).toBe("test");
+    expect(result.current.sectionTitles[0]).toBe("Score");
   });
 
   it("reset: returns to idle, clears everything", async () => {
-    mockPickPdf.mockResolvedValue("file:///test.pdf");
+    mockPickPdf.mockResolvedValue({ uri: "file:///test.pdf", name: "test.pdf" });
 
     const { result } = renderHook(() => usePdfImport());
 
@@ -92,12 +91,5 @@ describe("usePdfImport — Phase 2", () => {
     expect(result.current.fileName).toBeNull();
     expect(result.current.sectionTitles).toEqual([]);
     expect(result.current.error).toBeNull();
-  });
-
-  it("removed states: selecting, naming do not exist", () => {
-    const { result } = renderHook(() => usePdfImport());
-    expect((result.current as any)["setPageRanges"]).toBeUndefined();
-    expect((result.current as any)["setSectionTitle"]).toBeUndefined();
-    expect((result.current as any)["proceedToNaming"]).toBeUndefined();
   });
 });

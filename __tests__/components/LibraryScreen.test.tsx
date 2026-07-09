@@ -48,9 +48,9 @@ jest.mock("../../client/components/SheetCard", () => ({
   SheetCard: () => null,
 }));
 
-// ── SheetFormModal ────────────────────────────────────────────────────────────
-jest.mock("../../client/components/SheetFormModal", () => ({
-  SheetFormModal: () => null,
+// ── RenameModal ───────────────────────────────────────────────────────────────
+jest.mock("../../client/components/RenameModal", () => ({
+  RenameModal: () => null,
 }));
 
 // ── ConfirmModal ──────────────────────────────────────────────────────────────
@@ -68,6 +68,7 @@ const defaultPracticeContext = {
   sessions: [],
   addSheet: jest.fn(),
   removeSheet: jest.fn(),
+  patchSheet: jest.fn(),
   stats: null,
 };
 
@@ -114,49 +115,61 @@ describe("LibraryScreen — filter visibility", () => {
 });
 
 describe("LibraryScreen — + button entry point", () => {
-  it("1. pressing + on iOS shows action sheet with Import PDF", () => {
-    const spy = jest.spyOn(ActionSheetIOS, "showActionSheetWithOptions").mockImplementation(() => {});
+  it("1. pressing + navigates straight to PdfImport (no intermediate menu)", () => {
+    const sheetSpy = jest.spyOn(ActionSheetIOS, "showActionSheetWithOptions").mockImplementation(() => {});
+    const alertSpy = jest.spyOn(Alert, "alert");
 
     const { getByLabelText } = render(<LibraryScreen />);
-    fireEvent.press(getByLabelText("Add new score"));
+    fireEvent.press(getByLabelText("Import PDF score"));
+
+    expect(mockNavigate).toHaveBeenCalledWith("PdfImport");
+    expect(sheetSpy).not.toHaveBeenCalled();
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("LibraryScreen — long-press menu", () => {
+  const sheet = {
+    id: "1",
+    title: "Test Score",
+    artist: "Test Artist",
+    imageUris: [],
+    createdAt: Date.now(),
+    folder: "Musical",
+    isFavorite: false,
+  };
+
+  it("long-pressing a card on iOS opens Rename/Delete action sheet", () => {
+    Object.defineProperty(Platform, "OS", { value: "ios", configurable: true });
+    const spy = jest.spyOn(ActionSheetIOS, "showActionSheetWithOptions").mockImplementation(() => {});
+    mockUsePractice.mockReturnValue({ ...defaultPracticeContext, sheets: [sheet] });
+
+    const { getByLabelText } = render(<LibraryScreen />);
+    fireEvent(getByLabelText("Open Test Score"), "longPress");
 
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
-        options: expect.arrayContaining(["Import PDF"]),
+        options: ["Rename", "Delete", "Cancel"],
+        destructiveButtonIndex: 1,
       }),
       expect.any(Function),
     );
   });
 
-  it("2. choosing Import PDF from action sheet navigates to PdfImport", () => {
-    let capturedCallback: ((index: number) => void) | null = null;
-    jest.spyOn(ActionSheetIOS, "showActionSheetWithOptions").mockImplementation(
-      (options, callback) => {
-        capturedCallback = callback;
-      },
-    );
-
-    const { getByLabelText } = render(<LibraryScreen />);
-    fireEvent.press(getByLabelText("Add new score"));
-
-    // Index 0 is "Import PDF", so select that
-    capturedCallback!(0);
-
-    expect(mockNavigate).toHaveBeenCalledWith("PdfImport");
-  });
-
-  it("3. on Android, pressing + shows Alert with Import PDF button", () => {
+  it("long-pressing a card on Android opens Rename/Delete alert", () => {
     Object.defineProperty(Platform, "OS", { value: "android", configurable: true });
     const alertSpy = jest.spyOn(Alert, "alert");
+    mockUsePractice.mockReturnValue({ ...defaultPracticeContext, sheets: [sheet] });
 
     const { getByLabelText } = render(<LibraryScreen />);
-    fireEvent.press(getByLabelText("Add new score"));
+    fireEvent(getByLabelText("Open Test Score"), "longPress");
 
     expect(alertSpy).toHaveBeenCalledWith(
-      expect.any(String),
+      "Test Score",
       undefined,
       expect.arrayContaining([
-        expect.objectContaining({ text: "Import PDF" }),
+        expect.objectContaining({ text: "Rename" }),
+        expect.objectContaining({ text: "Delete" }),
       ]),
     );
   });

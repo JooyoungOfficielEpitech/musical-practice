@@ -8,7 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { useTheme } from "@/hooks/useTheme";
 import { PracticeBrowseView } from "@/components/PracticeBrowseView";
-import { SheetFormModal } from "@/components/SheetFormModal";
+import { RenameModal } from "@/components/RenameModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { usePractice } from "@/context/PracticeContext";
 import { usePracticeDetail } from "@/hooks/usePracticeDetail";
@@ -78,11 +78,12 @@ export default function PracticeDetailScreen() {
         onGoBack={() => navigation.goBack()}
       />
 
-      <SheetFormModal
+      <RenameModal
         visible={showEdit}
+        initialTitle={sheet.title}
+        initialArtist={sheet.artist}
         onClose={() => setShowEdit(false)}
         onSubmit={handleEdit}
-        initialData={sheet}
       />
 
       <ConfirmModal

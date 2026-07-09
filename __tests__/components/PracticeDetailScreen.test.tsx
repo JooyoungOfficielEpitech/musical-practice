@@ -154,6 +154,7 @@ jest.mock("../../client/context/PracticeContext", () => ({
     recordings: [],
     addSession: jest.fn().mockResolvedValue("session-1"),
     editSheet: jest.fn(),
+    patchSheet: jest.fn(),
     removeSheet: jest.fn(),
     removeRecording: jest.fn(),
     refreshData: jest.fn(),
@@ -172,9 +173,9 @@ jest.mock("../../client/hooks/useTimer", () => ({
   }),
 }));
 
-// Mock SheetFormModal
-jest.mock("../../client/components/SheetFormModal", () => ({
-  SheetFormModal: () => null,
+// Mock RenameModal
+jest.mock("../../client/components/RenameModal", () => ({
+  RenameModal: () => null,
   __esModule: true,
 }));
 

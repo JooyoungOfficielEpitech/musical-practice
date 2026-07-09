@@ -16,6 +16,9 @@ export interface SheetMusic {
    *  server-side result (reprocessed scores) instead of serving a stale cache. */
   resultStoragePath?: string;
   omrStatus?: "none" | "processing" | "ready" | "failed";
+  /** omr_jobs row ID — lets the app reconcile a still-processing sheet after
+   *  the import screen is gone (app killed, user navigated away). */
+  omrJobId?: string;
   selectedInstrument?: string;
   selectedPartIds?: string[]; // parts the user chose to practice (성부 선택), persisted
   /** Last tempo multiplier the user set for this score — restored on open. */
@@ -43,15 +46,6 @@ export interface UserStats {
   averageAccuracy: number;
   streak: number;
   lastPracticeDate: string;
-}
-
-/** Data shape submitted by SheetFormModal — lives here so hooks can import it without touching components/ */
-export interface SheetFormData {
-  title: string;
-  artist: string;
-  folder: string;
-  imageUris: string[];
-  audioUri?: string;
 }
 
 const KEYS = {
@@ -92,6 +86,28 @@ export async function updateSheet(updated: SheetMusic): Promise<void> {
     }
   } catch (e) {
     console.error("Failed to update sheet:", e);
+  }
+}
+
+/**
+ * Merge a partial patch into one stored sheet.
+ * Returns the patched sheet, or null when the id is unknown.
+ */
+export async function patchSheet(
+  id: string,
+  patch: Partial<SheetMusic>,
+): Promise<SheetMusic | null> {
+  try {
+    const sheets = await getSheets();
+    const idx = sheets.findIndex((s) => s.id === id);
+    if (idx === -1) return null;
+    const patched = { ...sheets[idx], ...patch };
+    const next = sheets.map((s, i) => (i === idx ? patched : s));
+    await AsyncStorage.setItem(KEYS.SHEETS, JSON.stringify(next));
+    return patched;
+  } catch (e) {
+    console.error("Failed to patch sheet:", e);
+    return null;
   }
 }
 

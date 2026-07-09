@@ -141,3 +141,52 @@ export async function downloadResult(
 
   return file.uri;
 }
+
+/** Storage path of the page-1 thumbnail the worker uploads beside the result. */
+export function previewStoragePath(resultStoragePath: string): string {
+  return resultStoragePath.replace(/\.musicxml$/, "") + ".preview.jpg";
+}
+
+/**
+ * Download the page-1 preview JPEG for a result and save it to local storage.
+ *
+ * @returns The local file URI, or null when no preview exists (legacy results
+ *          processed before previews shipped) or Supabase is unavailable.
+ */
+export async function downloadPreview(
+  resultStoragePath: string,
+  sheetId: string,
+): Promise<string | null> {
+  if (!supabase) return null;
+
+  const { data, error } = await supabase.storage
+    .from(RESULT_BUCKET)
+    .download(previewStoragePath(resultStoragePath));
+
+  if (error || !data) return null;
+
+  const b64 = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      resolve(dataUrl.slice(dataUrl.indexOf(",") + 1));
+    };
+    reader.onerror = () => reject(new Error("Failed to read preview blob"));
+    reader.readAsDataURL(data as Blob);
+  });
+
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  const dir = new Directory(Paths.document, "images");
+  if (!dir.exists) {
+    dir.create();
+  }
+  const file = new File(Paths.document, `images/${sheetId}-preview.jpg`);
+  file.write(bytes);
+
+  return file.uri;
+}

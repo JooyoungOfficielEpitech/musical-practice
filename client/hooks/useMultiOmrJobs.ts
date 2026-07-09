@@ -31,6 +31,13 @@ export interface SectionJobState {
   error?: string;
 }
 
+export interface JobLifecycle {
+  /** Called as soon as a job row exists. Return a local sheet ID to use for
+   *  result file naming — this is how imports persist before completion. */
+  onJobQueued?: (index: number, jobId: string) => Promise<string | void>;
+  onJobFailed?: (index: number, error: string) => void;
+}
+
 export interface UseMultiOmrJobsResult {
   overallStatus: MultiJobStatus;
   jobs: SectionJobState[];
@@ -40,6 +47,7 @@ export interface UseMultiOmrJobsResult {
     pdfB64: string,
     sections: SectionInput[],
     onJobDone: (index: number, musicXmlUri: string, resultStoragePath: string) => Promise<void>,
+    lifecycle?: JobLifecycle,
   ) => void;
   retry: (index: number) => Promise<void>;
   reset: () => void;
@@ -60,6 +68,7 @@ export function useMultiOmrJobs(): UseMultiOmrJobsResult {
     pdfB64: string;
     sections: SectionInput[];
     onJobDone: (index: number, musicXmlUri: string, resultStoragePath: string) => Promise<void>;
+    lifecycle?: JobLifecycle;
   } | null>(null);
 
   const _unsubscribeAll = useCallback(() => {
@@ -101,6 +110,7 @@ export function useMultiOmrJobs(): UseMultiOmrJobsResult {
         sectionTitle: (i) => submitContextRef.current?.sections[i]?.title ?? `section ${i + 1}`,
         registerChannel: (ch) => channelsRef.current.push(ch as Channel),
         registerPoll: (id) => pollsRef.current.push(id),
+        onJobFailed: (i, error) => submitContextRef.current?.lifecycle?.onJobFailed?.(i, error),
       });
     },
     [_updateJob, _settleJob],
@@ -111,12 +121,13 @@ export function useMultiOmrJobs(): UseMultiOmrJobsResult {
       pdfB64: string,
       sections: SectionInput[],
       onJobDone: (index: number, musicXmlUri: string, resultStoragePath: string) => Promise<void>,
+      lifecycle?: JobLifecycle,
     ) => {
       // Guard against double-tap: if already submitting, return early
       if (isSubmitting) return;
 
       setIsSubmitting(true);
-      submitContextRef.current = { pdfB64, sections, onJobDone };
+      submitContextRef.current = { pdfB64, sections, onJobDone, lifecycle };
       setOverallStatus("uploading");
       setJobs(sections.map((s) => ({
         title: s.title, status: "pending", pageRange: s.pageRange ?? null, progressPercent: 0,
@@ -129,8 +140,11 @@ export function useMultiOmrJobs(): UseMultiOmrJobsResult {
 
           for (let i = 0; i < sections.length; i++) {
             const section = sections[i];
-            const sheetId = `section-${Date.now()}-${i}`;
             const jobId = await submitOmrJob(storagePath, section.pageRange ? [section.pageRange] : []);
+            // Persist the sheet NOW (omrStatus "processing") so leaving the
+            // screen or killing the app never loses the import.
+            const persistedId = await lifecycle?.onJobQueued?.(i, jobId);
+            const sheetId = typeof persistedId === "string" ? persistedId : `section-${Date.now()}-${i}`;
             _updateJob(i, { status: "queued" });
             _subscribeJob(jobId, i, sheetId, onJobDone);
           }
@@ -169,8 +183,9 @@ export function useMultiOmrJobs(): UseMultiOmrJobsResult {
       try {
         const tempId = `pdf-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const storagePath = await uploadPdfToStorage(context.pdfB64, tempId);
-        const sheetId = `section-${Date.now()}-${index}`;
         const jobId = await submitOmrJob(storagePath, section.pageRange ? [section.pageRange] : []);
+        const persistedId = await context.lifecycle?.onJobQueued?.(index, jobId);
+        const sheetId = typeof persistedId === "string" ? persistedId : `section-${Date.now()}-${index}`;
 
         _updateJob(index, { status: "queued" });
         _subscribeJob(jobId, index, sheetId, context.onJobDone);

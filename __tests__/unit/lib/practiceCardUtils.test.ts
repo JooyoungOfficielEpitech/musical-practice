@@ -62,3 +62,19 @@ describe("omrStatusLabel", () => {
     expect(omrStatusLabel("none")).toBeNull();
   });
 });
+
+describe("formatImportDate", () => {
+  const { formatImportDate } = require("../../../client/lib/practiceCardUtils");
+
+  it("omits the year for dates in the current year", () => {
+    const now = new Date("2026-07-09T12:00:00Z").getTime();
+    const jun20 = new Date("2026-06-20T12:00:00Z").getTime();
+    expect(formatImportDate(jun20, now)).toMatch(/^Jun 20$/);
+  });
+
+  it("includes the year for older imports", () => {
+    const now = new Date("2026-07-09T12:00:00Z").getTime();
+    const lastYear = new Date("2025-06-20T12:00:00Z").getTime();
+    expect(formatImportDate(lastYear, now)).toMatch(/^Jun 20, 2025$/);
+  });
+});

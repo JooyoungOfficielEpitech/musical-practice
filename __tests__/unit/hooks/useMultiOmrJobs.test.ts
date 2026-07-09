@@ -304,6 +304,55 @@ describe("useMultiOmrJobs", () => {
     expect(result.current.jobs[0].progressPercent).toBe(100);
   });
 
+  it("14. lifecycle.onJobQueued is called at queue time and its sheetId names the result file", async () => {
+    mockUploadPdf.mockResolvedValue("storage/path.pdf");
+    mockSubmitJob.mockResolvedValue("job-1");
+    mockDownloadResult.mockResolvedValue("file:///musicxml/persisted-sheet.musicxml");
+
+    const onJobDone = jest.fn().mockResolvedValue(undefined);
+    const onJobQueued = jest.fn().mockResolvedValue("persisted-sheet-id");
+    const { result } = renderHook(() => useMultiOmrJobs());
+
+    await act(async () => {
+      result.current.submitAll("pdfB64==", [section1], onJobDone, { onJobQueued });
+      await Promise.resolve();
+    });
+
+    expect(onJobQueued).toHaveBeenCalledWith(0, "job-1");
+
+    await act(async () => {
+      fireDone(0, "results/job-1.xml");
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockDownloadResult).toHaveBeenCalledWith("results/job-1.xml", "persisted-sheet-id");
+  });
+
+  it("15. lifecycle.onJobFailed fires when the job fails", async () => {
+    mockUploadPdf.mockResolvedValue("storage/path.pdf");
+    mockSubmitJob.mockResolvedValue("job-1");
+
+    const onJobDone = jest.fn().mockResolvedValue(undefined);
+    const onJobQueued = jest.fn().mockResolvedValue("persisted-sheet-id");
+    const onJobFailed = jest.fn();
+    const { result } = renderHook(() => useMultiOmrJobs());
+
+    await act(async () => {
+      result.current.submitAll("pdfB64==", [section1], onJobDone, { onJobQueued, onJobFailed });
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      fireFailed(0, "OMR exploded");
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(onJobFailed).toHaveBeenCalledWith(0, "OMR exploded");
+    expect(onJobDone).not.toHaveBeenCalled();
+  });
+
   it("13. retry(index) resets failed job to queued and resubmits", async () => {
     mockUploadPdf.mockResolvedValue("storage/path.pdf");
     mockSubmitJob

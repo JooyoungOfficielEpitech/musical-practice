@@ -17,10 +17,10 @@ import { useTheme } from "@/hooks/useTheme";
 import { hapticFeedback } from "@/lib/hapticFeedback";
 import { usePractice } from "@/context/PracticeContext";
 import { SheetCard } from "@/components/SheetCard";
-import { SheetFormModal } from "@/components/SheetFormModal";
+import { RenameModal } from "@/components/RenameModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { EmptyState } from "@/components/EmptyState";
-import { Spacing, BorderRadius, Typography } from "@/constants/theme";
+import { Spacing, Typography } from "@/constants/theme";
 import type { RootStackParamList } from "@/types/navigation";
 import type { SheetMusic } from "@/lib/storage";
 
@@ -32,14 +32,9 @@ export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  const { sheets, removeSheet, addSheet } = usePractice();
+  const { sheets, removeSheet, patchSheet } = usePractice();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [pressedCardId, setPressedCardId] = useState<string | null>(null);
-
-  const handleDeletePress = useCallback((id: string, title: string) => {
-    setDeleteTarget({ id, title });
-  }, []);
+  const [renameTarget, setRenameTarget] = useState<SheetMusic | null>(null);
 
   const handleDeleteConfirm = useCallback(() => {
     if (deleteTarget) {
@@ -48,36 +43,56 @@ export default function LibraryScreen() {
     }
   }, [deleteTarget, removeSheet]);
 
-  const handleAddPress = useCallback(() => {
+  const handleLongPress = useCallback((item: SheetMusic) => {
     void hapticFeedback.triggerMedium();
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
-        { options: ["Import PDF", "Cancel"], cancelButtonIndex: 1, userInterfaceStyle: "dark" },
+        {
+          title: item.title,
+          options: ["Rename", "Delete", "Cancel"],
+          destructiveButtonIndex: 1,
+          cancelButtonIndex: 2,
+        },
         (index) => {
-          if (index === 0) navigation.navigate("PdfImport");
+          if (index === 0) setRenameTarget(item);
+          if (index === 1) setDeleteTarget({ id: item.id, title: item.title });
         },
       );
     } else {
-      Alert.alert("Import Score", undefined, [
-        { text: "Import PDF", onPress: () => navigation.navigate("PdfImport") },
+      Alert.alert(item.title, undefined, [
+        { text: "Rename", onPress: () => setRenameTarget(item) },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => setDeleteTarget({ id: item.id, title: item.title }),
+        },
         { text: "Cancel", style: "cancel" },
       ]);
     }
+  }, []);
+
+  const handleRenameSubmit = useCallback(
+    (data: { title: string; artist: string }) => {
+      if (renameTarget) {
+        void patchSheet(renameTarget.id, data);
+        setRenameTarget(null);
+      }
+    },
+    [renameTarget, patchSheet],
+  );
+
+  const handleAddPress = useCallback(() => {
+    void hapticFeedback.triggerMedium();
+    navigation.navigate("PdfImport");
   }, [navigation]);
 
   const renderItem = useCallback(({ item }: { item: SheetMusic }) => (
     <Pressable
-      onLongPress={() => {
-        void hapticFeedback.triggerMedium();
-        handleDeletePress(item.id, item.title);
-        setPressedCardId(null);
-      }}
-      onPressIn={() => setPressedCardId(item.id)}
-      onPressOut={() => setPressedCardId(null)}
+      onLongPress={() => handleLongPress(item)}
       delayLongPress={500}
       accessibilityLabel={`Open ${item.title}`}
       accessibilityRole="button"
-      accessibilityHint="Long press to delete"
+      accessibilityHint="Long press to rename or delete"
       style={({ pressed }) => [pressed && { opacity: 0.7 }]}
     >
       <SheetCard
@@ -85,7 +100,7 @@ export default function LibraryScreen() {
         onPress={() => navigation.navigate("PracticeDetail", { sheetId: item.id })}
       />
     </Pressable>
-  ), [navigation, handleDeletePress]);
+  ), [navigation, handleLongPress]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.backgroundDefault, paddingTop: insets.top }]}>
@@ -93,7 +108,7 @@ export default function LibraryScreen() {
         <Text style={[styles.title, { color: colors.text }]}>Library</Text>
         <Pressable
           onPress={handleAddPress}
-          accessibilityLabel="Add new score"
+          accessibilityLabel="Import PDF score"
           accessibilityRole="button"
           style={({ pressed }) => [styles.addBtn, { width: 44, height: 44, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] }]}
         >
@@ -139,12 +154,13 @@ export default function LibraryScreen() {
         onCancel={() => setDeleteTarget(null)}
       />
 
-      <SheetFormModal
-        visible={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSubmit={(data) => { addSheet(data); setShowAddModal(false); }}
+      <RenameModal
+        visible={!!renameTarget}
+        initialTitle={renameTarget?.title ?? ""}
+        initialArtist={renameTarget?.artist}
+        onClose={() => setRenameTarget(null)}
+        onSubmit={handleRenameSubmit}
       />
-
     </View>
   );
 }
