@@ -69,6 +69,7 @@ const defaultPracticeContext = {
   addSheet: jest.fn(),
   removeSheet: jest.fn(),
   patchSheet: jest.fn(),
+  refreshData: jest.fn().mockResolvedValue(undefined),
   stats: null,
 };
 

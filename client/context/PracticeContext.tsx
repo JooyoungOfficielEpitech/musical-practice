@@ -26,6 +26,8 @@ interface PracticeContextType {
 
 const PracticeContext = createContext<PracticeContextType | undefined>(undefined);
 
+const PENDING_POLL_INTERVAL_MS = 10_000;
+
 export function PracticeProvider({ children }: { children: ReactNode }) {
   const [sheets, setSheets] = useState<SheetMusic[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,6 +87,24 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     refreshData();
   }, [refreshData]);
+
+  // While any sheet is still processing, poll its job row so the library card
+  // flips to Ready without an app restart (covers relaunch mid-processing,
+  // where no import-screen subscription is alive).
+  useEffect(() => {
+    const pending = sheets.filter((s) => s.omrStatus === "processing" && s.omrJobId);
+    if (pending.length === 0) return;
+    const id = setInterval(() => {
+      pending.forEach((sheet) => {
+        reconcileOmrSheet(sheet)
+          .then((patch) => {
+            if (patch) return patchSheet(sheet.id, patch);
+          })
+          .catch(() => {});
+      });
+    }, PENDING_POLL_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [sheets, patchSheet]);
 
   // Ready sheets without a thumbnail: fetch the page-1 preview the worker
   // uploads beside the result. Once per sheet per session — a miss (legacy

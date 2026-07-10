@@ -8,6 +8,7 @@ import {
   Pressable,
   ActionSheetIOS,
   Alert,
+  RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -32,9 +33,19 @@ export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  const { sheets, removeSheet, patchSheet } = usePractice();
+  const { sheets, removeSheet, patchSheet, refreshData } = usePractice();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const [renameTarget, setRenameTarget] = useState<SheetMusic | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refreshData();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshData]);
 
   const handleDeleteConfirm = useCallback(() => {
     if (deleteTarget) {
@@ -122,6 +133,9 @@ export default function LibraryScreen() {
         scrollEnabled={sheets.length > 0}
         contentContainerStyle={[styles.listContent, sheets.length === 0 && { flex: 1 }]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.textSecondary} />
+        }
         ListEmptyComponent={
           <EmptyState
             icon="musical-notes-outline"
