@@ -229,3 +229,36 @@ describe("migrateFileUrisToDocument", () => {
     expect(result).toEqual(sheets);
   });
 });
+
+describe("migrateSheetMusic — UUID title cleanup", () => {
+  const base = {
+    id: "s1",
+    artist: "",
+    imageUris: [],
+    createdAt: new Date("2026-06-20T12:00:00Z").getTime(),
+    folder: "Musical",
+    isFavorite: false,
+  };
+
+  it("renames a raw UUID title to a dated placeholder", () => {
+    const sheet = migrateSheetMusic({
+      ...base,
+      title: "7F9A2B1C-3D4E-4A5B-8C6D-112233445566",
+    });
+    expect(sheet.title).toBe("Score Jun 20");
+  });
+
+  it("renames a UUID title whose dashes became spaces (old auto-naming)", () => {
+    const sheet = migrateSheetMusic({
+      ...base,
+      title: "7f9a2b1c 3d4e 4a5b 8c6d 112233445566",
+    });
+    expect(sheet.title).toBe("Score Jun 20");
+  });
+
+  it("leaves real titles untouched", () => {
+    for (const title of ["Road To Hell I", "Hermes - Full Score", "봄날"]) {
+      expect(migrateSheetMusic({ ...base, title }).title).toBe(title);
+    }
+  });
+});

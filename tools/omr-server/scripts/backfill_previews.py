@@ -6,7 +6,10 @@ script renders page 1 of each done job's PDF and uploads the missing ones.
 
 Usage:
     source venv/bin/activate && set -a && source .env && set +a
-    python scripts/backfill_previews.py
+    python scripts/backfill_previews.py [--force]
+
+--force regenerates previews even when one already exists (e.g. after the
+preview rendering logic changes).
 """
 import os
 import sys
@@ -29,6 +32,7 @@ def preview_exists(client, path: str) -> bool:
 
 
 def main() -> None:
+    force = "--force" in sys.argv
     client = get_supabase_client()
     jobs = (
         client.table("omr_jobs")
@@ -49,7 +53,7 @@ def main() -> None:
 
         target = preview_storage_path(result_path)
         try:
-            if preview_exists(client, target):
+            if not force and preview_exists(client, target):
                 skipped += 1
                 continue
 

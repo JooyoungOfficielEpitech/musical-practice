@@ -199,6 +199,22 @@ function PracticeBrowseViewComponent({
               </View>
             )}
           </>
+        ) : sheet.omrStatus === "processing" ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="hourglass-outline" size={48} color={colors.primary} />
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>Recognizing music…</Text>
+            <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
+              This score is still being processed. It updates here automatically — feel free to come back in a few minutes.
+            </Text>
+          </View>
+        ) : sheet.omrStatus === "failed" ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="alert-circle-outline" size={48} color={colors.error} />
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>Recognition failed</Text>
+            <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
+              This score could not be read. Delete it and import the PDF again.
+            </Text>
+          </View>
         ) : (
           <View style={styles.emptyState}>
             <Ionicons name="alert-circle-outline" size={48} color={colors.textSecondary} />

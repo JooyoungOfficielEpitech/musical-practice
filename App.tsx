@@ -27,11 +27,13 @@ import { AuthProvider } from "@/context/AuthContext";
 import { PracticeProvider } from "@/context/PracticeContext";
 import { queryClient } from "@/lib/query-client";
 import { initSentry } from "@/lib/sentry";
+import { applyPendingUpdate } from "@/lib/otaUpdate";
 import { RootStackNavigator } from "@/navigation/RootStackNavigator";
 
 SplashScreen.preventAutoHideAsync();
 initSentry();
 Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+void applyPendingUpdate();
 
 function App() {
   const [fontsLoaded, fontError] = useFonts({

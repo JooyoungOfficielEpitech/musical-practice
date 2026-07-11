@@ -130,7 +130,7 @@ export default function LibraryScreen() {
       <FlatList
         data={sheets}
         keyExtractor={(item) => item.id}
-        scrollEnabled={sheets.length > 0}
+        alwaysBounceVertical
         contentContainerStyle={[styles.listContent, sheets.length === 0 && { flex: 1 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={

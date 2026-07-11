@@ -1,5 +1,11 @@
 import type { SheetMusic } from "./storage";
 import { copyToLocalStorage, isDocumentUri, fileExists, rebaseDocumentUri } from "./fileStorage";
+import { formatImportDate } from "./practiceCardUtils";
+
+// Old imports derived titles from the picker's cache URI, whose filename is a
+// UUID (dashes sometimes already replaced with spaces by auto-naming).
+const UUID_TITLE_RE =
+  /^[0-9a-f]{8}[-\s][0-9a-f]{4}[-\s][0-9a-f]{4}[-\s][0-9a-f]{4}[-\s][0-9a-f]{12}$/i;
 
 /**
  * Migrate legacy SheetMusic data (imageUri: string) to new format (imageUris: string[]).
@@ -15,8 +21,14 @@ export function migrateSheetMusic(data: any): SheetMusic {
         ? [imageUri]
         : [];
 
+  const title =
+    typeof rest.title === "string" && UUID_TITLE_RE.test(rest.title.trim())
+      ? `Score ${formatImportDate(rest.createdAt ?? Date.now())}`
+      : rest.title;
+
   return {
     ...rest,
+    title,
     imageUris: migratedImageUris,
     audioUri: data.audioUri,
   };
