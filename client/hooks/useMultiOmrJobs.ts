@@ -36,6 +36,7 @@ export interface JobLifecycle {
    *  result file naming — this is how imports persist before completion. */
   onJobQueued?: (index: number, jobId: string) => Promise<string | void>;
   onJobFailed?: (index: number, error: string) => void;
+  onJobProgress?: (index: number, percent: number) => void;
 }
 
 export interface UseMultiOmrJobsResult {
@@ -111,6 +112,7 @@ export function useMultiOmrJobs(): UseMultiOmrJobsResult {
         registerChannel: (ch) => channelsRef.current.push(ch as Channel),
         registerPoll: (id) => pollsRef.current.push(id),
         onJobFailed: (i, error) => submitContextRef.current?.lifecycle?.onJobFailed?.(i, error),
+        onJobProgress: (i, pct) => submitContextRef.current?.lifecycle?.onJobProgress?.(i, pct),
       });
     },
     [_updateJob, _settleJob],

@@ -12,6 +12,7 @@ import type { SheetMusic } from "@/lib/storage";
 
 type JobRow = {
   status: string;
+  progress_percent: number | null;
   result_storage_path: string | null;
   error: string | null;
 };
@@ -30,7 +31,7 @@ export async function reconcileOmrSheet(
 
   const { data, error } = await supabase
     .from("omr_jobs")
-    .select("status, result_storage_path, error")
+    .select("status, progress_percent, result_storage_path, error")
     .eq("id", sheet.omrJobId)
     .single();
 
@@ -43,11 +44,19 @@ export async function reconcileOmrSheet(
       musicXmlUri,
       resultStoragePath: row.result_storage_path,
       omrStatus: "ready",
+      omrProgress: 100,
     };
   }
 
   if (row.status === "failed") {
     return { omrStatus: "failed" };
+  }
+
+  // Still running — surface progress on the library card, but only when it
+  // moved (a same-value patch would churn state/storage every poll tick).
+  const progress = row.progress_percent ?? 0;
+  if (progress !== (sheet.omrProgress ?? 0)) {
+    return { omrProgress: progress };
   }
 
   return null;

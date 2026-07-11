@@ -30,6 +30,9 @@ export interface JobSubscriptionDeps {
   /** Notify the owner that this job failed — used to flip the persisted sheet
    *  to omrStatus "failed". */
   onJobFailed?: (index: number, error: string) => void;
+  /** Live progress (0–100) — mirrored onto the persisted sheet so the library
+   *  card shows it while the user is elsewhere in the app. */
+  onJobProgress?: (index: number, percent: number) => void;
 }
 
 export function subscribeOmrJob(
@@ -69,6 +72,7 @@ export function subscribeOmrJob(
         progressPercent: row.progress_percent ?? 0,
         startedAt: Date.now(),
       });
+      deps.onJobProgress?.(index, row.progress_percent ?? 0);
     } else if (row.status === "done") {
       settled = true;
       clearPoll();

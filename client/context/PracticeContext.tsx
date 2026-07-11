@@ -26,7 +26,7 @@ interface PracticeContextType {
 
 const PracticeContext = createContext<PracticeContextType | undefined>(undefined);
 
-const PENDING_POLL_INTERVAL_MS = 10_000;
+const PENDING_POLL_INTERVAL_MS = 5_000;
 
 export function PracticeProvider({ children }: { children: ReactNode }) {
   const [sheets, setSheets] = useState<SheetMusic[]>([]);

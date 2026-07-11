@@ -5,16 +5,14 @@ import { hapticFeedback } from "@/lib/hapticFeedback";
 import { usePdfImport } from "@/hooks/usePdfImport";
 import { useMultiOmrJobs } from "@/hooks/useMultiOmrJobs";
 import { usePractice } from "@/context/PracticeContext";
-import {
-  UploadingView,
-  ProcessingView,
-} from "@/components/PdfImportProgressViews";
-import {
-  SuccessView,
-  ErrorView,
-  IdleView,
-} from "@/components/PdfImportStateViews";
+import { UploadingView } from "@/components/PdfImportProgressViews";
+import { ErrorView, IdleView } from "@/components/PdfImportStateViews";
 
+/**
+ * Non-blocking import: pick → upload → queue jobs, then IMMEDIATELY return to
+ * the library. The sheet is already persisted as "processing" and its card
+ * shows live progress; recognition finishes in the background.
+ */
 export default function PdfImportScreen() {
   const navigation = useNavigation();
   const { addSheet, patchSheet } = usePractice();
@@ -39,13 +37,18 @@ export default function PdfImportScreen() {
     }
   }, [state, error, navigation]);
 
-  // Success haptic — top-level effect (hooks must never live in render branches)
-  const isDone = multiOmrJobs.overallStatus === "done";
+  // Jobs are queued and persisted — hand the user back to the library where
+  // the card shows progress. No blocking "processing" screen.
+  const isRunning = multiOmrJobs.overallStatus === "running";
   useEffect(() => {
-    if (isDone) {
+    if (isRunning) {
       void hapticFeedback.triggerMedium();
+      AccessibilityInfo.announceForAccessibility(
+        "Recognition started. Progress is shown on the score card in your library.",
+      );
+      navigation.goBack();
     }
-  }, [isDone]);
+  }, [isRunning, navigation]);
 
   // Upload timeout handler: show warning at 30s
   useEffect(() => {
@@ -68,7 +71,7 @@ export default function PdfImportScreen() {
       const existingId = sheetIdsRef.current[index];
       if (existingId) {
         // Retry of an already-persisted sheet — just refresh its job pointer.
-        await patchSheet(existingId, { omrStatus: "processing", omrJobId: jobId });
+        await patchSheet(existingId, { omrStatus: "processing", omrJobId: jobId, omrProgress: 0 });
         return existingId;
       }
       const sheet = await addSheet({
@@ -78,6 +81,7 @@ export default function PdfImportScreen() {
         imageUris: [],
         omrStatus: "processing",
         omrJobId: jobId,
+        omrProgress: 0,
       });
       sheetIdsRef.current[index] = sheet.id;
       return sheet.id;
@@ -89,7 +93,7 @@ export default function PdfImportScreen() {
     async (index: number, musicXmlUri: string, resultStoragePath: string) => {
       const sheetId = sheetIdsRef.current[index];
       if (!sheetId) return;
-      await patchSheet(sheetId, { musicXmlUri, resultStoragePath, omrStatus: "ready" });
+      await patchSheet(sheetId, { musicXmlUri, resultStoragePath, omrStatus: "ready", omrProgress: 100 });
     },
     [patchSheet],
   );
@@ -104,6 +108,16 @@ export default function PdfImportScreen() {
     [patchSheet],
   );
 
+  const handleJobProgress = useCallback(
+    (index: number, percent: number) => {
+      const sheetId = sheetIdsRef.current[index];
+      if (sheetId) {
+        void patchSheet(sheetId, { omrProgress: percent });
+      }
+    },
+    [patchSheet],
+  );
+
   const handleStartProcessing = useCallback(() => {
     if (!pdfB64 || sectionTitles.length === 0 || multiOmrJobs.isSubmitting) return;
     const sections = sectionTitles.map((title) => ({
@@ -113,21 +127,15 @@ export default function PdfImportScreen() {
     multiOmrJobs.submitAll(pdfB64, sections, handleJobDone, {
       onJobQueued: handleJobQueued,
       onJobFailed: handleJobFailed,
+      onJobProgress: handleJobProgress,
     });
-  }, [pdfB64, sectionTitles, multiOmrJobs, handleJobDone, handleJobQueued, handleJobFailed]);
+  }, [pdfB64, sectionTitles, multiOmrJobs, handleJobDone, handleJobQueued, handleJobFailed, handleJobProgress]);
 
   const handleReset = useCallback(() => {
     setShowUploadTimeout(false);
     multiOmrJobs.reset();
     resetPdf();
   }, [multiOmrJobs, resetPdf]);
-
-  const handleRetry = useCallback(
-    (index: number) => {
-      multiOmrJobs.retry(index);
-    },
-    [multiOmrJobs],
-  );
 
   // Auto-trigger OMR submission once file is ready
   useEffect(() => {
@@ -136,8 +144,11 @@ export default function PdfImportScreen() {
     }
   }, [state, pdfB64, multiOmrJobs.overallStatus, handleStartProcessing]);
 
-  // ── Uploading ────────────────────────────────────────────────────────────
-  if ((state === "uploading" && multiOmrJobs.overallStatus === "idle") || multiOmrJobs.overallStatus === "uploading") {
+  // ── Uploading (brief, blocking) ──────────────────────────────────────────
+  if (
+    (state === "uploading" && (multiOmrJobs.overallStatus === "idle" || isRunning)) ||
+    multiOmrJobs.overallStatus === "uploading"
+  ) {
     return (
       <UploadingView
         fileName={fileName}
@@ -148,27 +159,7 @@ export default function PdfImportScreen() {
     );
   }
 
-  // ── Processing/Running ───────────────────────────────────────────────────
-  if (multiOmrJobs.overallStatus === "running") {
-    return (
-      <ProcessingView
-        jobs={multiOmrJobs.jobs}
-        onRetry={handleRetry}
-        onContinueInBackground={() => navigation.goBack()}
-      />
-    );
-  }
-
-  // ── Done ─────────────────────────────────────────────────────────────────
-  if (multiOmrJobs.overallStatus === "done") {
-    return (
-      <SuccessView
-        onViewLibrary={() => navigation.goBack()}
-      />
-    );
-  }
-
-  // ── Error ────────────────────────────────────────────────────────────────
+  // ── Upload/submit error ──────────────────────────────────────────────────
   if (state === "error" || multiOmrJobs.overallStatus === "failed") {
     const errorMsg = error ?? multiOmrJobs.error ?? "Something went wrong";
     const isUploadError = state === "error" || errorMsg.includes("Upload");

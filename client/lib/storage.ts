@@ -19,6 +19,8 @@ export interface SheetMusic {
   /** omr_jobs row ID — lets the app reconcile a still-processing sheet after
    *  the import screen is gone (app killed, user navigated away). */
   omrJobId?: string;
+  /** 0–100, mirrored from omr_jobs.progress_percent while processing. */
+  omrProgress?: number;
   selectedInstrument?: string;
   selectedPartIds?: string[]; // parts the user chose to practice (성부 선택), persisted
   /** Last tempo multiplier the user set for this score — restored on open. */

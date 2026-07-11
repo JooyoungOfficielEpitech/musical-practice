@@ -1,9 +1,10 @@
 import React from "react";
-import { render, within } from "@testing-library/react-native";
+import { render } from "@testing-library/react-native";
 
 // ── Navigation ───────────────────────────────────────────────────────────────
+const mockGoBack = jest.fn();
 jest.mock("@react-navigation/native", () => ({
-  useNavigation: () => ({ goBack: jest.fn(), navigate: jest.fn() }),
+  useNavigation: () => ({ goBack: mockGoBack, navigate: jest.fn() }),
 }));
 
 // ── Safe area ────────────────────────────────────────────────────────────────
@@ -23,6 +24,7 @@ jest.mock("../../client/hooks/useTheme", () => ({
       surface: "#F8F9FA",
       backgroundDefault: "#FFF",
       error: "#DC2626",
+      warning: "#D97706",
       buttonText: "#FFF",
       success: "#16A34A",
       borderLight: "#F3F4F6",
@@ -58,27 +60,6 @@ jest.mock("../../client/components/LoadingOverlay", () => {
   };
 });
 
-// ── ProgressTrack ────────────────────────────────────────────────────────────
-jest.mock("../../client/components/ProgressTrack", () => {
-  const { View } = require("react-native");
-  return {
-    ProgressTrack: ({ percent }: any) => <View testID="progress-track" style={{ width: `${percent}%` }} />,
-  };
-});
-
-// ── JobRowItem ────────────────────────────────────────────────────────────────
-jest.mock("../../client/components/JobRowItem", () => {
-  const { View, Text } = require("react-native");
-  return {
-    JobRowItem: ({ job }: any) => (
-      <View testID={`job-row-${job.title}`}>
-        <Text>{job.title}</Text>
-        <Text>{job.status}</Text>
-      </View>
-    ),
-  };
-});
-
 // ── Import after mocks ────────────────────────────────────────────────────────
 import PdfImportScreen from "../../client/screens/PdfImportScreen";
 import { usePdfImport } from "../../client/hooks/usePdfImport";
@@ -93,7 +74,6 @@ const mockUsePractice = usePractice as jest.Mock;
 const idlePdfHook = {
   state: "idle" as const,
   chunks: [],
-  pageRanges: [],
   sectionTitles: [],
   pdfB64: null,
   fileName: null,
@@ -106,7 +86,9 @@ const idleMultiJobsHook = {
   overallStatus: "idle" as const,
   jobs: [],
   error: null,
+  isSubmitting: false,
   submitAll: jest.fn(),
+  retry: jest.fn(),
   reset: jest.fn(),
 };
 
@@ -114,12 +96,15 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockUsePdfImport.mockReturnValue({ ...idlePdfHook, startImport: jest.fn() });
   mockUseMultiOmrJobs.mockReturnValue({ ...idleMultiJobsHook });
-  mockUsePractice.mockReturnValue({ addSheet: jest.fn().mockResolvedValue({ id: "s1" }) });
+  mockUsePractice.mockReturnValue({
+    addSheet: jest.fn().mockResolvedValue({ id: "s1" }),
+    patchSheet: jest.fn().mockResolvedValue(undefined),
+  });
 });
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe("PdfImportScreen — Phase 2: 1-tap PDF import", () => {
+describe("PdfImportScreen — non-blocking import", () => {
   it("1. auto-starts import on mount", () => {
     const startImport = jest.fn();
     mockUsePdfImport.mockReturnValue({ ...idlePdfHook, startImport });
@@ -142,10 +127,10 @@ describe("PdfImportScreen — Phase 2: 1-tap PDF import", () => {
     expect(getByTestId("loading-overlay")).toBeTruthy();
   });
 
-  it("3. running state renders LoadingOverlay with progress", () => {
+  it("3. once jobs are running, returns to the library immediately", () => {
     mockUsePdfImport.mockReturnValue({
       ...idlePdfHook,
-      state: "idle",
+      state: "uploading",
       sectionTitles: ["Score"],
     });
     mockUseMultiOmrJobs.mockReturnValue({
@@ -155,40 +140,70 @@ describe("PdfImportScreen — Phase 2: 1-tap PDF import", () => {
         {
           title: "Score",
           status: "processing" as const,
-          pageRange: [1, 12] as [number, number],
-          progressPercent: 45,
+          pageRange: null,
+          progressPercent: 5,
         },
       ],
     });
 
-    const { getByTestId } = render(<PdfImportScreen />);
-    expect(getByTestId("loading-overlay")).toBeTruthy();
+    render(<PdfImportScreen />);
+    expect(mockGoBack).toHaveBeenCalled();
   });
 
-  it("4. done state renders View Library button", () => {
+  it("4. submitAll receives lifecycle callbacks (queued/failed/progress)", () => {
+    const submitAll = jest.fn();
     mockUsePdfImport.mockReturnValue({
       ...idlePdfHook,
-      state: "idle",
+      state: "uploading",
+      pdfB64: "base64data",
+      sectionTitles: ["Score"],
     });
     mockUseMultiOmrJobs.mockReturnValue({
       ...idleMultiJobsHook,
-      overallStatus: "done",
-      jobs: [
-        {
-          title: "Score",
-          status: "done" as const,
-          pageRange: [1, 12] as [number, number],
-          progressPercent: 100,
-          musicXmlUri: "file:///x.xml",
-        },
-      ],
+      overallStatus: "idle",
+      submitAll,
     });
 
-    const { getByText } = render(<PdfImportScreen />);
-    expect(getByText(/View Library/i)).toBeTruthy();
+    render(<PdfImportScreen />);
+
+    expect(submitAll).toHaveBeenCalledTimes(1);
+    const lifecycle = submitAll.mock.calls[0][3];
+    expect(typeof lifecycle.onJobQueued).toBe("function");
+    expect(typeof lifecycle.onJobFailed).toBe("function");
+    expect(typeof lifecycle.onJobProgress).toBe("function");
   });
 
-  it("5. error state renders Retry Upload button for upload errors", () => {
+  it("5. onJobProgress patches the persisted sheet's omrProgress", async () => {
+    const patchSheet = jest.fn().mockResolvedValue(undefined);
+    const addSheet = jest.fn().mockResolvedValue({ id: "sheet-1" });
+    mockUsePractice.mockReturnValue({ addSheet, patchSheet });
+
+    const submitAll = jest.fn();
+    mockUsePdfImport.mockReturnValue({
+      ...idlePdfHook,
+      state: "uploading",
+      pdfB64: "base64data",
+      sectionTitles: ["Score"],
+    });
+    mockUseMultiOmrJobs.mockReturnValue({
+      ...idleMultiJobsHook,
+      overallStatus: "idle",
+      submitAll,
+    });
+
+    render(<PdfImportScreen />);
+
+    const lifecycle = submitAll.mock.calls[0][3];
+    await lifecycle.onJobQueued(0, "job-1");
+    expect(addSheet).toHaveBeenCalledWith(
+      expect.objectContaining({ omrStatus: "processing", omrJobId: "job-1", omrProgress: 0 }),
+    );
+
+    lifecycle.onJobProgress(0, 42);
+    expect(patchSheet).toHaveBeenCalledWith("sheet-1", { omrProgress: 42 });
+  });
+
+  it("6. error state renders Retry Upload button for upload errors", () => {
     mockUsePdfImport.mockReturnValue({
       ...idlePdfHook,
       state: "error",
@@ -203,73 +218,7 @@ describe("PdfImportScreen — Phase 2: 1-tap PDF import", () => {
     expect(getByText(/Retry Upload/i)).toBeTruthy();
   });
 
-  it("6. does NOT render TextInput for naming", () => {
-    mockUsePdfImport.mockReturnValue({
-      ...idlePdfHook,
-      state: "uploading",
-      sectionTitles: ["Score"],
-    });
-
-    const { UNSAFE_queryAllByType } = render(<PdfImportScreen />);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { TextInput } = require("react-native");
-    expect(UNSAFE_queryAllByType(TextInput)).toHaveLength(0);
-  });
-
-  it("7. does NOT render PageThumbnailGrid", () => {
-    mockUsePdfImport.mockReturnValue({
-      ...idlePdfHook,
-      state: "uploading",
-    });
-
-    const { queryByTestId } = render(<PdfImportScreen />);
-    expect(queryByTestId("page-thumbnail")).toBeNull();
-  });
-});
-
-describe("PdfImportScreen — Phase 3: Error handling & race conditions", () => {
-  it("rapid double-tap: prevents double submission with isSubmitting guard", () => {
-    const submitAll = jest.fn();
-    mockUsePdfImport.mockReturnValue({
-      ...idlePdfHook,
-      state: "uploading",
-      pdfB64: "base64data",
-      sectionTitles: ["Score"],
-    });
-    mockUseMultiOmrJobs.mockReturnValue({
-      ...idleMultiJobsHook,
-      overallStatus: "idle",
-      isSubmitting: false,
-      submitAll,
-    });
-
-    render(<PdfImportScreen />);
-    // Test verifies that the hook exports isSubmitting flag
-    expect(submitAll).toHaveBeenCalled();
-  });
-
-  it("long-upload-timeout: displays timeout warning after 30s", async () => {
-    jest.useFakeTimers();
-    mockUsePdfImport.mockReturnValue({
-      ...idlePdfHook,
-      state: "uploading",
-      fileName: "test.pdf",
-    });
-    mockUseMultiOmrJobs.mockReturnValue({
-      ...idleMultiJobsHook,
-      overallStatus: "uploading",
-    });
-
-    render(<PdfImportScreen />);
-
-    // Advance time past 30s timeout
-    jest.advanceTimersByTime(31000);
-
-    // Verify timeout handling (would check for timeout warning display)
-    jest.useRealTimers();
-  });
-
-  it("download-failure: distinguishes network vs file-write errors in error display", () => {
+  it("7. OMR submit failure shows the error message", () => {
     mockUsePdfImport.mockReturnValue({
       ...idlePdfHook,
       state: "idle",
@@ -282,7 +231,7 @@ describe("PdfImportScreen — Phase 3: Error handling & race conditions", () => 
         {
           title: "Score",
           status: "failed" as const,
-          pageRange: [1, 12] as [number, number],
+          pageRange: null,
           progressPercent: 50,
           error: "Network: Connection timeout",
         },
@@ -290,33 +239,6 @@ describe("PdfImportScreen — Phase 3: Error handling & race conditions", () => 
     });
 
     const { getByText } = render(<PdfImportScreen />);
-    // Should display the error message from multiOmrJobs
     expect(getByText(/Network: Connection timeout/i)).toBeTruthy();
-  });
-
-  it("optimistic-sheet-add: sheet only added when overallStatus is done with musicXmlUri", () => {
-    const addSheet = jest.fn().mockResolvedValue({ id: "s1" });
-    mockUsePdfImport.mockReturnValue({
-      ...idlePdfHook,
-      state: "idle",
-    });
-    mockUseMultiOmrJobs.mockReturnValue({
-      ...idleMultiJobsHook,
-      overallStatus: "done",
-      jobs: [
-        {
-          title: "Score",
-          status: "done" as const,
-          pageRange: [1, 12] as [number, number],
-          progressPercent: 100,
-          musicXmlUri: "file:///confirmed.musicxml",
-        },
-      ],
-    });
-    mockUsePractice.mockReturnValue({ addSheet });
-
-    const { getByText } = render(<PdfImportScreen />);
-    // Should render success view only when done
-    expect(getByText(/View Library/i)).toBeTruthy();
   });
 });

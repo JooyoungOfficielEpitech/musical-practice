@@ -202,7 +202,9 @@ function PracticeBrowseViewComponent({
         ) : sheet.omrStatus === "processing" ? (
           <View style={styles.emptyState}>
             <Ionicons name="hourglass-outline" size={48} color={colors.primary} />
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>Recognizing music…</Text>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>
+              {`Recognizing music… ${sheet.omrProgress ?? 0}%`}
+            </Text>
             <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
               This score is still being processed. It updates here automatically — feel free to come back in a few minutes.
             </Text>

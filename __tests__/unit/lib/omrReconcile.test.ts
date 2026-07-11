@@ -37,7 +37,7 @@ beforeEach(() => {
 describe("reconcileOmrSheet", () => {
   it("returns a ready patch (with downloaded uri) when the job is done", async () => {
     mockSingle.mockResolvedValue({
-      data: { status: "done", result_storage_path: "user/job-1.musicxml", error: null },
+      data: { status: "done", progress_percent: 100, result_storage_path: "user/job-1.musicxml", error: null },
       error: null,
     });
     mockDownloadResult.mockResolvedValue("file:///musicxml/sheet-1.musicxml");
@@ -49,12 +49,13 @@ describe("reconcileOmrSheet", () => {
       musicXmlUri: "file:///musicxml/sheet-1.musicxml",
       resultStoragePath: "user/job-1.musicxml",
       omrStatus: "ready",
+      omrProgress: 100,
     });
   });
 
   it("returns a failed patch when the job failed", async () => {
     mockSingle.mockResolvedValue({
-      data: { status: "failed", result_storage_path: null, error: "boom" },
+      data: { status: "failed", progress_percent: 10, result_storage_path: null, error: "boom" },
       error: null,
     });
 
@@ -63,13 +64,24 @@ describe("reconcileOmrSheet", () => {
     expect(patch).toEqual({ omrStatus: "failed" });
   });
 
-  it("returns null while the job is still running", async () => {
+  it("returns a progress patch while running when the percent moved", async () => {
     mockSingle.mockResolvedValue({
-      data: { status: "processing", result_storage_path: null, error: null },
+      data: { status: "processing", progress_percent: 37, result_storage_path: null, error: null },
       error: null,
     });
 
-    expect(await reconcileOmrSheet(baseSheet)).toBeNull();
+    expect(await reconcileOmrSheet({ ...baseSheet, omrProgress: 20 })).toEqual({
+      omrProgress: 37,
+    });
+  });
+
+  it("returns null while running when the percent is unchanged", async () => {
+    mockSingle.mockResolvedValue({
+      data: { status: "processing", progress_percent: 37, result_storage_path: null, error: null },
+      error: null,
+    });
+
+    expect(await reconcileOmrSheet({ ...baseSheet, omrProgress: 37 })).toBeNull();
   });
 
   it("returns null when the sheet has no job id or is not processing", async () => {

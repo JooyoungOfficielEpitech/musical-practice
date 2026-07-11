@@ -11,47 +11,6 @@ import { hapticFeedback } from "@/lib/hapticFeedback";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { Fonts, ClayShadow, Spacing, BorderRadius } from "@/constants/theme";
 
-interface SuccessViewProps {
-  onViewLibrary: () => void;
-}
-
-export function SuccessView({ onViewLibrary }: SuccessViewProps): React.JSX.Element {
-  const { colors } = useTheme();
-
-  return (
-    <SafeAreaView
-      style={[styles.center, { backgroundColor: colors.backgroundDefault }]}
-      edges={["top", "bottom"]}
-    >
-      <Text style={[styles.successText, { color: colors.text }]}>
-        All sections ready!
-      </Text>
-      <Text
-        style={[
-          styles.successSubtext,
-          { color: colors.textSecondary },
-        ]}
-      >
-        Your scores are now in the Library
-      </Text>
-      <Pressable
-        style={[styles.primaryButton, { backgroundColor: colors.primary }]}
-        onPress={() => {
-          void hapticFeedback.triggerMedium();
-          onViewLibrary();
-        }}
-        accessibilityLabel="View library with imported scores"
-        accessibilityRole="button"
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <Text style={[styles.primaryButtonText, { color: colors.buttonText }]}>
-          View Library
-        </Text>
-      </Pressable>
-    </SafeAreaView>
-  );
-}
-
 interface ErrorViewProps {
   errorMsg: string;
   isUploadError: boolean;
@@ -151,8 +110,6 @@ export function IdleView({ onGoBack }: IdleViewProps): React.JSX.Element {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  successText: { fontSize: 22, fontFamily: Fonts.heading, fontWeight: "700", marginBottom: 8 },
-  successSubtext: { fontSize: 14, marginBottom: 32, textAlign: "center" },
   errorText: { fontSize: 16, fontFamily: Fonts.body, marginBottom: 12, textAlign: "center" },
   errorContextText: { fontSize: 14, marginBottom: 24, textAlign: "center" },
   primaryButton: {

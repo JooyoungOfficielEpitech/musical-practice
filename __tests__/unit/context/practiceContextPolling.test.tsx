@@ -74,12 +74,12 @@ describe("PracticeContext pending-job polling", () => {
     expect(mockReconcile).toHaveBeenCalledTimes(1);
 
     await act(async () => {
-      jest.advanceTimersByTime(10_000);
+      jest.advanceTimersByTime(5_000);
     });
     expect(mockReconcile).toHaveBeenCalledTimes(2);
 
     await act(async () => {
-      jest.advanceTimersByTime(10_000);
+      jest.advanceTimersByTime(5_000);
     });
     expect(mockReconcile).toHaveBeenCalledTimes(3);
   });

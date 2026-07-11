@@ -7,6 +7,7 @@ import { hapticFeedback } from "@/lib/hapticFeedback";
 import { Spacing, BorderRadius, Typography, Shadows } from "@/constants/theme";
 import type { SheetMusic } from "@/lib/storage";
 import { omrStatusLabel, formatAccuracy, formatImportDate } from "@/lib/practiceCardUtils";
+import { ProgressTrack } from "@/components/ProgressTrack";
 
 /** Sheet-music styled stand-in shown until the score's preview image arrives. */
 function ScoreCoverPlaceholder({ height }: { height: number }) {
@@ -120,12 +121,21 @@ function SheetCardComponent({ sheet, onPress, onFavorite, compact, lastAccuracy 
               : omr.variant === "processing"
               ? colors.accent
               : colors.error;
+          const label =
+            omr.variant === "processing"
+              ? `Scanning ${sheet.omrProgress ?? 0}%`
+              : omr.label;
           return (
             <View testID="omr-badge" style={[styles.omrBadge, { backgroundColor: bgColor }]} accessible={false}>
-              <Text style={[styles.omrBadgeText, { color: colors.buttonText }]}>{omr.label}</Text>
+              <Text style={[styles.omrBadgeText, { color: colors.buttonText }]}>{label}</Text>
             </View>
           );
         })()}
+        {sheet.omrStatus === "processing" && (
+          <View style={styles.progressOverlay} accessible={false}>
+            <ProgressTrack percent={sheet.omrProgress ?? 0} height={3} />
+          </View>
+        )}
       </View>
       <View style={styles.info}>
         <View style={styles.textRow}>
@@ -219,4 +229,5 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   omrBadgeText: { ...Typography.label, fontSize: 10, fontFamily: "Nunito_700Bold", fontWeight: "700" },
+  progressOverlay: { position: "absolute", bottom: 0, left: 0, right: 0 },
 });

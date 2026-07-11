@@ -118,7 +118,7 @@ describe("SheetCard — M5 badges", () => {
     const sheet = makeSheet({ omrStatus: "processing" });
     const { getByTestId, getByText } = render(<SheetCard sheet={sheet} onPress={jest.fn()} />);
     expect(getByTestId("omr-badge")).toBeTruthy();
-    expect(getByText("Scanning\u2026")).toBeTruthy();
+    expect(getByText("Scanning 0%")).toBeTruthy();
   });
 
   it('shows OMR badge with "Failed" for omrStatus "failed"', () => {
@@ -147,5 +147,37 @@ describe("SheetCard — M5 badges", () => {
     const sheet = makeSheet();
     const { queryByTestId } = render(<SheetCard sheet={sheet} onPress={jest.fn()} />);
     expect(queryByTestId("accuracy-chip")).toBeNull();
+  });
+});
+
+describe("SheetCard — processing progress", () => {
+  const onPress = jest.fn();
+
+  it("shows the live percent in the scanning badge", () => {
+    const sheet = makeSheet({ omrStatus: "processing", omrProgress: 42, imageUris: [] });
+    const { getByText } = render(<SheetCard sheet={sheet} onPress={onPress} />);
+
+    expect(getByText("Scanning 42%")).toBeTruthy();
+  });
+
+  it("defaults to 0% when no progress has arrived yet", () => {
+    const sheet = makeSheet({ omrStatus: "processing", imageUris: [] });
+    const { getByText } = render(<SheetCard sheet={sheet} onPress={onPress} />);
+
+    expect(getByText("Scanning 0%")).toBeTruthy();
+  });
+
+  it("renders a progress track while processing", () => {
+    const sheet = makeSheet({ omrStatus: "processing", omrProgress: 42, imageUris: [] });
+    const { getByTestId } = render(<SheetCard sheet={sheet} onPress={onPress} />);
+
+    expect(getByTestId("progress-track")).toBeTruthy();
+  });
+
+  it("hides the progress track when ready", () => {
+    const sheet = makeSheet({ omrStatus: "ready" });
+    const { queryByTestId } = render(<SheetCard sheet={sheet} onPress={onPress} />);
+
+    expect(queryByTestId("progress-track")).toBeNull();
   });
 });
