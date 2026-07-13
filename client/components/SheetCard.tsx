@@ -8,6 +8,7 @@ import { Spacing, BorderRadius, Typography, Shadows } from "@/constants/theme";
 import type { SheetMusic } from "@/lib/storage";
 import { omrStatusLabel, formatAccuracy, formatImportDate } from "@/lib/practiceCardUtils";
 import { ProgressTrack } from "@/components/ProgressTrack";
+import { useSmoothProgress } from "@/hooks/useSmoothProgress";
 
 /** Sheet-music styled stand-in shown until the score's preview image arrives. */
 function ScoreCoverPlaceholder({ height }: { height: number }) {
@@ -39,6 +40,8 @@ interface SheetCardProps {
 
 function SheetCardComponent({ sheet, onPress, onFavorite, compact, lastAccuracy }: SheetCardProps) {
   const { colors } = useTheme();
+  const isProcessing = sheet.omrStatus === "processing";
+  const smoothProgress = useSmoothProgress(sheet.omrProgress ?? 0, isProcessing);
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
   const imageHeight = isTablet ? 200 : 140;
@@ -123,7 +126,7 @@ function SheetCardComponent({ sheet, onPress, onFavorite, compact, lastAccuracy 
               : colors.error;
           const label =
             omr.variant === "processing"
-              ? `Scanning ${sheet.omrProgress ?? 0}%`
+              ? `Scanning ${smoothProgress}%`
               : omr.label;
           return (
             <View testID="omr-badge" style={[styles.omrBadge, { backgroundColor: bgColor }]} accessible={false}>
@@ -131,9 +134,9 @@ function SheetCardComponent({ sheet, onPress, onFavorite, compact, lastAccuracy 
             </View>
           );
         })()}
-        {sheet.omrStatus === "processing" && (
+        {isProcessing && (
           <View style={styles.progressOverlay} accessible={false}>
-            <ProgressTrack percent={sheet.omrProgress ?? 0} height={3} />
+            <ProgressTrack percent={smoothProgress} height={3} />
           </View>
         )}
       </View>

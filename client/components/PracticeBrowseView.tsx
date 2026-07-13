@@ -11,6 +11,7 @@ import { PartCheckSheet } from "@/components/PartCheckSheet";
 import { ScoreFullscreenModal } from "@/components/ScoreFullscreenModal";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
+import { useSmoothProgress } from "@/hooks/useSmoothProgress";
 import { Spacing, BorderRadius, Typography, Fonts } from "@/constants/theme";
 import type { SheetMusic } from "@/lib/storage";
 import type { PracticeDetailState } from "@/hooks/usePracticeDetail";
@@ -35,6 +36,10 @@ function PracticeBrowseViewComponent({
   const [deleteBtnFocused, setDeleteBtnFocused] = useState(false);
 
   const heroHeight = Math.round(Math.min(420, Math.max(240, screenHeight * 0.42)));
+  const smoothProgress = useSmoothProgress(
+    sheet.omrProgress ?? 0,
+    sheet.omrStatus === "processing",
+  );
 
   const {
     setShowEdit, musicXmlContent, musicXmlLoading,
@@ -203,7 +208,7 @@ function PracticeBrowseViewComponent({
           <View style={styles.emptyState}>
             <Ionicons name="hourglass-outline" size={48} color={colors.primary} />
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              {`Recognizing music… ${sheet.omrProgress ?? 0}%`}
+              {`Recognizing music… ${smoothProgress}%`}
             </Text>
             <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
               This score is still being processed. It updates here automatically — feel free to come back in a few minutes.
