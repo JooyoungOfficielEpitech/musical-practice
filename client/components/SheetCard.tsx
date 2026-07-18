@@ -98,7 +98,7 @@ function SheetCardComponent({ sheet, onPress, onFavorite, compact, lastAccuracy 
     >
       <View
         accessible={true}
-        accessibilityLabel={`${sheet.title}, ${sheet.imageUris.length} page${sheet.imageUris.length !== 1 ? "s" : ""}${sheet.audioUri ? ", audio available" : ""}${(() => { const omr = omrStatusLabel(sheet.omrStatus ?? "none"); return omr ? `, ${omr.label}` : ""; })()}`}
+        accessibilityLabel={`${sheet.title}${(() => { const omr = omrStatusLabel(sheet.omrStatus ?? "none"); if (!omr) return ""; return omr.variant === "processing" ? `, scanning ${smoothProgress} percent` : `, ${omr.label}`; })()}`}
       >
         {sheet.imageUris[0] ? (
           <Image source={{ uri: sheet.imageUris[0] }} style={[styles.image, { backgroundColor: colors.backgroundSecondary, height: imageHeight }]} contentFit="cover" contentPosition="top" />

@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { hapticFeedback } from "@/lib/hapticFeedback";
 import { PartCheckCard } from "@/components/PartCheckCard";
-import { Spacing, BorderRadius, ClayShadow, Fonts, Colors } from "@/constants/theme";
+import { Spacing, BorderRadius, ClayShadow, Fonts } from "@/constants/theme";
 import type { PartInfo } from "@/types/music";
 
 export interface PartCheckSheetProps {
@@ -31,11 +31,15 @@ export function PartCheckSheet({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onDismiss} accessibilityViewIsModal>
-      <Pressable style={styles.backdrop} onPress={onDismiss} accessibilityLabel="Dismiss" />
+      <Pressable
+        style={[styles.backdrop, { backgroundColor: colors.overlay }]}
+        onPress={onDismiss}
+        accessibilityLabel="Dismiss"
+      />
       <SafeAreaView testID="part-check-sheet" style={[styles.sheet, { backgroundColor: colors.surface }]} edges={["bottom"]}>
         <View style={styles.header}>
           <View style={[styles.handle, { backgroundColor: colors.borderLight }]} />
-          <Pressable onPress={onDismiss} accessibilityLabel="Close parts" accessibilityRole="button" hitSlop={8} style={styles.closeBtn}>
+          <Pressable onPress={onDismiss} accessibilityLabel="Close parts" accessibilityRole="button" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.closeBtn}>
             <Ionicons name="close" size={22} color={colors.text} />
           </Pressable>
         </View>
@@ -61,7 +65,7 @@ export function PartCheckSheet({
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: Colors.light.ripple },
+  backdrop: { flex: 1 },
   sheet: {
     borderTopLeftRadius: BorderRadius.lg,
     borderTopRightRadius: BorderRadius.lg,

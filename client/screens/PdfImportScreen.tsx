@@ -15,13 +15,27 @@ import { ErrorView, IdleView } from "@/components/PdfImportStateViews";
  */
 export default function PdfImportScreen() {
   const navigation = useNavigation();
-  const { addSheet, patchSheet } = usePractice();
+  const { addSheet, patchSheet, patchSheetLocal } = usePractice();
   const [showUploadTimeout, setShowUploadTimeout] = useState(false);
   // Local sheet IDs per section index — sheets are persisted at queue time.
   const sheetIdsRef = useRef<Record<number, string>>({});
 
   const { state, sectionTitles, pdfB64, fileName, error, startImport, reset: resetPdf } = usePdfImport();
   const multiOmrJobs = useMultiOmrJobs();
+
+  // If the user backs out BEFORE jobs are queued (cancel mid-upload), tear the
+  // hook down so no subscriptions/polls outlive an import that never started.
+  // Once running, closures intentionally survive unmount to finish in background.
+  const multiOmrJobsRef = useRef(multiOmrJobs);
+  multiOmrJobsRef.current = multiOmrJobs;
+  const jobsStartedRef = useRef(false);
+  useEffect(() => {
+    return () => {
+      if (!jobsStartedRef.current) {
+        multiOmrJobsRef.current.reset();
+      }
+    };
+  }, []);
 
   // Auto-start on mount
   useEffect(() => {
@@ -42,6 +56,7 @@ export default function PdfImportScreen() {
   const isRunning = multiOmrJobs.overallStatus === "running";
   useEffect(() => {
     if (isRunning) {
+      jobsStartedRef.current = true;
       void hapticFeedback.triggerMedium();
       AccessibilityInfo.announceForAccessibility(
         "Recognition started. Progress is shown on the score card in your library.",
@@ -112,10 +127,12 @@ export default function PdfImportScreen() {
     (index: number, percent: number) => {
       const sheetId = sheetIdsRef.current[index];
       if (sheetId) {
-        void patchSheet(sheetId, { omrProgress: percent });
+        // Ephemeral — in-memory only; the reconcile poll re-derives it after
+        // a relaunch, so it is not worth an AsyncStorage write per event.
+        patchSheetLocal(sheetId, { omrProgress: percent });
       }
     },
-    [patchSheet],
+    [patchSheetLocal],
   );
 
   const handleStartProcessing = useCallback(() => {

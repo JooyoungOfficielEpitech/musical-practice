@@ -26,7 +26,7 @@ export function EmptyState({ icon, title, message, actionLabel, onAction }: Empt
       {actionLabel && onAction && (
         <Pressable
           onPress={() => {
-            void void hapticFeedback.triggerLight();
+            void hapticFeedback.triggerLight();
             onAction();
           }}
           accessibilityLabel={actionLabel}

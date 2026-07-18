@@ -17,10 +17,10 @@ export function checkAllSettled(jobs: SectionJobState[]): {
 }
 
 /**
- * Backoff calculation for polling (simple: fixed interval for now).
- * Could be extended to exponential backoff later.
+ * Fallback poll cadence when Realtime misses events. Realtime is the primary
+ * signal — 2.5s keeps catch-up latency low without hammering PostgREST.
  */
-export const POLL_INTERVAL_MS = 1000;
+export const POLL_INTERVAL_MS = 2500;
 
 /**
  * Determine if Realtime has given us a fatal condition.

@@ -57,6 +57,19 @@ const KEYS = {
   SETTINGS: "@musicalpractice/settings",
 };
 
+// All sheet mutations are read-modify-write over one AsyncStorage key.
+// Concurrent callers (realtime progress events, the reconcile poll, user
+// edits) would otherwise read the same snapshot and the last writer would
+// silently drop the other's update — so every mutation runs through this
+// serial queue.
+let sheetWriteQueue: Promise<unknown> = Promise.resolve();
+
+function enqueueSheetWrite<T>(operation: () => Promise<T>): Promise<T> {
+  const run = sheetWriteQueue.then(operation, operation);
+  sheetWriteQueue = run.catch(() => {});
+  return run;
+}
+
 export async function getSheets(): Promise<SheetMusic[]> {
   try {
     const data = await AsyncStorage.getItem(KEYS.SHEETS);
@@ -68,59 +81,67 @@ export async function getSheets(): Promise<SheetMusic[]> {
   }
 }
 
-export async function saveSheet(sheet: SheetMusic): Promise<void> {
-  try {
-    const sheets = await getSheets();
-    sheets.unshift(sheet);
-    await AsyncStorage.setItem(KEYS.SHEETS, JSON.stringify(sheets));
-  } catch (e) {
-    console.error("Failed to save sheet:", e);
-  }
+export function saveSheet(sheet: SheetMusic): Promise<void> {
+  return enqueueSheetWrite(async () => {
+    try {
+      const sheets = await getSheets();
+      sheets.unshift(sheet);
+      await AsyncStorage.setItem(KEYS.SHEETS, JSON.stringify(sheets));
+    } catch (e) {
+      console.error("Failed to save sheet:", e);
+    }
+  });
 }
 
-export async function updateSheet(updated: SheetMusic): Promise<void> {
-  try {
-    const sheets = await getSheets();
-    const idx = sheets.findIndex((s) => s.id === updated.id);
-    if (idx !== -1) {
-      sheets[idx] = updated;
-      await AsyncStorage.setItem(KEYS.SHEETS, JSON.stringify(sheets));
+export function updateSheet(updated: SheetMusic): Promise<void> {
+  return enqueueSheetWrite(async () => {
+    try {
+      const sheets = await getSheets();
+      const idx = sheets.findIndex((s) => s.id === updated.id);
+      if (idx !== -1) {
+        sheets[idx] = updated;
+        await AsyncStorage.setItem(KEYS.SHEETS, JSON.stringify(sheets));
+      }
+    } catch (e) {
+      console.error("Failed to update sheet:", e);
     }
-  } catch (e) {
-    console.error("Failed to update sheet:", e);
-  }
+  });
 }
 
 /**
  * Merge a partial patch into one stored sheet.
  * Returns the patched sheet, or null when the id is unknown.
  */
-export async function patchSheet(
+export function patchSheet(
   id: string,
   patch: Partial<SheetMusic>,
 ): Promise<SheetMusic | null> {
-  try {
-    const sheets = await getSheets();
-    const idx = sheets.findIndex((s) => s.id === id);
-    if (idx === -1) return null;
-    const patched = { ...sheets[idx], ...patch };
-    const next = sheets.map((s, i) => (i === idx ? patched : s));
-    await AsyncStorage.setItem(KEYS.SHEETS, JSON.stringify(next));
-    return patched;
-  } catch (e) {
-    console.error("Failed to patch sheet:", e);
-    return null;
-  }
+  return enqueueSheetWrite(async () => {
+    try {
+      const sheets = await getSheets();
+      const idx = sheets.findIndex((s) => s.id === id);
+      if (idx === -1) return null;
+      const patched = { ...sheets[idx], ...patch };
+      const next = sheets.map((s, i) => (i === idx ? patched : s));
+      await AsyncStorage.setItem(KEYS.SHEETS, JSON.stringify(next));
+      return patched;
+    } catch (e) {
+      console.error("Failed to patch sheet:", e);
+      return null;
+    }
+  });
 }
 
-export async function deleteSheet(id: string): Promise<void> {
-  try {
-    const sheets = await getSheets();
-    const filtered = sheets.filter((s) => s.id !== id);
-    await AsyncStorage.setItem(KEYS.SHEETS, JSON.stringify(filtered));
-  } catch (e) {
-    console.error("Failed to delete sheet:", e);
-  }
+export function deleteSheet(id: string): Promise<void> {
+  return enqueueSheetWrite(async () => {
+    try {
+      const sheets = await getSheets();
+      const filtered = sheets.filter((s) => s.id !== id);
+      await AsyncStorage.setItem(KEYS.SHEETS, JSON.stringify(filtered));
+    } catch (e) {
+      console.error("Failed to delete sheet:", e);
+    }
+  });
 }
 
 export async function getSessions(): Promise<PracticeSession[]> {

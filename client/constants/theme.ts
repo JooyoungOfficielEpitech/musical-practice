@@ -6,7 +6,8 @@ import { Platform } from "react-native";
 export const Colors = {
   light: {
     text: "#1C1917",
-    textSecondary: "#78716C",
+    // 4.9:1 on the F4F1EC secondary surface — #78716C fell just under AA (4.1).
+    textSecondary: "#6B6560",
     buttonText: "#FAFAF9",
     tabIconDefault: "#A8A29E",
     tabIconSelected: "#1C1917",

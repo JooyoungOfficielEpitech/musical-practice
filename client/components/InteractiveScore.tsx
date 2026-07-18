@@ -27,6 +27,8 @@ type WebViewIncoming =
   | { type: "debug"; tbl0?: number; tbl1?: number; tbl10?: number; tblN?: number; len?: number; bpm?: number; msg?: string };
 
 function buildHtml(isDark: boolean): string {
+  // Initial colors only — later theme changes arrive via a setTheme message so
+  // the WebView never reloads (a reload re-renders OSMD and resets the cursor).
   const cursorColor = isDark ? "#F59E0B" : "#D97706";
   const bgColor = isDark ? "#1A1815" : "#FFFFFF";
   const textColor = isDark ? "#FAFAF9" : "#1C1917";
@@ -48,7 +50,7 @@ function buildHtml(isDark: boolean): string {
   <div id="error"></div>
   <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.8.6/build/opensheetmusicdisplay.min.js"><\/script>
   <script>
-    var osmd=null,timeTable=[],currentStep=0;
+    var osmd=null,timeTable=[],currentStep=0,cursorColor='${cursorColor}';
     function sendMsg(m){window.ReactNativeWebView.postMessage(JSON.stringify(m));}
     console.log('[InteractiveScore:WebView] JS init ok, waiting for loadXml');
     function showErr(e){document.getElementById('error').style.display='block';document.getElementById('error').textContent=e;sendMsg({type:'error',message:e});}
@@ -91,15 +93,23 @@ function buildHtml(isDark: boolean): string {
       while(!osmd.cursor.Iterator.EndReached){var ts=osmd.cursor.Iterator.currentTimeStamp;timeTable.push(((ts&&ts.realValue)||0)*secPerWholeNote*1000);osmd.cursor.next();}
       osmd.cursor.reset();
     }
-    function stepCursor(step){if(!osmd||!osmd.cursor)return;if(step<currentStep){osmd.cursor.reset();currentStep=0;}while(currentStep<step&&!osmd.cursor.Iterator.EndReached){osmd.cursor.next();currentStep++;}osmd.cursor.show();var el=osmd.cursor.cursorElement;if(el){el.style.backgroundColor='rgba(37,99,235,0.12)';el.style.borderLeft='4px solid ${cursorColor}';el.style.boxShadow='0 0 8px rgba(37,99,235,0.8)';el.style.opacity='1';el.scrollIntoView({behavior:'smooth',block:'nearest'});}}
+    function stepCursor(step){if(!osmd||!osmd.cursor)return;if(step<currentStep){osmd.cursor.reset();currentStep=0;}while(currentStep<step&&!osmd.cursor.Iterator.EndReached){osmd.cursor.next();currentStep++;}osmd.cursor.show();var el=osmd.cursor.cursorElement;if(el){el.style.backgroundColor='rgba(37,99,235,0.12)';el.style.borderLeft='4px solid '+cursorColor;el.style.boxShadow='0 0 8px rgba(37,99,235,0.8)';el.style.opacity='1';el.scrollIntoView({behavior:'smooth',block:'nearest'});}}
     function seekToMs(ms){if(!osmd||!osmd.cursor||timeTable.length===0)return;var lo=0,hi=timeTable.length-1,step=0;while(lo<=hi){var mid=(lo+hi)>>1;if(timeTable[mid]<=ms){step=mid;lo=mid+1;}else{hi=mid-1;}}if(step===currentStep)return;sendMsg({type:'debug',msg:'seek ms='+ms.toFixed(0)+' step='+step+' tbl='+timeTable[step].toFixed(0)+' prev='+currentStep});stepCursor(step);}
     function clickInit(){var sc=document.getElementById('score');if(!sc)return;sc.addEventListener('click',function(e){if(!osmd||!osmd.cursor)return;var cx=e.pageX,cy=e.pageY,best=-1,dist=Infinity;osmd.cursor.reset();var i=0;while(!osmd.cursor.Iterator.EndReached){var el=osmd.cursor.cursorElement;if(el){var r=el.getBoundingClientRect(),cX=r.left+r.width/2+window.scrollX,cY=r.top+r.height/2+window.scrollY,d=Math.sqrt(Math.pow(cx-cX,2)+Math.pow(cy-cY,2));if(d<dist){dist=d;best=i;}}osmd.cursor.next();i++;}if(best>=0&&dist<80){stepCursor(best);sendMsg({type:'notePress',noteIndex:best});}});}
     function loadXml(xml){currentStep=0;try{if(!osmd)osmd=new opensheetmusicdisplay.OpenSheetMusicDisplay('score',{autoResize:true,backend:'svg',drawTitle:false,drawComposer:false,drawCredits:false,drawPartNames:false,drawPartAbbreviations:false,zoom:0.65});osmd.load(xml).then(function(){osmd.render();osmd.cursor.show();stepCursor(0);buildTimeTable();clickInit();sendMsg({type:'ready'});sendMsg({type:'debug',tbl0:timeTable[0],tbl1:timeTable[1],tbl10:timeTable[10],tblN:timeTable[timeTable.length-1],len:timeTable.length,bpm:(osmd.Sheet&&osmd.Sheet.DefaultStartTempoInBpm)||120});}).catch(function(e){showErr('Render failed: '+e.message);});}catch(e){showErr('Load failed: '+e.message);}}
-    function setVisibleParts(indices){if(!osmd||!osmd.Sheet)return;var inst=osmd.Sheet.Instruments;for(var i=0;i<inst.length;i++){inst[i].Visible=indices.indexOf(i)>=0;}osmd.render();}
+    function setVisibleParts(indices){if(!osmd||!osmd.Sheet)return;try{var inst=osmd.Sheet.Instruments;for(var i=0;i<inst.length;i++){inst[i].Visible=indices.indexOf(i)>=0;}osmd.render();}catch(e){sendMsg({type:'debug',msg:'setVisibleParts failed: '+e.message});}}
+    function setTheme(dark){
+      cursorColor=dark?'#F59E0B':'#D97706';
+      document.body.style.background=dark?'#1A1815':'#FFFFFF';
+      document.body.style.color=dark?'#FAFAF9':'#1C1917';
+      var el=osmd&&osmd.cursor&&osmd.cursor.cursorElement;
+      if(el){el.style.borderLeft='4px solid '+cursorColor;}
+    }
     function handleMsg(m){
       if(m.type==='loadXml'){loadXml(m.xml);}
       else if(m.type==='setPositionMs'){seekToMs(m.positionMs);}
       else if(m.type==='setVisibleParts'){setVisibleParts(m.visibleIndices);}
+      else if(m.type==='setTheme'){setTheme(!!m.isDark);}
     }
     window.addEventListener('message',function(e){try{handleMsg(JSON.parse(e.data));}catch(e){}});
     document.addEventListener('message',function(e){try{handleMsg(JSON.parse(e.data));}catch(e){}});
@@ -122,7 +132,12 @@ export const InteractiveScore = memo(function InteractiveScore({
   const readyRef = useRef(false);
   const handleWebViewLoadRef = useRef<() => void>(() => {});
 
-  const html = useMemo(() => buildHtml(isDark), [isDark]);
+  // Build the HTML ONCE with the theme at mount. A source change would reload
+  // the WebView (full OSMD re-render, cursor reset), so later theme toggles go
+  // through a setTheme message instead.
+  const initialDarkRef = useRef(isDark);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const html = useMemo(() => buildHtml(initialDarkRef.current), []);
 
   const sendToWebView = useCallback(
     (message: Record<string, unknown>) => {
@@ -142,6 +157,10 @@ export const InteractiveScore = memo(function InteractiveScore({
     handleWebViewLoadRef.current = handleWebViewLoad;
   }, [handleWebViewLoad]);
 
+  // Latest theme for the ready-handler — declared before handleMessage closes over it.
+  const isDarkRef = useRef(isDark);
+  isDarkRef.current = isDark;
+
   const handleMessage = useCallback(
     (event: WebViewMessageEvent) => {
       try {
@@ -152,6 +171,8 @@ export const InteractiveScore = memo(function InteractiveScore({
             console.log("[InteractiveScore] WebView ready — OSMD rendered");
             setLoading(false);
             setError(null);
+            // Theme may have flipped while OSMD was loading — sync it now.
+            sendToWebView({ type: "setTheme", isDark: isDarkRef.current });
             onReady?.();
             break;
           case "notePress":
@@ -169,7 +190,7 @@ export const InteractiveScore = memo(function InteractiveScore({
         // ignore malformed messages
       }
     },
-    [onReady, onNotePress],
+    [onReady, onNotePress, sendToWebView],
   );
 
   // Send cursor position to WebView whenever positionMs changes
@@ -187,6 +208,12 @@ export const InteractiveScore = memo(function InteractiveScore({
     if (visiblePartIndices === undefined || !readyRef.current) return;
     sendToWebView({ type: "setVisibleParts", visibleIndices: visiblePartIndices });
   }, [visiblePartIndices, sendToWebView]);
+
+  // Live theme switch — restyle in place instead of reloading the WebView
+  useEffect(() => {
+    if (!readyRef.current) return;
+    sendToWebView({ type: "setTheme", isDark });
+  }, [isDark, sendToWebView]);
 
   return (
     <View

@@ -99,6 +99,7 @@ beforeEach(() => {
   mockUsePractice.mockReturnValue({
     addSheet: jest.fn().mockResolvedValue({ id: "s1" }),
     patchSheet: jest.fn().mockResolvedValue(undefined),
+    patchSheetLocal: jest.fn(),
   });
 });
 
@@ -173,10 +174,11 @@ describe("PdfImportScreen — non-blocking import", () => {
     expect(typeof lifecycle.onJobProgress).toBe("function");
   });
 
-  it("5. onJobProgress patches the persisted sheet's omrProgress", async () => {
+  it("5. onJobProgress updates progress in memory only (no storage write)", async () => {
     const patchSheet = jest.fn().mockResolvedValue(undefined);
+    const patchSheetLocal = jest.fn();
     const addSheet = jest.fn().mockResolvedValue({ id: "sheet-1" });
-    mockUsePractice.mockReturnValue({ addSheet, patchSheet });
+    mockUsePractice.mockReturnValue({ addSheet, patchSheet, patchSheetLocal });
 
     const submitAll = jest.fn();
     mockUsePdfImport.mockReturnValue({
@@ -200,7 +202,9 @@ describe("PdfImportScreen — non-blocking import", () => {
     );
 
     lifecycle.onJobProgress(0, 42);
-    expect(patchSheet).toHaveBeenCalledWith("sheet-1", { omrProgress: 42 });
+    expect(patchSheetLocal).toHaveBeenCalledWith("sheet-1", { omrProgress: 42 });
+    // Progress must not hit AsyncStorage — only the queued/ready patches do.
+    expect(patchSheet).not.toHaveBeenCalledWith("sheet-1", { omrProgress: 42 });
   });
 
   it("6. error state renders Retry Upload button for upload errors", () => {

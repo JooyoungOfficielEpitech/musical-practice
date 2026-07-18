@@ -12,6 +12,7 @@ import { RenameModal } from "@/components/RenameModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { usePractice } from "@/context/PracticeContext";
 import { usePracticeDetail } from "@/hooks/usePracticeDetail";
+import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { DebugOverlay } from "@/components/DebugOverlay";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 import type { RootStackParamList } from "@/types/navigation";
@@ -41,8 +42,10 @@ export default function PracticeDetailScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.backgroundDefault, paddingTop: insets.top }]}>
-        <View style={styles.notFound}>
-          <Text style={[styles.notFoundText, { color: colors.textSecondary }]}>Loading...</Text>
+        <View style={styles.loadingWrap}>
+          <LoadingSkeleton height={220} />
+          <LoadingSkeleton height={64} />
+          <LoadingSkeleton height={64} />
         </View>
       </View>
     );
@@ -122,5 +125,6 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   backBtn: { width: 44, height: 44, borderRadius: BorderRadius.sm, alignItems: "center", justifyContent: "center" },
   notFound: { flex: 1, alignItems: "center", justifyContent: "center", gap: Spacing.md },
+  loadingWrap: { flex: 1, padding: Spacing.lg, gap: Spacing.md },
   notFoundText: { ...Typography.body, fontFamily: "Nunito_500Medium", fontWeight: "500" },
 });

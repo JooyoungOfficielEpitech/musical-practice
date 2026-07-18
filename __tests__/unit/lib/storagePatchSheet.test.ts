@@ -63,3 +63,43 @@ describe("patchSheet", () => {
     expect(stored[0].omrStatus).toBeUndefined();
   });
 });
+
+describe("patchSheet — concurrent writes", () => {
+  it("serializes concurrent patches so neither update is lost", async () => {
+    await AsyncStorage.setItem(
+      "@musicalpractice/sheets",
+      JSON.stringify([sheet({ id: "s1" }), sheet({ id: "s2" })]),
+    );
+
+    // Fire two patches on different sheets without awaiting in between —
+    // without write serialization both read the same snapshot and the
+    // last writer wins, losing the other's update.
+    const [a, b] = await Promise.all([
+      patchSheet("s1", { omrProgress: 55 }),
+      patchSheet("s2", { omrStatus: "ready" }),
+    ]);
+
+    expect(a?.omrProgress).toBe(55);
+    expect(b?.omrStatus).toBe("ready");
+
+    const stored = JSON.parse((await AsyncStorage.getItem("@musicalpractice/sheets"))!);
+    expect(stored.find((s: any) => s.id === "s1").omrProgress).toBe(55);
+    expect(stored.find((s: any) => s.id === "s2").omrStatus).toBe("ready");
+  });
+
+  it("serializes concurrent patches on the SAME sheet (both fields survive)", async () => {
+    await AsyncStorage.setItem(
+      "@musicalpractice/sheets",
+      JSON.stringify([sheet({ id: "s1" })]),
+    );
+
+    await Promise.all([
+      patchSheet("s1", { omrProgress: 80 }),
+      patchSheet("s1", { musicXmlUri: "file:///x" }),
+    ]);
+
+    const stored = JSON.parse((await AsyncStorage.getItem("@musicalpractice/sheets"))!);
+    expect(stored[0].omrProgress).toBe(80);
+    expect(stored[0].musicXmlUri).toBe("file:///x");
+  });
+});

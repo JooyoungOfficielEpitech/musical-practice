@@ -1,4 +1,13 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  type ReactNode,
+} from "react";
 import {
   type SheetMusic,
   getSheets,
@@ -19,6 +28,8 @@ interface PracticeContextType {
   addSheet: (sheet: Omit<SheetMusic, "id" | "createdAt" | "isFavorite">) => Promise<SheetMusic>;
   editSheet: (sheet: SheetMusic) => Promise<void>;
   patchSheet: (id: string, patch: Partial<SheetMusic>) => Promise<void>;
+  /** In-memory-only patch for ephemeral fields (live progress) — no storage write. */
+  patchSheetLocal: (id: string, patch: Partial<SheetMusic>) => void;
   removeSheet: (id: string) => Promise<void>;
   persistPartSelection: (id: string, partIds: string[]) => Promise<void>;
   refreshData: () => Promise<void>;
@@ -28,34 +39,68 @@ const PracticeContext = createContext<PracticeContextType | undefined>(undefined
 
 const PENDING_POLL_INTERVAL_MS = 5_000;
 
+/** Progress-only patches are ephemeral — not worth an AsyncStorage write. */
+function isEphemeralPatch(patch: Partial<SheetMusic>): boolean {
+  const keys = Object.keys(patch);
+  return keys.length === 1 && keys[0] === "omrProgress";
+}
+
 export function PracticeProvider({ children }: { children: ReactNode }) {
   const [sheets, setSheets] = useState<SheetMusic[]>([]);
   const [loading, setLoading] = useState(true);
+  // Latest sheets for long-lived timers — keeps the poll interval stable
+  // instead of tearing it down on every state change.
+  const sheetsRef = useRef<SheetMusic[]>(sheets);
+  useEffect(() => {
+    sheetsRef.current = sheets;
+  }, [sheets]);
 
-  const patchSheet = useCallback(async (id: string, patch: Partial<SheetMusic>) => {
-    const patched = await patchSheetStorage(id, patch);
-    if (patched) {
-      setSheets((prev) => prev.map((s) => (s.id === id ? patched : s)));
-    }
+  const patchSheetLocal = useCallback((id: string, patch: Partial<SheetMusic>) => {
+    setSheets((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
   }, []);
 
-  /** Sheets stuck in "processing" whose job finished while the app was away —
-   *  check the server and flip them to ready/failed. Fire-and-forget. */
-  const reconcilePendingSheets = useCallback(
-    (loaded: SheetMusic[]) => {
-      loaded
-        .filter((s) => s.omrStatus === "processing" && s.omrJobId)
-        .forEach((sheet) => {
-          reconcileOmrSheet(sheet)
-            .then((patch) => {
-              if (patch) return patchSheet(sheet.id, patch);
-            })
-            .catch(() => {
-              // Offline or transient — try again on the next refresh.
-            });
+  const patchSheet = useCallback(
+    async (id: string, patch: Partial<SheetMusic>) => {
+      const patched = await patchSheetStorage(id, patch);
+      if (patched) {
+        // Apply the patch onto the CURRENT state object (not the storage copy)
+        // so in-memory-only fields like omrProgress survive.
+        patchSheetLocal(id, patch);
+      }
+    },
+    [patchSheetLocal],
+  );
+
+  const applyReconcilePatch = useCallback(
+    (id: string, patch: Partial<SheetMusic>) => {
+      if (isEphemeralPatch(patch)) {
+        patchSheetLocal(id, patch);
+        return Promise.resolve();
+      }
+      return patchSheet(id, patch);
+    },
+    [patchSheet, patchSheetLocal],
+  );
+
+  // Guard against overlapping reconciles for one sheet (slow network + 5s tick).
+  const reconcileInFlightRef = useRef<Set<string>>(new Set());
+
+  const reconcileSheet = useCallback(
+    (sheet: SheetMusic) => {
+      if (reconcileInFlightRef.current.has(sheet.id)) return;
+      reconcileInFlightRef.current.add(sheet.id);
+      reconcileOmrSheet(sheet)
+        .then((patch) => {
+          if (patch) return applyReconcilePatch(sheet.id, patch);
+        })
+        .catch(() => {
+          // Offline or transient — next tick retries.
+        })
+        .finally(() => {
+          reconcileInFlightRef.current.delete(sheet.id);
         });
     },
-    [patchSheet],
+    [applyReconcilePatch],
   );
 
   const refreshData = useCallback(async () => {
@@ -78,33 +123,33 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
       }
 
       setSheets(migratedSheets);
-      reconcilePendingSheets(migratedSheets);
+      // Catch up sheets whose job finished while the app was away.
+      migratedSheets
+        .filter((s) => s.omrStatus === "processing" && s.omrJobId)
+        .forEach(reconcileSheet);
     } finally {
       setLoading(false);
     }
-  }, [reconcilePendingSheets]);
+  }, [reconcileSheet]);
 
   useEffect(() => {
     refreshData();
   }, [refreshData]);
 
   // While any sheet is still processing, poll its job row so the library card
-  // flips to Ready without an app restart (covers relaunch mid-processing,
-  // where no import-screen subscription is alive).
+  // shows live progress and flips to Ready without an app restart. The
+  // interval is keyed on a boolean, so per-tick state updates never tear it
+  // down — pending sheets are read from the ref each tick.
+  const hasPending = sheets.some((s) => s.omrStatus === "processing" && s.omrJobId);
   useEffect(() => {
-    const pending = sheets.filter((s) => s.omrStatus === "processing" && s.omrJobId);
-    if (pending.length === 0) return;
+    if (!hasPending) return;
     const id = setInterval(() => {
-      pending.forEach((sheet) => {
-        reconcileOmrSheet(sheet)
-          .then((patch) => {
-            if (patch) return patchSheet(sheet.id, patch);
-          })
-          .catch(() => {});
-      });
+      sheetsRef.current
+        .filter((s) => s.omrStatus === "processing" && s.omrJobId)
+        .forEach(reconcileSheet);
     }, PENDING_POLL_INTERVAL_MS);
     return () => clearInterval(id);
-  }, [sheets, patchSheet]);
+  }, [hasPending, reconcileSheet]);
 
   // Ready sheets without a thumbnail: fetch the page-1 preview the worker
   // uploads beside the result. Once per sheet per session — a miss (legacy
@@ -185,22 +230,32 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
     [patchSheet],
   );
 
-  return (
-    <PracticeContext.Provider
-      value={{
-        sheets,
-        loading,
-        addSheet,
-        editSheet,
-        patchSheet,
-        removeSheet,
-        persistPartSelection,
-        refreshData,
-      }}
-    >
-      {children}
-    </PracticeContext.Provider>
+  const value = useMemo(
+    () => ({
+      sheets,
+      loading,
+      addSheet,
+      editSheet,
+      patchSheet,
+      patchSheetLocal,
+      removeSheet,
+      persistPartSelection,
+      refreshData,
+    }),
+    [
+      sheets,
+      loading,
+      addSheet,
+      editSheet,
+      patchSheet,
+      patchSheetLocal,
+      removeSheet,
+      persistPartSelection,
+      refreshData,
+    ],
   );
+
+  return <PracticeContext.Provider value={value}>{children}</PracticeContext.Provider>;
 }
 
 export function usePractice() {
