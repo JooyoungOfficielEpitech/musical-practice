@@ -51,7 +51,8 @@
           "microphonePermission": "Musical Practice needs microphone access to detect your pitch and measure accuracy while singing."
         }
       ],
-      "expo-audio"
+      "expo-audio",
+      "expo-asset"
     ],
     "extra": {
       "eas": {

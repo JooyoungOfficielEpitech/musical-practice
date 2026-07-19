@@ -10,6 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
+import { getOsmdSource } from "@/lib/osmdSource";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 
 interface InteractiveScoreProps {
@@ -26,12 +27,17 @@ type WebViewIncoming =
   | { type: "error"; message: string }
   | { type: "debug"; tbl0?: number; tbl1?: number; tbl10?: number; tblN?: number; len?: number; bpm?: number; msg?: string };
 
-function buildHtml(isDark: boolean): string {
+function buildHtml(isDark: boolean, osmdJs: string | null): string {
   // Initial colors only — later theme changes arrive via a setTheme message so
   // the WebView never reloads (a reload re-renders OSMD and resets the cursor).
   const cursorColor = isDark ? "#F59E0B" : "#D97706";
   const bgColor = isDark ? "#1A1815" : "#FFFFFF";
   const textColor = isDark ? "#FAFAF9" : "#1C1917";
+  // Bundled OSMD renders offline; CDN only as a fallback when the asset
+  // couldn't be read (should not happen in production builds).
+  const osmdScript = osmdJs
+    ? `<script>${osmdJs}<\/script>`
+    : `<script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.8.6/build/opensheetmusicdisplay.min.js"><\/script>`;
 
   return `<!DOCTYPE html>
 <html>
@@ -48,7 +54,7 @@ function buildHtml(isDark: boolean): string {
 <body>
   <div id="score"></div>
   <div id="error"></div>
-  <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.8.6/build/opensheetmusicdisplay.min.js"><\/script>
+  ${osmdScript}
   <script>
     var osmd=null,timeTable=[],currentStep=0,cursorColor='${cursorColor}';
     function sendMsg(m){window.ReactNativeWebView.postMessage(JSON.stringify(m));}
@@ -134,10 +140,23 @@ export const InteractiveScore = memo(function InteractiveScore({
 
   // Build the HTML ONCE with the theme at mount. A source change would reload
   // the WebView (full OSMD re-render, cursor reset), so later theme toggles go
-  // through a setTheme message instead.
+  // through a setTheme message instead. The HTML waits for the bundled OSMD
+  // source (offline rendering) — null while loading, then built exactly once.
   const initialDarkRef = useRef(isDark);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const html = useMemo(() => buildHtml(initialDarkRef.current), []);
+  const [osmdJs, setOsmdJs] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    let cancelled = false;
+    getOsmdSource().then((js) => {
+      if (!cancelled) setOsmdJs(js);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const html = useMemo(
+    () => (osmdJs === undefined ? null : buildHtml(initialDarkRef.current, osmdJs)),
+    [osmdJs],
+  );
 
   const sendToWebView = useCallback(
     (message: Record<string, unknown>) => {
@@ -222,6 +241,7 @@ export const InteractiveScore = memo(function InteractiveScore({
       accessibilityLabel="Musical score"
       accessibilityLiveRegion="polite"
     >
+      {html !== null && (
       <WebView
         ref={webViewRef}
         source={{ html }}
@@ -237,6 +257,7 @@ export const InteractiveScore = memo(function InteractiveScore({
           setLoading(false);
         }}
       />
+      )}
       {loading && !error && (
         <SafeAreaView style={[styles.overlayBackdrop, { backgroundColor: colors.overlay }]}>
           <View style={styles.loadingOverlay}>

@@ -11,6 +11,7 @@ module.exports = {
       "<rootDir>/__mocks__/react-native-reanimated.js",
     "^react-native-gesture-handler$":
       "<rootDir>/__mocks__/react-native-gesture-handler.js",
+    "\\.jslib$": "<rootDir>/__mocks__/jslibAssetStub.js",
   },
   setupFiles: [
     "./node_modules/@react-native-async-storage/async-storage/jest/async-storage-mock.js",
