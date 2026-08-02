@@ -1,4 +1,11 @@
-import { ratioToMs, msToRatio, gestureXToMs, makeLoopRange } from "../../../../client/lib/audio/transportMath";
+import {
+  ratioToMs,
+  msToRatio,
+  gestureXToMs,
+  makeLoopRange,
+  scaledToOriginalMs,
+  originalToScaledMs,
+} from "../../../../client/lib/audio/transportMath";
 
 describe("ratioToMs", () => {
   it("maps 0..1 onto the duration", () => {
@@ -61,5 +68,21 @@ describe("makeLoopRange", () => {
   });
   it("returns null for zero duration", () => {
     expect(makeLoopRange(100, 500, 0)).toBeNull();
+  });
+});
+
+describe("tempo rescaling", () => {
+  it("round-trips between scaled and original time", () => {
+    // At tempo 0.5 (half speed) a note at 4s original plays at 8s scaled.
+    expect(scaledToOriginalMs(8000, 0.5)).toBe(4000);
+    expect(originalToScaledMs(4000, 0.5)).toBe(8000);
+    expect(originalToScaledMs(scaledToOriginalMs(1234, 1.3), 1.3)).toBeCloseTo(1234);
+  });
+  it("is identity at tempo 1", () => {
+    expect(scaledToOriginalMs(500, 1)).toBe(500);
+    expect(originalToScaledMs(500, 1)).toBe(500);
+  });
+  it("guards against a non-positive tempo", () => {
+    expect(originalToScaledMs(500, 0)).toBe(500);
   });
 });

@@ -246,6 +246,13 @@ jest.mock("../../client/hooks/usePracticeDetail", () => ({
       pause: jest.fn(),
       seekTo: jest.fn(),
     },
+    playback: {
+      partVolumes: {}, setPartVolume: jest.fn(),
+      transpose: 0, setTranspose: jest.fn(),
+      metronomeOn: false, toggleMetronome: jest.fn(),
+    },
+    omrRetrying: false,
+    handleRetryOmr: jest.fn().mockResolvedValue(undefined),
     handleNotePress: jest.fn(),
     handleSynthPlayPause: jest.fn(),
     handleScanSheet: jest.fn(),

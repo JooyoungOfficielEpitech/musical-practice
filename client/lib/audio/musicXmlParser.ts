@@ -50,7 +50,7 @@ function getTagContent(xml: string, tag: string): string | null {
   return match ? match[1].trim() : null;
 }
 
-function getAllMatches(xml: string, tag: string): string[] {
+export function getAllMatches(xml: string, tag: string): string[] {
   const regex = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, "g");
   const results: string[] = [];
   let match;
@@ -79,7 +79,7 @@ function saneTempoOrDefault(bpm: number): number {
   return bpm >= MIN_SANE_TEMPO && bpm <= MAX_SANE_TEMPO ? bpm : DEFAULT_TEMPO;
 }
 
-function parseTempo(xml: string): number {
+export function parseTempo(xml: string): number {
   // Look for <sound tempo="120"/> or <per-minute>120</per-minute>
   const soundMatch = xml.match(/<sound[^>]*tempo="(\d+(?:\.\d+)?)"[^>]*\/?>/);
   if (soundMatch) return saneTempoOrDefault(parseFloat(soundMatch[1]));
@@ -96,7 +96,7 @@ const DEFAULT_BAR_BEATS = 4; // quarter-note beats per bar (4/4)
  * Bar length in quarter-note beats from a measure's <time> signature.
  * 4/4 -> 4, 3/4 -> 3, 6/8 -> 3, 2/2 -> 4. Returns null if no <time> present.
  */
-function parseBarBeats(measureXml: string): number | null {
+export function parseBarBeats(measureXml: string): number | null {
   const m = measureXml.match(
     /<beats>(\d+)<\/beats>\s*<beat-type>(\d+)<\/beat-type>/,
   );
@@ -195,7 +195,7 @@ function noteNameToMidi(noteName: string, octave: number): number {
  * Find repeat structure in measures. Returns the ordered list of measure indices
  * to process, expanding basic forward/backward repeats.
  */
-function expandRepeats(measures: string[]): number[] {
+export function expandRepeats(measures: string[]): number[] {
   const result: number[] = [];
   let repeatStart = 0;
 

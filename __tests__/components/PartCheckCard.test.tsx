@@ -83,3 +83,50 @@ describe("PartCheckCard", () => {
     expect(screen.getByText("200 notes")).toBeTruthy();
   });
 });
+
+describe("PartCheckCard — per-part volume", () => {
+  it("shows a volume slider for each visible part when onVolumeChange is given", () => {
+    render(
+      <PartCheckCard
+        parts={PARTS}
+        visiblePartIds={new Set(["P1"])}
+        partNoteCounts={COUNTS}
+        onTogglePart={() => {}}
+        partVolumes={{ P1: 0.5 }}
+        onVolumeChange={() => {}}
+      />,
+    );
+    expect(screen.getByLabelText("Soprano volume").props.accessibilityValue.now).toBe(50);
+    expect(screen.queryByLabelText("Alto volume")).toBeNull(); // hidden part — no slider
+  });
+
+  it("reports volume changes with the part id", () => {
+    const onVolumeChange = jest.fn();
+    render(
+      <PartCheckCard
+        parts={PARTS}
+        visiblePartIds={new Set(["P1", "P2"])}
+        partNoteCounts={COUNTS}
+        onTogglePart={() => {}}
+        partVolumes={{}}
+        onVolumeChange={onVolumeChange}
+      />,
+    );
+    fireEvent(screen.getByLabelText("Alto volume"), "accessibilityAction", {
+      nativeEvent: { actionName: "decrement" },
+    });
+    expect(onVolumeChange).toHaveBeenCalledWith("P2", 0.9);
+  });
+
+  it("renders no sliders when onVolumeChange is not provided", () => {
+    render(
+      <PartCheckCard
+        parts={PARTS}
+        visiblePartIds={new Set(["P1", "P2"])}
+        partNoteCounts={COUNTS}
+        onTogglePart={() => {}}
+      />,
+    );
+    expect(screen.queryByLabelText("Soprano volume")).toBeNull();
+  });
+});

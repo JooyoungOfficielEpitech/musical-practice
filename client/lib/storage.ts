@@ -25,6 +25,10 @@ export interface SheetMusic {
   selectedPartIds?: string[]; // parts the user chose to practice (성부 선택), persisted
   /** Last tempo multiplier the user set for this score — restored on open. */
   savedTempoMultiplier?: number;
+  /** Per-part playback volume (0..1) keyed by part id — restored on open. */
+  partVolumes?: Record<string, number>;
+  /** Semitone offset for playback audio — restored on open. */
+  savedTranspose?: number;
 }
 
 export interface PracticeSession {

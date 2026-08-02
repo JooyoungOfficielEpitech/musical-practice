@@ -93,6 +93,12 @@ const baseState = {
   audioPlayer: baseAudioPlayer,
   noteEditor: baseNoteEditor,
   omr: { isProcessing: false, processImage: jest.fn(), error: null, status: "none" as const },
+  playback: {
+    partVolumes: {}, setPartVolume: jest.fn(),
+    transpose: 0, setTranspose: jest.fn(),
+    metronomeOn: false, toggleMetronome: jest.fn(),
+  },
+  omrRetrying: false, handleRetryOmr: jest.fn().mockResolvedValue(undefined),
   handleNotePress: jest.fn(), handleSynthPlayPause: jest.fn(),
   handleScanSheet: jest.fn(),
   handleDeletePress: jest.fn(),
@@ -168,5 +174,50 @@ describe("PracticeBrowseView — back button affordance", () => {
     const { getByLabelText } = render(<PracticeBrowseView {...baseProps} onGoBack={onGoBack} />);
     fireEvent.press(getByLabelText("Go back to library"));
     expect(onGoBack).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ─── OMR trust & recovery ────────────────────────────────────────────────────
+describe("PracticeBrowseView — failed scan retry", () => {
+  const failedSheet = { ...baseSheet, omrStatus: "failed" as const };
+
+  it("shows a Retry scan button in the failed state and calls handleRetryOmr", () => {
+    const handleRetryOmr = jest.fn().mockResolvedValue(undefined);
+    const { getByLabelText, getByText } = render(
+      <PracticeBrowseView
+        {...baseProps}
+        sheet={failedSheet}
+        state={{ ...baseProps.state, handleRetryOmr }}
+      />
+    );
+    expect(getByText("Recognition failed")).toBeTruthy();
+    fireEvent.press(getByLabelText("Retry scan"));
+    expect(handleRetryOmr).toHaveBeenCalledTimes(1);
+  });
+
+  it("disables the retry button while a retry is in flight", () => {
+    const handleRetryOmr = jest.fn().mockResolvedValue(undefined);
+    const { getByLabelText, getByText } = render(
+      <PracticeBrowseView
+        {...baseProps}
+        sheet={failedSheet}
+        state={{ ...baseProps.state, handleRetryOmr, omrRetrying: true }}
+      />
+    );
+    expect(getByText("Restarting…")).toBeTruthy();
+    fireEvent.press(getByLabelText("Retry scan"));
+    expect(handleRetryOmr).not.toHaveBeenCalled();
+  });
+});
+
+describe("PracticeBrowseView — auto-scan disclaimer", () => {
+  it("shows the accuracy disclaimer under a loaded score", () => {
+    const { getByText } = render(
+      <PracticeBrowseView
+        {...baseProps}
+        state={{ ...baseProps.state, hasMusicXml: true, musicXmlContent: "<score/>" }}
+      />
+    );
+    expect(getByText(/Auto-scanned/)).toBeTruthy();
   });
 });

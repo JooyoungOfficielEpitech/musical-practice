@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
+import { VolumeSlider } from "@/components/VolumeSlider";
 import { Spacing, BorderRadius, Fonts, Typography, ClayShadowSmall } from "@/constants/theme";
 import type { PartInfo } from "@/types/music";
 
@@ -11,6 +12,9 @@ export interface PartCheckCardProps {
   visiblePartIds: Set<string>;
   partNoteCounts: Record<string, number>;
   onTogglePart: (partId: string) => void;
+  /** Per-part volume 0..1; sliders render only when onVolumeChange is given. */
+  partVolumes?: Record<string, number>;
+  onVolumeChange?: (partId: string, volume: number) => void;
 }
 
 /**
@@ -24,6 +28,8 @@ function PartCheckCardComponent({
   visiblePartIds,
   partNoteCounts,
   onTogglePart,
+  partVolumes,
+  onVolumeChange,
 }: PartCheckCardProps): React.JSX.Element | null {
   const { colors } = useTheme();
   if (parts.length === 0) return null;
@@ -55,6 +61,8 @@ function PartCheckCardComponent({
             selectable={isMulti}
             isLastRow={idx === parts.length - 1}
             onTogglePart={onTogglePart}
+            volume={partVolumes?.[part.id] ?? 1}
+            onVolumeChange={onVolumeChange}
           />
         ))}
       </View>
@@ -70,6 +78,8 @@ interface PartRowProps {
   selectable: boolean;
   isLastRow: boolean;
   onTogglePart: (partId: string) => void;
+  volume: number;
+  onVolumeChange?: (partId: string, volume: number) => void;
 }
 
 const PartRow = React.memo(function PartRow({
@@ -80,8 +90,26 @@ const PartRow = React.memo(function PartRow({
   selectable,
   isLastRow,
   onTogglePart,
+  volume,
+  onVolumeChange,
 }: PartRowProps): React.JSX.Element {
   const { colors } = useTheme();
+
+  const handleVolumeChange = useCallback(
+    (v: number) => onVolumeChange?.(part.id, v),
+    [onVolumeChange, part.id],
+  );
+
+  const volumeRow = onVolumeChange && isVisible ? (
+    <View style={styles.volumeRow}>
+      <Ionicons name="volume-medium-outline" size={16} color={colors.textSecondary} />
+      <VolumeSlider
+        value={volume}
+        onChange={handleVolumeChange}
+        accessibilityLabel={`${part.name} volume`}
+      />
+    </View>
+  ) : null;
 
   const handlePress = useCallback(() => {
     // Keep at least one part selected — ignore a tap that would clear the last.
@@ -116,20 +144,28 @@ const PartRow = React.memo(function PartRow({
   );
 
   if (!selectable) {
-    return <View style={[styles.row, borderStyle]}>{content}</View>;
+    return (
+      <View style={borderStyle}>
+        <View style={styles.row}>{content}</View>
+        {volumeRow}
+      </View>
+    );
   }
 
   return (
-    <Pressable
-      onPress={handlePress}
-      accessibilityRole="checkbox"
-      accessibilityLabel={part.name}
-      accessibilityHint={isLastVisible ? "At least one part must be selected" : undefined}
-      accessibilityState={{ checked: isVisible, disabled: isLastVisible }}
-      style={({ pressed }) => [styles.row, borderStyle, { opacity: isLastVisible ? 0.6 : (pressed ? 0.7 : 1) }]}
-    >
-      {content}
-    </Pressable>
+    <View style={borderStyle}>
+      <Pressable
+        onPress={handlePress}
+        accessibilityRole="checkbox"
+        accessibilityLabel={part.name}
+        accessibilityHint={isLastVisible ? "At least one part must be selected" : undefined}
+        accessibilityState={{ checked: isVisible, disabled: isLastVisible }}
+        style={({ pressed }) => [styles.row, { opacity: isLastVisible ? 0.6 : (pressed ? 0.7 : 1) }]}
+      >
+        {content}
+      </Pressable>
+      {volumeRow}
+    </View>
   );
 });
 
@@ -155,6 +191,13 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   rowText: { flex: 1, marginRight: Spacing.sm },
+  volumeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    paddingBottom: Spacing.md,
+    paddingRight: Spacing.xs,
+  },
   partName: { fontSize: 15, fontFamily: Fonts.bodySemiBold },
   partCount: { ...Typography.small },
 });

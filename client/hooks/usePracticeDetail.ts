@@ -1,11 +1,13 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { Platform, AppState } from "react-native";
-import { setAudioModeAsync } from "expo-audio";
 import { useNavigation } from "@react-navigation/native";
 import { usePractice } from "@/context/PracticeContext";
 import { useSynthPlayer } from "@/hooks/useSynthPlayer";
+import { usePlaybackOptions, type PlaybackOptionsState } from "@/hooks/usePlaybackOptions";
 import { parseMusicXml } from "@/lib/audio/musicXmlParser";
+import { buildPlaybackNotes, mergeNoteEvents } from "@/lib/audio/playbackNotes";
+import { buildBeatGrid, generateMetronomeEvents } from "@/lib/audio/beatGrid";
 import { downloadResult } from "@/lib/omrQueue";
+import { buildRetryPatch } from "@/lib/omrRetry";
 import { dlog } from "@/lib/debug/debugLog";
 import { countNotesByPart, resolveInitialVisibleParts } from "@/lib/audio/partSelection";
 import { resolveExistingUri } from "@/lib/fileStorage";
@@ -24,6 +26,9 @@ export interface PracticeDetailState {
   togglePartVisibility: (partId: string) => void;
   noteSequence: NoteSequence;
   synthPlayer: ReturnType<typeof useSynthPlayer>;
+  playback: PlaybackOptionsState;
+  omrRetrying: boolean;
+  handleRetryOmr: () => Promise<void>;
   handleNotePress: (noteIndex: number) => void;
   handleSynthPlayPause: () => Promise<void>;
   handleDeletePress: () => void;
@@ -48,16 +53,32 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
   const [partNoteCounts, setPartNoteCounts] = useState<Record<string, number>>({});
   const [visiblePartIds, setVisiblePartIds] = useState<Set<string>>(new Set());
   const notePartIndicesRef = useRef<number[]>([]);
-  const filteredNotes = useMemo(() => {
-    const indices = notePartIndicesRef.current;
-    if (visiblePartIds.size === 0 || visiblePartIds.size === partInfos.length || indices.length === 0) {
-      return noteSequence;
-    }
-    return noteSequence.filter((_, i) => {
-      const idx = indices[i];
-      return idx !== undefined && visiblePartIds.has(partInfos[idx]?.id);
-    });
-  }, [noteSequence, visiblePartIds, partInfos]);
+
+  const playback = usePlaybackOptions(sheet, patchSheet);
+
+  // Full playback pipeline: part filter → per-part volume → transpose.
+  const playbackNotes = useMemo(
+    () =>
+      buildPlaybackNotes({
+        notes: noteSequence,
+        notePartIndices: notePartIndicesRef.current,
+        partInfos,
+        visiblePartIds,
+        partVolumes: playback.partVolumes,
+        transposeSemitones: playback.transpose,
+      }),
+    [noteSequence, visiblePartIds, partInfos, playback.partVolumes, playback.transpose],
+  );
+
+  // Metronome clicks ride the same shared bar grid as the notes.
+  const beatGrid = useMemo(
+    () => (musicXmlContent ? buildBeatGrid(musicXmlContent) : null),
+    [musicXmlContent],
+  );
+  const notesForPlayer = useMemo(() => {
+    if (!playback.metronomeOn || !beatGrid) return playbackNotes;
+    return mergeNoteEvents(playbackNotes, generateMetronomeEvents(beatGrid));
+  }, [playbackNotes, playback.metronomeOn, beatGrid]);
 
   const togglePartVisibility = useCallback((partId: string) => {
     const next = new Set(visiblePartIds);
@@ -73,7 +94,7 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
   }, [visiblePartIds, sheet, persistPartSelection]);
 
   const synthPlayer = useSynthPlayer(
-    filteredNotes,
+    notesForPlayer,
     sheet?.selectedInstrument ?? "piano",
     sheet?.savedTempoMultiplier ?? 1.0,
   );
@@ -167,6 +188,20 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
     if (synthPlayer.isPlaying) await synthPlayer.pause(); else await synthPlayer.play();
   }, [synthPlayer]);
 
+  // Failed scan → clone the job server-side and flip back to "processing";
+  // the library poll then tracks the new job like any fresh import.
+  const [omrRetrying, setOmrRetrying] = useState(false);
+  const handleRetryOmr = useCallback(async () => {
+    if (!sheet || omrRetrying) return;
+    setOmrRetrying(true);
+    try {
+      const patch = await buildRetryPatch(sheet);
+      await patchSheet(sheet.id, patch);
+    } finally {
+      setOmrRetrying(false);
+    }
+  }, [sheet, omrRetrying, patchSheet]);
+
   const handleDeletePress = useCallback(() => { setShowDeleteConfirm(true); }, []);
 
   const handleDeleteConfirm = useCallback(async () => {
@@ -189,6 +224,7 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
     noteSequence,
     partInfos, partNoteCounts, visiblePartIds, togglePartVisibility,
     synthPlayer,
+    playback, omrRetrying, handleRetryOmr,
     handleNotePress, handleSynthPlayPause,
     handleDeletePress, handleDeleteConfirm, handleEdit,
   };

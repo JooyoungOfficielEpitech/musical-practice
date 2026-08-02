@@ -36,3 +36,16 @@ export function makeLoopRange(
   if (hi - lo < minLenMs) return null;
   return { startMs: Math.round(lo), endMs: Math.round(hi) };
 }
+
+/**
+ * The player's position/duration live on the tempo-scaled timeline (a note at
+ * 4s original plays at 8s when tempo is 0.5). Loop anchors are kept in
+ * original-score time so they survive tempo changes; these convert both ways.
+ */
+export function scaledToOriginalMs(scaledMs: number, tempo: number): number {
+  return scaledMs * tempo;
+}
+
+export function originalToScaledMs(originalMs: number, tempo: number): number {
+  return tempo > 0 ? originalMs / tempo : originalMs;
+}

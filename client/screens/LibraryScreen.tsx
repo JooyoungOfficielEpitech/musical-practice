@@ -17,6 +17,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTheme } from "@/hooks/useTheme";
 import { hapticFeedback } from "@/lib/hapticFeedback";
 import { usePractice } from "@/context/PracticeContext";
+import { buildRetryPatch } from "@/lib/omrRetry";
 import { SheetCard } from "@/components/SheetCard";
 import { RenameModal } from "@/components/RenameModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
@@ -54,33 +55,55 @@ export default function LibraryScreen() {
     }
   }, [deleteTarget, removeSheet]);
 
+  const handleRetryScan = useCallback(
+    async (item: SheetMusic) => {
+      try {
+        const patch = await buildRetryPatch(item);
+        await patchSheet(item.id, patch);
+      } catch (e) {
+        const message = e instanceof Error ? e.message : "Could not restart the scan.";
+        Alert.alert("Retry failed", message);
+      }
+    },
+    [patchSheet],
+  );
+
   const handleLongPress = useCallback((item: SheetMusic) => {
     void hapticFeedback.triggerMedium();
+    const canRetry = item.omrStatus === "failed" && !!item.omrJobId;
     if (Platform.OS === "ios") {
+      const options = canRetry
+        ? ["Retry Scan", "Rename", "Delete", "Cancel"]
+        : ["Rename", "Delete", "Cancel"];
+      const offset = canRetry ? 1 : 0;
       ActionSheetIOS.showActionSheetWithOptions(
         {
           title: item.title,
-          options: ["Rename", "Delete", "Cancel"],
-          destructiveButtonIndex: 1,
-          cancelButtonIndex: 2,
+          options,
+          destructiveButtonIndex: offset + 1,
+          cancelButtonIndex: offset + 2,
         },
         (index) => {
-          if (index === 0) setRenameTarget(item);
-          if (index === 1) setDeleteTarget({ id: item.id, title: item.title });
+          if (canRetry && index === 0) void handleRetryScan(item);
+          if (index === offset) setRenameTarget(item);
+          if (index === offset + 1) setDeleteTarget({ id: item.id, title: item.title });
         },
       );
     } else {
       Alert.alert(item.title, undefined, [
+        ...(canRetry
+          ? [{ text: "Retry Scan", onPress: () => void handleRetryScan(item) }]
+          : []),
         { text: "Rename", onPress: () => setRenameTarget(item) },
         {
           text: "Delete",
-          style: "destructive",
+          style: "destructive" as const,
           onPress: () => setDeleteTarget({ id: item.id, title: item.title }),
         },
-        { text: "Cancel", style: "cancel" },
+        { text: "Cancel", style: "cancel" as const },
       ]);
     }
-  }, []);
+  }, [handleRetryScan]);
 
   const handleRenameSubmit = useCallback(
     (data: { title: string; artist: string }) => {
@@ -139,8 +162,12 @@ export default function LibraryScreen() {
         ListEmptyComponent={
           <EmptyState
             icon="musical-notes-outline"
-            title="No scores found"
-            message="Import a PDF to start practicing"
+            title="Start with a PDF score"
+            message={
+              "Import sheet music and we'll scan it into playable parts.\n" +
+              "Scanning runs in the background and usually takes a few minutes — " +
+              "you can keep using the app (or close it) while it works."
+            }
             actionLabel="Import PDF"
             onAction={() => navigation.navigate("PdfImport")}
           />
