@@ -3,9 +3,11 @@ import { useNavigation } from "@react-navigation/native";
 import { usePractice } from "@/context/PracticeContext";
 import { useSynthPlayer } from "@/hooks/useSynthPlayer";
 import { usePlaybackOptions, type PlaybackOptionsState } from "@/hooks/usePlaybackOptions";
+import { usePlaybackNotes } from "@/hooks/usePlaybackNotes";
+import { useLoopControls, type LoopControlsState } from "@/hooks/useLoopControls";
+import { usePracticeExtras, type PracticeExtrasState } from "@/hooks/usePracticeExtras";
 import { parseMusicXml } from "@/lib/audio/musicXmlParser";
-import { buildPlaybackNotes, mergeNoteEvents } from "@/lib/audio/playbackNotes";
-import { buildBeatGrid, generateMetronomeEvents } from "@/lib/audio/beatGrid";
+import { originalToScaledMs } from "@/lib/audio/transportMath";
 import { downloadResult } from "@/lib/omrQueue";
 import { buildRetryPatch } from "@/lib/omrRetry";
 import { dlog } from "@/lib/debug/debugLog";
@@ -27,9 +29,12 @@ export interface PracticeDetailState {
   noteSequence: NoteSequence;
   synthPlayer: ReturnType<typeof useSynthPlayer>;
   playback: PlaybackOptionsState;
+  loop: LoopControlsState;
+  soloPart: (partId: string) => void;
+  extras: PracticeExtrasState;
   omrRetrying: boolean;
   handleRetryOmr: () => Promise<void>;
-  handleNotePress: (noteIndex: number) => void;
+  handleNotePress: (noteIndex: number, timeMs?: number | null) => void;
   handleSynthPlayPause: () => Promise<void>;
   handleDeletePress: () => void;
   handleDeleteConfirm: () => Promise<void>;
@@ -55,30 +60,9 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
   const notePartIndicesRef = useRef<number[]>([]);
 
   const playback = usePlaybackOptions(sheet, patchSheet);
-
-  // Full playback pipeline: part filter → per-part volume → transpose.
-  const playbackNotes = useMemo(
-    () =>
-      buildPlaybackNotes({
-        notes: noteSequence,
-        notePartIndices: notePartIndicesRef.current,
-        partInfos,
-        visiblePartIds,
-        partVolumes: playback.partVolumes,
-        transposeSemitones: playback.transpose,
-      }),
-    [noteSequence, visiblePartIds, partInfos, playback.partVolumes, playback.transpose],
-  );
-
-  // Metronome clicks ride the same shared bar grid as the notes.
-  const beatGrid = useMemo(
-    () => (musicXmlContent ? buildBeatGrid(musicXmlContent) : null),
-    [musicXmlContent],
-  );
-  const notesForPlayer = useMemo(() => {
-    if (!playback.metronomeOn || !beatGrid) return playbackNotes;
-    return mergeNoteEvents(playbackNotes, generateMetronomeEvents(beatGrid));
-  }, [playbackNotes, playback.metronomeOn, beatGrid]);
+  const notesForPlayer = usePlaybackNotes({
+    noteSequence, notePartIndicesRef, partInfos, visiblePartIds, playback, musicXmlContent,
+  });
 
   const togglePartVisibility = useCallback((partId: string) => {
     const next = new Set(visiblePartIds);
@@ -121,7 +105,7 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
         // Pull the latest server-side result first — scores get reprocessed on
         // the server, and the local file is otherwise a forever-stale snapshot.
         // Offline/failure falls back silently to the cached copy below.
-        if (sheet.resultStoragePath) {
+        if (sheet.resultStoragePath && !sheet.hasLocalEdits) {
           try {
             await downloadResult(sheet.resultStoragePath, sheet.id);
             dlog("load", "server refresh OK", { path: sheet.resultStoragePath });
@@ -180,9 +164,43 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
   }, [sheet?.musicXmlUri]);
 
 
-  const handleNotePress = useCallback((idx: number) => {
-    if (noteSequence[idx]) synthPlayer.seekTo(noteSequence[idx].startTime * 1000);
-  }, [synthPlayer, noteSequence]);
+  const loop = useLoopControls(synthPlayer);
+
+  // A note edit re-parses in place — same pipeline as the initial load.
+  const applyEditedXml = useCallback((xml: string) => {
+    setMusicXmlContent(xml);
+    const parsed = parseMusicXml(xml);
+    setNoteSequence(parsed.notes);
+    setPartInfos(parsed.parts);
+    setPartNoteCounts(countNotesByPart(parsed.notePartIndices, parsed.parts));
+    notePartIndicesRef.current = parsed.notePartIndices;
+  }, []);
+
+  const extras = usePracticeExtras({
+    sheet, patchSheet, noteSequence, notePartIndicesRef, partInfos,
+    visiblePartIds, playback, synthPlayer, musicXmlContent,
+    onXmlEdited: applyEditedXml,
+  });
+
+  const soloPart = useCallback((partId: string) => {
+    const isSolo = visiblePartIds.size === 1 && visiblePartIds.has(partId);
+    const next = isSolo ? new Set(partInfos.map((p) => p.id)) : new Set([partId]);
+    setPartsDeselectedError(null);
+    setVisiblePartIds(next);
+    if (sheet) persistPartSelection(sheet.id, [...next]).catch(() => {});
+  }, [visiblePartIds, partInfos, sheet, persistPartSelection]);
+
+  const handleNotePress = useCallback((idx: number, timeMs: number | null = null) => {
+    // Edit mode swallows taps to select notes for fixing.
+    if (extras.editor.handleEditTap(timeMs)) return;
+    // Prefer the WebView's grid time (exact) over the step index (ambiguous).
+    const originalMs = timeMs ?? (noteSequence[idx] ? noteSequence[idx].startTime * 1000 : null);
+    if (originalMs === null) return;
+    // While the loop is armed, taps define the A–B points instead of seeking.
+    if (loop.handleScoreTap(originalMs / 1000)) return;
+    // seekTo lives on the tempo-scaled timeline; note times are original-score.
+    synthPlayer.seekTo(originalToScaledMs(originalMs, synthPlayer.tempo));
+  }, [synthPlayer, noteSequence, loop, extras.editor]);
 
   const handleSynthPlayPause = useCallback(async () => {
     if (synthPlayer.isPlaying) await synthPlayer.pause(); else await synthPlayer.play();
@@ -224,7 +242,7 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
     noteSequence,
     partInfos, partNoteCounts, visiblePartIds, togglePartVisibility,
     synthPlayer,
-    playback, omrRetrying, handleRetryOmr,
+    playback, loop, soloPart, extras, omrRetrying, handleRetryOmr,
     handleNotePress, handleSynthPlayPause,
     handleDeletePress, handleDeleteConfirm, handleEdit,
   };

@@ -85,6 +85,24 @@ jest.mock("../../../client/hooks/useSynthPlayer", () => ({
 }));
 
 // ─── Expo / RN side effects ───────────────────────────────────────────────────
+jest.mock("../../../client/hooks/usePracticeExtras", () => ({
+  usePracticeExtras: () => ({
+    singAlong: {
+      active: false, livePitch: null, accuracyPercent: 0,
+      permissionError: null, toggle: jest.fn().mockResolvedValue(undefined),
+    },
+    editor: {
+      editedMusicXml: "", selectedNote: null, selectedPitch: null,
+      canEditSelected: null, hasEdits: false,
+      selectNote: jest.fn(), applyPitch: jest.fn(() => true),
+      dismiss: jest.fn(), resetEdits: jest.fn(),
+      editMode: false, toggleEditMode: jest.fn(),
+      handleEditTap: jest.fn(() => false),
+    },
+    sessionToast: { visible: false, durationSec: 0 },
+  }),
+}));
+
 jest.mock("expo-haptics", () => ({
   notificationAsync: jest.fn(),
   NotificationFeedbackType: { Success: "success" },

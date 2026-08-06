@@ -6,7 +6,7 @@ import { Alert, ActionSheetIOS, Platform } from "react-native";
 const mockNavigate = jest.fn();
 const mockGoBack = jest.fn();
 jest.mock("@react-navigation/native", () => ({
-  useNavigation: () => ({ navigate: mockNavigate, goBack: mockGoBack }),
+  useNavigation: () => ({ navigate: mockNavigate, goBack: mockGoBack, addListener: jest.fn(() => jest.fn()) }),
 }));
 
 // ── Safe area ─────────────────────────────────────────────────────────────────

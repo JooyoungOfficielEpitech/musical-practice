@@ -1,7 +1,7 @@
 import type { NoteSequence } from "../../types/music";
 
 const VALID_STEPS = new Set(["A", "B", "C", "D", "E", "F", "G"]);
-const PITCH_RE = /^([A-G])(#?)(\d+)$/;
+const PITCH_RE = /^([A-G])(#|b?)(\d+)$/;
 const NOTE_BLOCK_RE = /<note\b[^>]*>[\s\S]*?<\/note>/g;
 const DIVISIONS_RE = /<divisions>(\d+)<\/divisions>/;
 const TEMPO_RE = /<sound[^>]*tempo="([\d.]+)"/;
@@ -13,9 +13,12 @@ export function parsePitchString(
 ): { step: string; alter: number; octave: number } | null {
   const m = pitch.match(PITCH_RE);
   if (!m) return null;
-  const [, step, sharp, octStr] = m;
+  const [, step, accidental, octStr] = m;
   if (!VALID_STEPS.has(step)) return null;
-  return { step, alter: sharp === "#" ? 1 : 0, octave: parseInt(octStr, 10) };
+  let alter = 0;
+  if (accidental === "#") alter = 1;
+  else if (accidental === "b") alter = -1;
+  return { step, alter, octave: parseInt(octStr, 10) };
 }
 
 export function formatPitchString(
@@ -139,4 +142,36 @@ export function replaceNotePitch(
   return (
     xmlString.slice(0, range.start) + updatedNote + xmlString.slice(range.end)
   );
+}
+
+/**
+ * Replace the pitch of the nth <note> block in XML document order (the index
+ * space noteEditLocator.findXmlNoteIndex returns). Returns the original string
+ * unchanged when the index is out of range or points at a rest.
+ */
+export function replaceNotePitchAtIndex(
+  xmlString: string,
+  xmlNoteIndex: number,
+  newStep: string,
+  newAlter: number,
+  newOctave: number,
+): string {
+  if (!VALID_STEPS.has(newStep) || xmlNoteIndex < 0) return xmlString;
+
+  NOTE_BLOCK_RE.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let i = 0;
+  while ((match = NOTE_BLOCK_RE.exec(xmlString)) !== null) {
+    if (i === xmlNoteIndex) {
+      const block = match[0];
+      if (block.includes("<rest") || !block.includes("<pitch>")) return xmlString;
+      const updated = block.replace(
+        /<pitch>[\s\S]*?<\/pitch>/,
+        buildPitchBlock(newStep, newAlter, newOctave),
+      );
+      return xmlString.slice(0, match.index) + updated + xmlString.slice(match.index + block.length);
+    }
+    i++;
+  }
+  return xmlString;
 }

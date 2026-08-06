@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -18,13 +18,15 @@ import { useTheme } from "@/hooks/useTheme";
 import { hapticFeedback } from "@/lib/hapticFeedback";
 import { usePractice } from "@/context/PracticeContext";
 import { buildRetryPatch } from "@/lib/omrRetry";
+import { getLibraryStats } from "@/lib/practiceSessionRecorder";
+import { LibraryStatsStrip } from "@/components/LibraryStatsStrip";
 import { SheetCard } from "@/components/SheetCard";
 import { RenameModal } from "@/components/RenameModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { EmptyState } from "@/components/EmptyState";
 import { Spacing, Typography } from "@/constants/theme";
 import type { RootStackParamList } from "@/types/navigation";
-import type { SheetMusic } from "@/lib/storage";
+import type { SheetMusic, UserStats } from "@/lib/storage";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -38,15 +40,28 @@ export default function LibraryScreen() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const [renameTarget, setRenameTarget] = useState<SheetMusic | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [stats, setStats] = useState<UserStats | null>(null);
+
+  const loadStats = useCallback(() => {
+    getLibraryStats().then(setStats).catch(() => {});
+  }, []);
+  // Sessions are recorded when leaving the practice screen, so refresh the
+  // strip every time the library regains focus.
+  useEffect(() => {
+    loadStats();
+    const unsubscribe = navigation.addListener("focus", loadStats);
+    return unsubscribe;
+  }, [navigation, loadStats]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       await refreshData();
+      loadStats();
     } finally {
       setRefreshing(false);
     }
-  }, [refreshData]);
+  }, [refreshData, loadStats]);
 
   const handleDeleteConfirm = useCallback(() => {
     if (deleteTarget) {
@@ -159,6 +174,7 @@ export default function LibraryScreen() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.textSecondary} />
         }
+        ListHeaderComponent={stats ? <LibraryStatsStrip stats={stats} /> : null}
         ListEmptyComponent={
           <EmptyState
             icon="musical-notes-outline"

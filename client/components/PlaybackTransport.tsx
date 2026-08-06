@@ -1,14 +1,9 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React from "react";
 import { StyleSheet, Text, View, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { hapticFeedback } from "@/lib/hapticFeedback";
 import { SeekBar } from "@/components/SeekBar";
-import {
-  makeLoopRange,
-  scaledToOriginalMs,
-  originalToScaledMs,
-} from "@/lib/audio/transportMath";
 import { TRANSPOSE_MIN, TRANSPOSE_MAX } from "@/lib/audio/playbackNotes";
 import { Spacing, BorderRadius, Typography, Fonts } from "@/constants/theme";
 import type { UseSynthPlayerReturn } from "@/hooks/useSynthPlayer";
@@ -22,6 +17,9 @@ export interface PlaybackTransportProps {
   onTransposeChange: (semitones: number) => void;
   metronomeOn: boolean;
   onToggleMetronome: () => void;
+  /** A is set, waiting for B (loop state machine lives in useLoopControls). */
+  loopArmed: boolean;
+  onLoopPress: () => void;
 }
 
 function formatTime(ms: number): string {
@@ -32,9 +30,9 @@ function formatTime(ms: number): string {
 }
 
 /**
- * Practice transport: scrubber, play/pause, A–B loop, metronome, and
- * tempo/pitch steppers. Loop anchors live in original-score time so an active
- * loop survives tempo changes.
+ * Practice transport: scrubber, play/pause, A–B loop button, metronome, and
+ * tempo/pitch steppers. Presentational — loop state machine lives in
+ * useLoopControls (so score taps can also set loop points).
  */
 function PlaybackTransportComponent({
   synthPlayer,
@@ -43,63 +41,18 @@ function PlaybackTransportComponent({
   onTransposeChange,
   metronomeOn,
   onToggleMetronome,
+  loopArmed,
+  onLoopPress,
 }: PlaybackTransportProps): React.JSX.Element {
   const { colors } = useTheme();
   const { positionMs, durationMs, tempo, loopRange, isPlaying } = synthPlayer;
 
-  // A–B loop: anchor A (original-time ms) is armed first; the second press
-  // completes the range. An active loop's original-time bounds are kept so a
-  // tempo change can rescale the player's (tempo-scaled) range.
-  const [loopAnchorMs, setLoopAnchorMs] = useState<number | null>(null);
-  const loopOriginalRef = useRef<{ aMs: number; bMs: number } | null>(null);
-
-  const handleLoopPress = useCallback(() => {
-    void hapticFeedback.triggerLight();
-    if (loopRange) {
-      synthPlayer.clearLoopRange();
-      loopOriginalRef.current = null;
-      setLoopAnchorMs(null);
-      return;
-    }
-    if (loopAnchorMs === null) {
-      setLoopAnchorMs(scaledToOriginalMs(positionMs, tempo));
-      return;
-    }
-    const range = makeLoopRange(
-      originalToScaledMs(loopAnchorMs, tempo),
-      positionMs,
-      durationMs,
-    );
-    if (!range) return; // points too close — stay armed until a usable B
-    loopOriginalRef.current = {
-      aMs: scaledToOriginalMs(range.startMs, tempo),
-      bMs: scaledToOriginalMs(range.endMs, tempo),
-    };
-    synthPlayer.setLoopRange(range);
-    setLoopAnchorMs(null);
-  }, [loopRange, loopAnchorMs, positionMs, durationMs, tempo, synthPlayer]);
-
-  // Rescale the active loop when the tempo changes.
-  const prevTempoRef = useRef(tempo);
-  useEffect(() => {
-    if (prevTempoRef.current === tempo) return;
-    prevTempoRef.current = tempo;
-    const original = loopOriginalRef.current;
-    if (!original || !loopRange) return;
-    const range = makeLoopRange(
-      originalToScaledMs(original.aMs, tempo),
-      originalToScaledMs(original.bMs, tempo),
-      durationMs,
-    );
-    if (range) synthPlayer.setLoopRange(range);
-  }, [tempo, durationMs, loopRange, synthPlayer]);
-
   const loopLabel = loopRange
     ? "Clear loop"
-    : loopAnchorMs !== null
+    : loopArmed
       ? "Set loop end"
       : "Set loop start";
-  const loopActive = !!loopRange || loopAnchorMs !== null;
+  const loopActive = !!loopRange || loopArmed;
 
   const transposeLabel =
     transpose === 0 ? "0 st" : `${transpose > 0 ? "+" : ""}${transpose} st`;
@@ -131,14 +84,17 @@ function PlaybackTransportComponent({
         </Pressable>
 
         <Pressable
-          onPress={handleLoopPress}
+          onPress={() => {
+            void hapticFeedback.triggerLight();
+            onLoopPress();
+          }}
           accessibilityLabel={loopLabel}
           accessibilityRole="button"
           style={[styles.toggleBtn, loopActive && { backgroundColor: colors.primarySubtle ?? colors.borderLight }]}
         >
           <Ionicons name="repeat" size={20} color={loopActive ? colors.primary : colors.text} />
           <Text style={[styles.toggleText, { color: loopActive ? colors.primary : colors.textSecondary }]}>
-            {loopRange ? "A–B" : loopAnchorMs !== null ? "A…" : "Loop"}
+            {loopRange ? "A–B" : loopArmed ? "A…" : "Loop"}
           </Text>
         </Pressable>
 

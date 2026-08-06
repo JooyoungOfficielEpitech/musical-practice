@@ -251,6 +251,23 @@ jest.mock("../../client/hooks/usePracticeDetail", () => ({
       transpose: 0, setTranspose: jest.fn(),
       metronomeOn: false, toggleMetronome: jest.fn(),
     },
+    extras: {
+      singAlong: {
+        active: false, livePitch: null, accuracyPercent: 0,
+        permissionError: null, toggle: jest.fn().mockResolvedValue(undefined),
+      },
+      editor: {
+        editedMusicXml: "", selectedNote: null, selectedPitch: null,
+        canEditSelected: null, hasEdits: false,
+        selectNote: jest.fn(), applyPitch: jest.fn(() => true),
+        dismiss: jest.fn(), resetEdits: jest.fn(),
+        editMode: false, toggleEditMode: jest.fn(),
+        handleEditTap: jest.fn(() => false),
+      },
+      sessionToast: { visible: false, durationSec: 0 },
+    },
+    loop: { armed: false, handleLoopButton: jest.fn(), handleScoreTap: jest.fn(() => false) },
+    soloPart: jest.fn(),
     omrRetrying: false,
     handleRetryOmr: jest.fn().mockResolvedValue(undefined),
     handleNotePress: jest.fn(),

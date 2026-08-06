@@ -15,6 +15,8 @@ export interface PartCheckCardProps {
   /** Per-part volume 0..1; sliders render only when onVolumeChange is given. */
   partVolumes?: Record<string, number>;
   onVolumeChange?: (partId: string, volume: number) => void;
+  /** Solo pill per row when given; soloing again restores all parts. */
+  onSoloPart?: (partId: string) => void;
 }
 
 /**
@@ -30,6 +32,7 @@ function PartCheckCardComponent({
   onTogglePart,
   partVolumes,
   onVolumeChange,
+  onSoloPart,
 }: PartCheckCardProps): React.JSX.Element | null {
   const { colors } = useTheme();
   if (parts.length === 0) return null;
@@ -63,6 +66,8 @@ function PartCheckCardComponent({
             onTogglePart={onTogglePart}
             volume={partVolumes?.[part.id] ?? 1}
             onVolumeChange={onVolumeChange}
+            isSoloed={visiblePartIds.has(part.id) && visibleCount === 1 && parts.length > 1}
+            onSoloPart={isMulti ? onSoloPart : undefined}
           />
         ))}
       </View>
@@ -80,6 +85,8 @@ interface PartRowProps {
   onTogglePart: (partId: string) => void;
   volume: number;
   onVolumeChange?: (partId: string, volume: number) => void;
+  isSoloed: boolean;
+  onSoloPart?: (partId: string) => void;
 }
 
 const PartRow = React.memo(function PartRow({
@@ -92,6 +99,8 @@ const PartRow = React.memo(function PartRow({
   onTogglePart,
   volume,
   onVolumeChange,
+  isSoloed,
+  onSoloPart,
 }: PartRowProps): React.JSX.Element {
   const { colors } = useTheme();
 
@@ -132,6 +141,23 @@ const PartRow = React.memo(function PartRow({
         </Text>
         <Text style={[styles.partCount, { color: colors.textSecondary }]}>{count} notes</Text>
       </View>
+      {onSoloPart && (
+        <Pressable
+          onPress={() => onSoloPart(part.id)}
+          accessibilityRole="button"
+          accessibilityLabel={isSoloed ? `Unsolo ${part.name}` : `Solo ${part.name}`}
+          hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+          style={[
+            styles.soloPill,
+            { borderColor: isSoloed ? colors.primary : colors.borderLight,
+              backgroundColor: isSoloed ? colors.primary : "transparent" },
+          ]}
+        >
+          <Text style={[styles.soloPillText, { color: isSoloed ? colors.buttonText ?? "#fff" : colors.textSecondary }]}>
+            {isSoloed ? "All" : "Solo"}
+          </Text>
+        </Pressable>
+      )}
       {selectable && (
         <Ionicons
           testID={`partcheck-icon-${part.id}`}
@@ -200,4 +226,14 @@ const styles = StyleSheet.create({
   },
   partName: { fontSize: 15, fontFamily: Fonts.bodySemiBold },
   partCount: { ...Typography.small },
+  soloPill: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 4,
+    marginRight: Spacing.sm,
+    minHeight: 28,
+    justifyContent: "center",
+  },
+  soloPillText: { ...Typography.small, fontFamily: Fonts.bodySemiBold, fontWeight: "600" },
 });

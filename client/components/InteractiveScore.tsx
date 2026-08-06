@@ -17,13 +17,15 @@ interface InteractiveScoreProps {
   musicXml: string;
   positionMs?: number;   // score time (ms) — drives cursor position directly
   visiblePartIndices?: number[];
-  onNotePress?: (noteIndex: number) => void;
+  /** timeMs = the tapped step's original-score time from the WebView's bar-grid
+   *  time table — the reliable coordinate; step index alone is ambiguous. */
+  onNotePress?: (noteIndex: number, timeMs: number | null) => void;
   onReady?: () => void;
 }
 
 type WebViewIncoming =
   | { type: "ready" }
-  | { type: "notePress"; noteIndex: number }
+  | { type: "notePress"; noteIndex: number; timeMs?: number | null }
   | { type: "error"; message: string }
   | { type: "debug"; tbl0?: number; tbl1?: number; tbl10?: number; tblN?: number; len?: number; bpm?: number; msg?: string };
 
@@ -101,7 +103,7 @@ function buildHtml(isDark: boolean, osmdJs: string | null): string {
     }
     function stepCursor(step){if(!osmd||!osmd.cursor)return;if(step<currentStep){osmd.cursor.reset();currentStep=0;}while(currentStep<step&&!osmd.cursor.Iterator.EndReached){osmd.cursor.next();currentStep++;}osmd.cursor.show();var el=osmd.cursor.cursorElement;if(el){el.style.backgroundColor='rgba(37,99,235,0.12)';el.style.borderLeft='4px solid '+cursorColor;el.style.boxShadow='0 0 8px rgba(37,99,235,0.8)';el.style.opacity='1';el.scrollIntoView({behavior:'smooth',block:'nearest'});}}
     function seekToMs(ms){if(!osmd||!osmd.cursor||timeTable.length===0)return;var lo=0,hi=timeTable.length-1,step=0;while(lo<=hi){var mid=(lo+hi)>>1;if(timeTable[mid]<=ms){step=mid;lo=mid+1;}else{hi=mid-1;}}if(step===currentStep)return;sendMsg({type:'debug',msg:'seek ms='+ms.toFixed(0)+' step='+step+' tbl='+timeTable[step].toFixed(0)+' prev='+currentStep});stepCursor(step);}
-    function clickInit(){var sc=document.getElementById('score');if(!sc)return;sc.addEventListener('click',function(e){if(!osmd||!osmd.cursor)return;var cx=e.pageX,cy=e.pageY,best=-1,dist=Infinity;osmd.cursor.reset();var i=0;while(!osmd.cursor.Iterator.EndReached){var el=osmd.cursor.cursorElement;if(el){var r=el.getBoundingClientRect(),cX=r.left+r.width/2+window.scrollX,cY=r.top+r.height/2+window.scrollY,d=Math.sqrt(Math.pow(cx-cX,2)+Math.pow(cy-cY,2));if(d<dist){dist=d;best=i;}}osmd.cursor.next();i++;}if(best>=0&&dist<80){stepCursor(best);sendMsg({type:'notePress',noteIndex:best});}});}
+    function clickInit(){var sc=document.getElementById('score');if(!sc)return;sc.addEventListener('click',function(e){if(!osmd||!osmd.cursor)return;var cx=e.pageX,cy=e.pageY,best=-1,dist=Infinity;osmd.cursor.reset();var i=0;while(!osmd.cursor.Iterator.EndReached){var el=osmd.cursor.cursorElement;if(el){var r=el.getBoundingClientRect(),cX=r.left+r.width/2+window.scrollX,cY=r.top+r.height/2+window.scrollY,d=Math.sqrt(Math.pow(cx-cX,2)+Math.pow(cy-cY,2));if(d<dist){dist=d;best=i;}}osmd.cursor.next();i++;}if(best>=0&&dist<80){stepCursor(best);sendMsg({type:'notePress',noteIndex:best,timeMs:(typeof timeTable[best]==='number'?timeTable[best]:null)});}});}
     function loadXml(xml){currentStep=0;try{if(!osmd)osmd=new opensheetmusicdisplay.OpenSheetMusicDisplay('score',{autoResize:true,backend:'svg',drawTitle:false,drawComposer:false,drawCredits:false,drawPartNames:false,drawPartAbbreviations:false,zoom:0.65});osmd.load(xml).then(function(){osmd.render();osmd.cursor.show();stepCursor(0);buildTimeTable();clickInit();sendMsg({type:'ready'});sendMsg({type:'debug',tbl0:timeTable[0],tbl1:timeTable[1],tbl10:timeTable[10],tblN:timeTable[timeTable.length-1],len:timeTable.length,bpm:(osmd.Sheet&&osmd.Sheet.DefaultStartTempoInBpm)||120});}).catch(function(e){showErr('Render failed: '+e.message);});}catch(e){showErr('Load failed: '+e.message);}}
     function setVisibleParts(indices){if(!osmd||!osmd.Sheet)return;try{var inst=osmd.Sheet.Instruments;for(var i=0;i<inst.length;i++){inst[i].Visible=indices.indexOf(i)>=0;}osmd.render();}catch(e){sendMsg({type:'debug',msg:'setVisibleParts failed: '+e.message});}}
     function setTheme(dark){
@@ -195,7 +197,7 @@ export const InteractiveScore = memo(function InteractiveScore({
             onReady?.();
             break;
           case "notePress":
-            onNotePress?.(data.noteIndex);
+            onNotePress?.(data.noteIndex, data.timeMs ?? null);
             break;
           case "error":
             setError(data.message);
@@ -211,6 +213,15 @@ export const InteractiveScore = memo(function InteractiveScore({
     },
     [onReady, onNotePress, sendToWebView],
   );
+
+  // Reload the score when the XML itself changes after the initial load (note
+  // edits) — the WebView stays mounted, OSMD just re-renders the new content.
+  const prevXmlRef = useRef(musicXml);
+  useEffect(() => {
+    if (!readyRef.current || musicXml === prevXmlRef.current) return;
+    prevXmlRef.current = musicXml;
+    sendToWebView({ type: "loadXml", xml: musicXml });
+  }, [musicXml, sendToWebView]);
 
   // Send cursor position to WebView whenever positionMs changes
   const prevPositionRef = useRef<number | undefined>(undefined);

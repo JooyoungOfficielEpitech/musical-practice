@@ -29,6 +29,8 @@ export interface SheetMusic {
   partVolumes?: Record<string, number>;
   /** Semitone offset for playback audio — restored on open. */
   savedTranspose?: number;
+  /** User fixed notes locally — server refresh must not overwrite the file. */
+  hasLocalEdits?: boolean;
 }
 
 export interface PracticeSession {

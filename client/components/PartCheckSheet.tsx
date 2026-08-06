@@ -17,6 +17,7 @@ export interface PartCheckSheetProps {
   onTogglePart: (partId: string) => void;
   partVolumes?: Record<string, number>;
   onVolumeChange?: (partId: string, volume: number) => void;
+  onSoloPart?: (partId: string) => void;
 }
 
 /** Bottom sheet that surfaces the full part-check UI (parts + note counts +
@@ -30,6 +31,7 @@ export function PartCheckSheet({
   onTogglePart,
   partVolumes,
   onVolumeChange,
+  onSoloPart,
 }: PartCheckSheetProps): React.JSX.Element {
   const { colors } = useTheme();
 
@@ -54,6 +56,7 @@ export function PartCheckSheet({
           onTogglePart={onTogglePart}
           partVolumes={partVolumes}
           onVolumeChange={onVolumeChange}
+          onSoloPart={onSoloPart}
         />
         <Pressable
           onPress={() => {

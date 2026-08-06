@@ -130,3 +130,49 @@ describe("PartCheckCard — per-part volume", () => {
     expect(screen.queryByLabelText("Soprano volume")).toBeNull();
   });
 });
+
+describe("PartCheckCard — solo", () => {
+  it("shows a Solo pill per row and reports the part id", () => {
+    const onSoloPart = jest.fn();
+    render(
+      <PartCheckCard
+        parts={PARTS}
+        visiblePartIds={new Set(["P1", "P2"])}
+        partNoteCounts={COUNTS}
+        onTogglePart={() => {}}
+        onSoloPart={onSoloPart}
+      />,
+    );
+    fireEvent.press(screen.getByLabelText("Solo Alto"));
+    expect(onSoloPart).toHaveBeenCalledWith("P2");
+  });
+
+  it("marks the soloed part and offers to restore all", () => {
+    const onSoloPart = jest.fn();
+    render(
+      <PartCheckCard
+        parts={PARTS}
+        visiblePartIds={new Set(["P1"])}
+        partNoteCounts={COUNTS}
+        onTogglePart={() => {}}
+        onSoloPart={onSoloPart}
+      />,
+    );
+    fireEvent.press(screen.getByLabelText("Unsolo Soprano"));
+    expect(onSoloPart).toHaveBeenCalledWith("P1");
+    expect(screen.getByLabelText("Solo Alto")).toBeTruthy();
+  });
+
+  it("renders no solo pills for single-part scores", () => {
+    render(
+      <PartCheckCard
+        parts={[PARTS[0]]}
+        visiblePartIds={new Set(["P1"])}
+        partNoteCounts={COUNTS}
+        onTogglePart={() => {}}
+        onSoloPart={() => {}}
+      />,
+    );
+    expect(screen.queryByLabelText("Solo Soprano")).toBeNull();
+  });
+});

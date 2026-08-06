@@ -34,6 +34,8 @@ function makeProps(overrides: Record<string, unknown> = {}) {
     onTransposeChange: jest.fn(),
     metronomeOn: false,
     onToggleMetronome: jest.fn(),
+    loopArmed: false,
+    onLoopPress: jest.fn(),
     ...overrides,
   };
 }
@@ -90,54 +92,27 @@ describe("PlaybackTransport", () => {
     expect(props.onToggleMetronome).toHaveBeenCalledTimes(1);
   });
 
-  it("arms loop start, then sets the loop range on the second press", () => {
-    const synthPlayer = makeSynthPlayer({ positionMs: 0 });
-    const props = makeProps({ synthPlayer });
-    const { getByLabelText, rerender } = render(<PlaybackTransport {...(props as any)} />);
-
-    // Arm point A at the current position
-    fireEvent.press(getByLabelText("Set loop start"));
-    expect(synthPlayer.setLoopRange).not.toHaveBeenCalled();
-
-    // Position advances, second press completes the A–B range
-    const advanced = { ...props, synthPlayer: { ...synthPlayer, positionMs: 5_000 } };
-    rerender(<PlaybackTransport {...(advanced as any)} />);
-    fireEvent.press(getByLabelText("Set loop end"));
-    expect(synthPlayer.setLoopRange).toHaveBeenCalledWith({ startMs: 0, endMs: 5_000 });
-  });
-
-  it("clears an active loop on press", () => {
-    const synthPlayer = makeSynthPlayer({ loopRange: { startMs: 0, endMs: 5_000 } });
-    const props = makeProps({ synthPlayer });
+  it("fires onLoopPress and shows the arm label when idle", () => {
+    const props = makeProps();
     const { getByLabelText } = render(<PlaybackTransport {...(props as any)} />);
-
-    fireEvent.press(getByLabelText("Clear loop"));
-    expect(synthPlayer.clearLoopRange).toHaveBeenCalledTimes(1);
+    fireEvent.press(getByLabelText("Set loop start"));
+    expect(props.onLoopPress).toHaveBeenCalledTimes(1);
   });
 
-  it("rescales an active loop when the tempo changes", () => {
-    const synthPlayer = makeSynthPlayer({ positionMs: 0, tempo: 1.0 });
-    const props = makeProps({ synthPlayer });
-    const { getByLabelText, rerender } = render(<PlaybackTransport {...(props as any)} />);
+  it("shows the B label while armed", () => {
+    const props = makeProps({ loopArmed: true });
+    const { getByLabelText, getByText } = render(<PlaybackTransport {...(props as any)} />);
+    expect(getByLabelText("Set loop end")).toBeTruthy();
+    expect(getByText("A…")).toBeTruthy();
+  });
 
-    fireEvent.press(getByLabelText("Set loop start"));
-    const advanced = { ...props, synthPlayer: { ...synthPlayer, positionMs: 8_000 } };
-    rerender(<PlaybackTransport {...(advanced as any)} />);
-    fireEvent.press(getByLabelText("Set loop end"));
-    expect(synthPlayer.setLoopRange).toHaveBeenLastCalledWith({ startMs: 0, endMs: 8_000 });
-
-    // Halving the speed (tempo 0.5) doubles the scaled loop bounds.
-    const slowed = {
-      ...props,
-      synthPlayer: {
-        ...synthPlayer,
-        positionMs: 8_000,
-        tempo: 0.5,
-        durationMs: 120_000,
-        loopRange: { startMs: 0, endMs: 8_000 },
-      },
-    };
-    rerender(<PlaybackTransport {...(slowed as any)} />);
-    expect(synthPlayer.setLoopRange).toHaveBeenLastCalledWith({ startMs: 0, endMs: 16_000 });
+  it("shows the clear label when a loop is active", () => {
+    const props = makeProps({
+      synthPlayer: makeSynthPlayer({ loopRange: { startMs: 0, endMs: 5_000 } }),
+    });
+    const { getByLabelText, getByText } = render(<PlaybackTransport {...(props as any)} />);
+    fireEvent.press(getByLabelText("Clear loop"));
+    expect(props.onLoopPress).toHaveBeenCalledTimes(1);
+    expect(getByText("A–B")).toBeTruthy();
   });
 });

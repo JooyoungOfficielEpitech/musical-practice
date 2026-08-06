@@ -10,6 +10,10 @@ import { InteractiveScore } from "@/components/InteractiveScore";
 import { PartCheckSheet } from "@/components/PartCheckSheet";
 import { PracticeTopBar } from "@/components/PracticeTopBar";
 import { PlaybackTransport } from "@/components/PlaybackTransport";
+import { PracticeToolsRow } from "@/components/PracticeToolsRow";
+import { PracticeStateView } from "@/components/PracticeStateViews";
+import { NoteEditSheet } from "@/components/NoteEditSheet";
+import { SessionCompleteToast } from "@/components/SessionCompleteToast";
 import { ScoreFullscreenModal } from "@/components/ScoreFullscreenModal";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
@@ -45,7 +49,7 @@ function PracticeBrowseViewComponent({
     setShowEdit, musicXmlContent, musicXmlLoading,
     hasMusicXml, synthPlayer, handleNotePress, handleSynthPlayPause,
     handleDeletePress,
-    playback, omrRetrying, handleRetryOmr,
+    playback, loop, soloPart, extras, omrRetrying, handleRetryOmr,
     partInfos, partNoteCounts, visiblePartIds, togglePartVisibility,
   } = state;
 
@@ -132,9 +136,18 @@ function PracticeBrowseViewComponent({
                   onTransposeChange={playback.setTranspose}
                   metronomeOn={playback.metronomeOn}
                   onToggleMetronome={playback.toggleMetronome}
+                  loopArmed={loop.armed}
+                  onLoopPress={loop.handleLoopButton}
                 />
+                {loop.armed && (
+                  <Text style={[styles.loopHint, { color: colors.primary }]}>
+                    Tap two notes on the score to set the loop
+                  </Text>
+                )}
               </View>
             )}
+
+            {musicXmlContent && <PracticeToolsRow extras={extras} />}
 
             {/* Part selection */}
             {partInfos.length > 1 && (
@@ -156,44 +169,24 @@ function PracticeBrowseViewComponent({
               </View>
             )}
           </>
-        ) : sheet.omrStatus === "processing" ? (
-          <View style={styles.emptyState}>
-            <Ionicons name="hourglass-outline" size={48} color={colors.primary} />
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              {`Recognizing music… ${smoothProgress}%`}
-            </Text>
-            <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
-              This score is still being processed. It updates here automatically — feel free to come back in a few minutes.
-            </Text>
-          </View>
-        ) : sheet.omrStatus === "failed" ? (
-          <View style={styles.emptyState}>
-            <Ionicons name="alert-circle-outline" size={48} color={colors.error} />
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>Recognition failed</Text>
-            <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
-              This score could not be read. You can retry the scan — or delete it and import the PDF again.
-            </Text>
-            <Pressable
-              onPress={handleRetryPress}
-              disabled={omrRetrying}
-              accessibilityLabel="Retry scan"
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.retryBtn, { backgroundColor: colors.primary, opacity: omrRetrying ? 0.5 : pressed ? 0.85 : 1 }]}
-            >
-              <Ionicons name="refresh" size={18} color={colors.buttonText} />
-              <Text style={[styles.retryBtnText, { color: colors.buttonText }]}>
-                {omrRetrying ? "Restarting…" : "Retry scan"}
-              </Text>
-            </Pressable>
-          </View>
         ) : (
-          <View style={styles.emptyState}>
-            <Ionicons name="alert-circle-outline" size={48} color={colors.textSecondary} />
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>No score loaded</Text>
-            <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>The score could not be loaded. Try re-importing the PDF.</Text>
-          </View>
+          <PracticeStateView
+            omrStatus={sheet.omrStatus}
+            smoothProgress={smoothProgress}
+            omrRetrying={omrRetrying}
+            onRetry={handleRetryPress}
+          />
         )}
       </ScrollView>
+
+      {extras.sessionToast.visible && (
+        <View style={styles.toastWrap} pointerEvents="none">
+          <SessionCompleteToast
+            durationSec={extras.sessionToast.durationSec}
+            accuracy={extras.sessionToast.accuracy}
+          />
+        </View>
+      )}
 
       {/* Modals */}
       <PartCheckSheet
@@ -204,7 +197,18 @@ function PracticeBrowseViewComponent({
         onTogglePart={togglePartVisibility}
         partVolumes={playback.partVolumes}
         onVolumeChange={playback.setPartVolume}
+        onSoloPart={soloPart}
         onDismiss={() => setPartSheetVisible(false)}
+      />
+
+      <NoteEditSheet
+        visible={!!extras.editor.selectedNote}
+        selectedPitch={extras.editor.selectedPitch}
+        canEdit={extras.editor.canEditSelected === true}
+        onApply={(step, alter, octave) => {
+          extras.editor.applyPitch(step, alter, octave);
+        }}
+        onDismiss={extras.editor.dismiss}
       />
 
       <ScoreFullscreenModal
@@ -233,15 +237,8 @@ const styles = StyleSheet.create({
   disclaimerText: { ...Typography.small, fontSize: 11, flex: 1 },
   transport: { paddingHorizontal: 0, marginVertical: Spacing.md },
   transportLabel: { ...Typography.label, marginBottom: Spacing.xs, paddingHorizontal: Spacing.lg },
-  emptyState: { flex: 1, alignItems: "center", justifyContent: "center", gap: Spacing.md, paddingHorizontal: Spacing.xl, paddingTop: Spacing["2xl"] },
-  emptyTitle: { ...Typography.h3 },
-  emptyMessage: { ...Typography.body, textAlign: "center" },
-  retryBtn: {
-    flexDirection: "row", alignItems: "center", gap: Spacing.sm,
-    paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md, marginTop: Spacing.sm, minHeight: 44,
-  },
-  retryBtnText: { ...Typography.body, fontFamily: Fonts.bodySemiBold, fontWeight: "600" },
+  loopHint: { ...Typography.small, textAlign: "center", marginTop: Spacing.xs },
+  toastWrap: { position: "absolute", bottom: Spacing["2xl"], left: 0, right: 0, alignItems: "center" },
   partsSection: { paddingHorizontal: Spacing.lg, marginVertical: Spacing.lg },
   partsButton: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, borderRadius: BorderRadius.md, flexDirection: "row", alignItems: "center", gap: Spacing.sm },
   partsButtonText: { ...Typography.body, fontFamily: Fonts.bodySemiBold, fontWeight: "600" },

@@ -3,6 +3,7 @@ import {
   formatPitchString,
   findNoteRange,
   replaceNotePitch,
+  replaceNotePitchAtIndex,
 } from "../../../../client/lib/audio/musicXmlEditor";
 import {
   SAMPLE_MUSICXML,
@@ -142,5 +143,26 @@ describe("replaceNotePitch", () => {
       4,
     );
     expect(updated).toBe(SAMPLE_MUSICXML);
+  });
+});
+
+describe("replaceNotePitchAtIndex", () => {
+  const XML = `<score-partwise><part id="P1"><measure number="1">
+    <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration></note>
+    <note><rest/><duration>1</duration></note>
+    <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration></note>
+  </measure></part></score-partwise>`;
+
+  it("replaces exactly the nth note block, leaving identical siblings alone", () => {
+    const out = replaceNotePitchAtIndex(XML, 2, "D", 1, 5);
+    expect(out).toContain("<pitch><step>C</step><octave>4</octave></pitch>"); // first C untouched
+    expect(out).toContain("<pitch><step>D</step><alter>1</alter><octave>5</octave></pitch>");
+    expect(out.indexOf("<step>D</step>")).toBeGreaterThan(out.indexOf("<step>C</step>"));
+  });
+
+  it("returns the input unchanged for a rest index or out-of-range index", () => {
+    expect(replaceNotePitchAtIndex(XML, 1, "D", 0, 4)).toBe(XML);
+    expect(replaceNotePitchAtIndex(XML, 99, "D", 0, 4)).toBe(XML);
+    expect(replaceNotePitchAtIndex(XML, -1, "D", 0, 4)).toBe(XML);
   });
 });
