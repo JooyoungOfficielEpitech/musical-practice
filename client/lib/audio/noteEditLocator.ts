@@ -68,10 +68,17 @@ export function findXmlNoteIndex(xmlString: string, identity: NoteIdentity): num
 
   let matchCount = 0;
   for (const block of parts[partIndex].match(NOTE_BLOCK_RE) ?? []) {
-    if (!block.includes("<rest")) {
+    // Tie continuations extend the previous played note — the parser merges
+    // them into one NoteEvent, so they must not advance occurrence counting.
+    const isTieContinuation = block.includes('<tie type="stop"');
+    if (!block.includes("<rest") && !isTieContinuation) {
       const midi = effectiveMidi(block, keyAcc);
       if (midi === midiNumber) {
-        if (matchCount === occurrence) return globalIndex;
+        if (matchCount === occurrence) {
+          // Editing half a tie corrupts the tie chain — refuse tied notes.
+          if (block.includes("<tie ")) return null;
+          return globalIndex;
+        }
         matchCount++;
       }
     }

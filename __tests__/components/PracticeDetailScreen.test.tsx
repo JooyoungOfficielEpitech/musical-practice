@@ -254,7 +254,7 @@ jest.mock("../../client/hooks/usePracticeDetail", () => ({
     extras: {
       singAlong: {
         active: false, livePitch: null, accuracyPercent: 0,
-        permissionError: null, toggle: jest.fn().mockResolvedValue(undefined),
+        error: null, multiPartWarning: false, toggle: jest.fn().mockResolvedValue(undefined),
       },
       editor: {
         editedMusicXml: "", selectedNote: null, selectedPitch: null,

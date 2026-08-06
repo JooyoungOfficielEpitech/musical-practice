@@ -63,9 +63,16 @@ export function PracticeToolsRow({ extras }: PracticeToolsRowProps): React.JSX.E
           Listening… sing your part along with playback
         </Text>
       )}
-      {singAlong.permissionError && (
+      {singAlong.error && (
         <Text style={[styles.hint, { color: colors.error }]}>
-          Microphone access is needed for sing-along scoring — enable it in Settings.
+          {singAlong.error.includes("permission")
+            ? "Microphone access is needed for sing-along scoring — enable it in Settings."
+            : "Microphone unavailable — sing-along scoring can't start."}
+        </Text>
+      )}
+      {singAlong.multiPartWarning && (
+        <Text style={[styles.hint, { color: colors.textSecondary }]}>
+          Several parts are playing — solo your part for accurate scoring.
         </Text>
       )}
       {editor.editMode && (

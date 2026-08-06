@@ -41,7 +41,8 @@ export async function recordSession({
     sheetMusicTitle: sheetTitle,
     startedAt: Date.now(),
     duration: durationSec,
-    accuracy: accuracy ?? 0,
+    // Canonical unit: 0..1 fraction (the card chip and toast multiply by 100).
+    accuracy: accuracy !== undefined ? Math.max(0, Math.min(1, accuracy)) : 0,
     bpm: bpm ?? 100,
   };
 
@@ -98,5 +99,30 @@ export async function getLibraryStats(): Promise<UserStats> {
       streak: 0,
       lastPracticeDate: "",
     };
+  }
+}
+
+/**
+ * Latest recorded accuracy (0..1) per sheet — feeds the library card chip.
+ * Sessions with no accuracy (0) are skipped; safe empty map on any failure.
+ */
+export async function getLastAccuracyBySheet(): Promise<Record<string, number>> {
+  try {
+    const sessions = await storage.getSessions();
+    const latest: Record<string, { startedAt: number; accuracy: number }> = {};
+    for (const s of sessions) {
+      if (s.accuracy <= 0) continue;
+      const prev = latest[s.sheetMusicId];
+      if (!prev || s.startedAt >= prev.startedAt) {
+        latest[s.sheetMusicId] = { startedAt: s.startedAt, accuracy: s.accuracy };
+      }
+    }
+    const result: Record<string, number> = {};
+    for (const [sheetId, entry] of Object.entries(latest)) {
+      result[sheetId] = entry.accuracy;
+    }
+    return result;
+  } catch {
+    return {};
   }
 }

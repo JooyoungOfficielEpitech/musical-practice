@@ -120,3 +120,32 @@ describe("computeNoteOccurrence", () => {
     expect(computeNoteOccurrence(notes, partIndices, 1)).toBe(0);
   });
 });
+
+describe("findXmlNoteIndex — tied notes", () => {
+  // C4 tied across two blocks (ONE played note), then a separate C4.
+  const TIE_XML = `<score-partwise>
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>1</divisions><key><fifths>0</fifths></key></attributes>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><tie type="start"/></note>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><tie type="stop"/></note>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration></note>
+    </measure>
+  </part>
+</score-partwise>`;
+
+  it("does not count tie continuations, so occurrence matches the played sequence", () => {
+    // Played C4 events: [tied pair]=occ 0, plain C4=occ 1 → plain C4 is block index 2.
+    expect(findXmlNoteIndex(TIE_XML, { partIndex: 0, midiNumber: 60, occurrence: 1 })).toBe(2);
+  });
+
+  it("refuses to edit a note that participates in a tie", () => {
+    // Occurrence 0 is the tied note — editing only half a tie corrupts it.
+    expect(findXmlNoteIndex(TIE_XML, { partIndex: 0, midiNumber: 60, occurrence: 0 })).toBeNull();
+  });
+
+  it("still edits untied notes in the same part", () => {
+    expect(findXmlNoteIndex(TIE_XML, { partIndex: 0, midiNumber: 64, occurrence: 0 })).toBe(3);
+  });
+});

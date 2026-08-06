@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { AppState } from "react-native";
+import { AppState, Platform } from "react-native";
+import { setAudioModeAsync } from "expo-audio";
 import { initAudioStream, startAudioStream, stopAudioStream } from "@/lib/audio/audioStream";
 import { detectPitch, destroyDetector, initDetector } from "@/lib/audio/pitchDetector";
 import { DEFAULT_AUDIO_CONFIG } from "@/lib/audio/types";
@@ -44,12 +45,27 @@ export function usePitchDetection(
 
     stopAudioStream();
     destroyDetector();
+    // Leave record mode — staying in it ducks playback volume/routing on iOS.
+    if (Platform.OS !== "web") {
+      setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }).catch(() => {});
+    }
   }, []);
 
   const startListening = useCallback(async () => {
     try {
       setError(null);
       console.log("[PitchDetection] startListening — init detector + audio stream");
+
+      // iOS needs the play-and-record session BEFORE the mic stream starts,
+      // or recording fails / output reroutes. (expo-audio, NOT expo-av — the
+      // expo-av variant conflicts with LiveAudioStream's session handling.)
+      if (Platform.OS !== "web") {
+        await setAudioModeAsync({
+          allowsRecording: true,
+          playsInSilentMode: true,
+          shouldPlayInBackground: false,
+        });
+      }
 
       initDetector(DEFAULT_AUDIO_CONFIG.sampleRate);
       initAudioStream(DEFAULT_AUDIO_CONFIG);

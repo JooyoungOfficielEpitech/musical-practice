@@ -27,6 +27,8 @@ interface UsePitchPracticeReturn {
   reset: () => void;
   livePitch: LivePitchInfo | null;
   accuracyPercent: number;
+  /** Mic/stream failure — surface to the user, the badge will never appear. */
+  error: string | null;
 }
 
 export function usePitchPractice(options: UsePitchPracticeOptions): UsePitchPracticeReturn {
@@ -36,8 +38,12 @@ export function usePitchPractice(options: UsePitchPracticeOptions): UsePitchPrac
 
   const readingsRef = useRef<JudgmentReading[]>([]);
   const lastPositionRef = useRef(-1); // Track last position to avoid duplicate readings
+  // The judging effect must run per NEW pitch reading only — never because the
+  // caller re-rendered with a fresh options object.
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
 
-  const { currentPitch, startListening, stopListening } = usePitchDetection();
+  const { currentPitch, startListening, stopListening, error } = usePitchDetection();
 
   const reset = useCallback(() => {
     readingsRef.current = [];
@@ -69,10 +75,11 @@ export function usePitchPractice(options: UsePitchPracticeOptions): UsePitchPrac
       return;
     }
 
-    const positionSec = options.getPositionSec();
+    const opts = optionsRef.current;
+    const positionSec = opts.getPositionSec();
 
     // Get notes expected at current position
-    const expectedNotes = expectedNotesAt(options.notes, positionSec);
+    const expectedNotes = expectedNotesAt(opts.notes, positionSec);
 
     // If no expected notes (silence / rest), don't judge
     if (expectedNotes.length === 0) {
@@ -110,8 +117,8 @@ export function usePitchPractice(options: UsePitchPracticeOptions): UsePitchPrac
     const judgment = judgePitch(
       midiFloat,
       expectedNotes,
-      options.toleranceCents ?? 60,
-      options.octaveAgnostic ?? false,
+      opts.toleranceCents ?? 60,
+      opts.octaveAgnostic ?? false,
     );
 
     // Add reading
@@ -126,7 +133,8 @@ export function usePitchPractice(options: UsePitchPracticeOptions): UsePitchPrac
     // Update accuracy
     const accuracy = summarizeAccuracy(readingsRef.current);
     setAccuracyPercent(accuracy);
-  }, [active, currentPitch, options]);
+     
+  }, [active, currentPitch]);
 
   return {
     active,
@@ -135,5 +143,6 @@ export function usePitchPractice(options: UsePitchPracticeOptions): UsePitchPrac
     reset,
     livePitch,
     accuracyPercent,
+    error,
   };
 }

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { parsePitchString, replaceNotePitchAtIndex } from "../lib/audio/musicXmlEditor";
 import { findXmlNoteIndex } from "../lib/audio/noteEditLocator";
 import { playNote, resumeAudioContext } from "../lib/audio/synthEngine";
@@ -54,7 +54,7 @@ function previewMidi(midi: number): void {
  */
 export function useNoteEditor(
   initialMusicXml: string,
-  onXmlChanged?: (xml: string) => void,
+  onXmlChanged?: (xml: string, hasEdits: boolean) => void,
 ): NoteEditorState {
   const [editedMusicXml, setEditedMusicXml] = useState(initialMusicXml);
   const [selectedNote, setSelectedNote] = useState<NoteIdentity | null>(null);
@@ -62,8 +62,16 @@ export function useNoteEditor(
   const [canEditSelected, setCanEditSelected] = useState<boolean | null>(null);
   const [hasEdits, setHasEdits] = useState(false);
 
-  // A new score file resets the editing session.
+  // The undo baseline: the last XML that arrived from OUTSIDE (load/refresh).
+  // Our own edits round-trip through the parent (re-parse) and come back as
+  // initialMusicXml — those must NOT reset the session or move the baseline.
+  const baselineRef = useRef(initialMusicXml);
+  const lastEmittedRef = useRef<string | null>(null);
+
+  // A genuinely new score file resets the editing session.
   useEffect(() => {
+    if (initialMusicXml === lastEmittedRef.current) return;
+    baselineRef.current = initialMusicXml;
     setEditedMusicXml(initialMusicXml);
     setHasEdits(false);
     setSelectedNote(null);
@@ -97,7 +105,8 @@ export function useNoteEditor(
       setSelectedPitch(null);
       setCanEditSelected(null);
       previewMidi(midiOf(step, alter, octave));
-      onXmlChanged?.(updated);
+      lastEmittedRef.current = updated;
+      onXmlChanged?.(updated, true);
       return true;
     },
     [selectedNote, editedMusicXml, onXmlChanged],
@@ -110,13 +119,15 @@ export function useNoteEditor(
   }, []);
 
   const resetEdits = useCallback(() => {
-    setEditedMusicXml(initialMusicXml);
+    const baseline = baselineRef.current;
+    setEditedMusicXml(baseline);
     setHasEdits(false);
     setSelectedNote(null);
     setSelectedPitch(null);
     setCanEditSelected(null);
-    onXmlChanged?.(initialMusicXml);
-  }, [initialMusicXml, onXmlChanged]);
+    lastEmittedRef.current = baseline;
+    onXmlChanged?.(baseline, false);
+  }, [onXmlChanged]);
 
   return {
     editedMusicXml, selectedNote, selectedPitch, canEditSelected, hasEdits,

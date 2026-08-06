@@ -97,7 +97,7 @@ describe("practiceSessionRecorder", () => {
         sheetId: "sheet-1",
         sheetTitle: "Test Song",
         durationSec: 120,
-        accuracy: 85,
+        accuracy: 0.85,
         bpm: 120,
       });
 
@@ -107,7 +107,7 @@ describe("practiceSessionRecorder", () => {
           sheetMusicId: "sheet-1",
           sheetMusicTitle: "Test Song",
           duration: 120,
-          accuracy: 85,
+          accuracy: 0.85,
           bpm: 120,
           startedAt: expect.any(Number),
         }),
@@ -332,5 +332,27 @@ describe("practiceSessionRecorder", () => {
     it("should be at least 30 seconds", () => {
       expect(MIN_SESSION_SEC).toBeGreaterThanOrEqual(30);
     });
+  });
+});
+
+describe("getLastAccuracyBySheet", () => {
+  it("returns the most recent non-zero accuracy per sheet", async () => {
+    const storage = require("../../../client/lib/storage");
+    jest.spyOn(storage, "getSessions").mockResolvedValue([
+      { id: "1", sheetMusicId: "s1", sheetMusicTitle: "A", startedAt: 100, duration: 60, accuracy: 0.5, bpm: 100 },
+      { id: "2", sheetMusicId: "s1", sheetMusicTitle: "A", startedAt: 200, duration: 60, accuracy: 0.8, bpm: 100 },
+      { id: "3", sheetMusicId: "s2", sheetMusicTitle: "B", startedAt: 150, duration: 60, accuracy: 0, bpm: 100 },
+    ]);
+    const { getLastAccuracyBySheet } = require("../../../client/lib/practiceSessionRecorder");
+
+    const map = await getLastAccuracyBySheet();
+    expect(map).toEqual({ s1: 0.8 }); // s2 skipped — no scored session
+  });
+
+  it("returns an empty map when storage fails", async () => {
+    const storage = require("../../../client/lib/storage");
+    jest.spyOn(storage, "getSessions").mockRejectedValue(new Error("boom"));
+    const { getLastAccuracyBySheet } = require("../../../client/lib/practiceSessionRecorder");
+    expect(await getLastAccuracyBySheet()).toEqual({});
   });
 });

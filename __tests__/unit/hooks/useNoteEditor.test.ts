@@ -62,7 +62,7 @@ describe("useNoteEditor", () => {
     expect(first).toBeGreaterThan(-1);
     expect(edited).toBeGreaterThan(first);
     expect(xml).toContain("<pitch><step>D</step><alter>1</alter><octave>4</octave></pitch>");
-    expect(onXmlChanged).toHaveBeenCalledWith(xml);
+    expect(onXmlChanged).toHaveBeenCalledWith(xml, true);
     // Selection clears after a successful apply.
     expect(result.current.selectedNote).toBeNull();
   });
@@ -90,7 +90,27 @@ describe("useNoteEditor", () => {
 
     expect(result.current.editedMusicXml).toBe(XML);
     expect(result.current.hasEdits).toBe(false);
-    expect(onXmlChanged).toHaveBeenLastCalledWith(XML);
+    expect(onXmlChanged).toHaveBeenLastCalledWith(XML, false);
+  });
+
+  it("keeps hasEdits and the undo baseline when the parent round-trips the edited XML", () => {
+    const onXmlChanged = jest.fn();
+    const { result, rerender } = renderHook<
+      ReturnType<typeof useNoteEditor>,
+      { xml: string }
+    >(({ xml }) => useNoteEditor(xml, onXmlChanged), { initialProps: { xml: XML } });
+
+    act(() => result.current.selectNote(SECOND_C));
+    act(() => { result.current.applyPitch("D", 0, 4); });
+    const edited = result.current.editedMusicXml;
+
+    // Parent re-parses and feeds the edited XML back down.
+    rerender({ xml: edited });
+    expect(result.current.hasEdits).toBe(true); // NOT reset by our own edit
+
+    act(() => result.current.resetEdits());
+    expect(result.current.editedMusicXml).toBe(XML); // undo → the ORIGINAL
+    expect(onXmlChanged).toHaveBeenLastCalledWith(XML, false);
   });
 
   it("dismiss clears the selection without editing", () => {

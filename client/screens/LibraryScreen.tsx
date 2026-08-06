@@ -18,7 +18,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { hapticFeedback } from "@/lib/hapticFeedback";
 import { usePractice } from "@/context/PracticeContext";
 import { buildRetryPatch } from "@/lib/omrRetry";
-import { getLibraryStats } from "@/lib/practiceSessionRecorder";
+import { getLibraryStats, getLastAccuracyBySheet } from "@/lib/practiceSessionRecorder";
 import { LibraryStatsStrip } from "@/components/LibraryStatsStrip";
 import { SheetCard } from "@/components/SheetCard";
 import { RenameModal } from "@/components/RenameModal";
@@ -41,9 +41,11 @@ export default function LibraryScreen() {
   const [renameTarget, setRenameTarget] = useState<SheetMusic | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState<UserStats | null>(null);
+  const [accuracyBySheet, setAccuracyBySheet] = useState<Record<string, number>>({});
 
   const loadStats = useCallback(() => {
     getLibraryStats().then(setStats).catch(() => {});
+    getLastAccuracyBySheet().then(setAccuracyBySheet).catch(() => {});
   }, []);
   // Sessions are recorded when leaving the practice screen, so refresh the
   // strip every time the library regains focus.
@@ -146,10 +148,11 @@ export default function LibraryScreen() {
     >
       <SheetCard
         sheet={item}
+        lastAccuracy={accuracyBySheet[item.id]}
         onPress={() => navigation.navigate("PracticeDetail", { sheetId: item.id })}
       />
     </Pressable>
-  ), [navigation, handleLongPress]);
+  ), [navigation, handleLongPress, accuracyBySheet]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.backgroundDefault, paddingTop: insets.top }]}>

@@ -34,7 +34,9 @@ export interface PracticeExtrasState {
     active: boolean;
     livePitch: (PitchResult & { correct: boolean }) | null;
     accuracyPercent: number;
-    permissionError: string | null;
+    error: string | null;
+    /** More than one part is audible — scoring is loose; suggest soloing. */
+    multiPartWarning: boolean;
     toggle: () => Promise<void>;
   };
   editor: NoteEditorState & {
@@ -94,10 +96,13 @@ export function usePracticeExtras(args: PracticeExtrasArgs): PracticeExtrasState
   });
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Accuracy is stored/displayed as a 0..1 fraction everywhere downstream
+  // (PracticeSession.accuracy, SheetCard chip, toast) — convert once here.
   const session = usePracticeSessionTracker({
     isPlaying: synthPlayer.isPlaying,
     sheet: sheet ? { id: sheet.id, title: sheet.title } : undefined,
-    getFinishAccuracy: () => lastAccuracyRef.current,
+    getFinishAccuracy: () =>
+      lastAccuracyRef.current !== undefined ? lastAccuracyRef.current / 100 : undefined,
   });
 
   const toggleSingAlong = useCallback(async () => {
@@ -105,7 +110,11 @@ export function usePracticeExtras(args: PracticeExtrasArgs): PracticeExtrasState
       const accuracy = pitch.accuracyPercent;
       pitch.deactivate();
       if (accuracy > 0) {
-        setSessionToast({ visible: true, durationSec: session.elapsedActiveSec, accuracy });
+        setSessionToast({
+          visible: true,
+          durationSec: session.elapsedActiveSec,
+          accuracy: accuracy / 100,
+        });
         if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
         toastTimerRef.current = setTimeout(
           () => setSessionToast((t) => ({ ...t, visible: false })),
@@ -124,11 +133,12 @@ export function usePracticeExtras(args: PracticeExtrasArgs): PracticeExtrasState
   const toggleEditMode = useCallback(() => setEditMode((v) => !v), []);
 
   const handleXmlChanged = useCallback(
-    (xml: string) => {
+    (xml: string, hasEdits: boolean) => {
       onXmlEdited(xml);
       if (sheet?.musicXmlUri) {
+        // A full undo (hasEdits=false) re-enables server refresh.
         saveEditedXml(sheet.id, sheet.musicXmlUri, xml)
-          .then(() => patchSheet(sheet.id, { hasLocalEdits: true }))
+          .then(() => patchSheet(sheet.id, { hasLocalEdits: hasEdits }))
           .catch(() => {});
       }
     },
@@ -170,12 +180,18 @@ export function usePracticeExtras(args: PracticeExtrasArgs): PracticeExtrasState
     [editMode, noteSequence, partInfos, visiblePartIds, noteEditor, notePartIndicesRef],
   );
 
+  const audibleParts =
+    visiblePartIds.size === 0 || visiblePartIds.size === partInfos.length
+      ? partInfos.length
+      : visiblePartIds.size;
+
   return {
     singAlong: {
       active: pitch.active,
       livePitch: pitch.livePitch,
       accuracyPercent: pitch.accuracyPercent,
-      permissionError: permission.error,
+      error: permission.error ?? pitch.error,
+      multiPartWarning: pitch.active && audibleParts > 1,
       toggle: toggleSingAlong,
     },
     editor: { ...noteEditor, editMode, toggleEditMode, handleEditTap },

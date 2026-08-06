@@ -8,6 +8,11 @@ const mockInitDetector = jest.fn();
 const mockDetectPitch = jest.fn();
 const mockDestroyDetector = jest.fn();
 
+const mockSetAudioMode = jest.fn().mockResolvedValue(undefined);
+jest.mock("expo-audio", () => ({
+  setAudioModeAsync: (...args: unknown[]) => mockSetAudioMode(...args),
+}));
+
 jest.mock("../../../client/lib/audio/pitchDetector", () => ({
   initDetector: (...args: any[]) => mockInitDetector(...args),
   detectPitch: (...args: any[]) => mockDetectPitch(...args),
@@ -327,5 +332,22 @@ describe("usePitchDetection", () => {
 
       expect(result.current.error).toBeNull();
     });
+  });
+});
+
+describe("usePitchDetection — audio session", () => {
+  it("enters play-and-record mode before starting and leaves it on stop", async () => {
+    mockSetAudioMode.mockClear();
+    const { result } = renderHook(() => usePitchDetection());
+
+    await act(async () => { await result.current.startListening(); });
+    expect(mockSetAudioMode).toHaveBeenCalledWith(
+      expect.objectContaining({ allowsRecording: true }),
+    );
+
+    act(() => { result.current.stopListening(); });
+    expect(mockSetAudioMode).toHaveBeenLastCalledWith(
+      expect.objectContaining({ allowsRecording: false }),
+    );
   });
 });
