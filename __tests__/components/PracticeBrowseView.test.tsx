@@ -84,6 +84,7 @@ const baseState = {
   showDeleteConfirm: false, setShowDeleteConfirm: jest.fn(),
   audioMode: "reference" as const, setAudioMode: jest.fn(),
   musicXmlContent: null, musicXmlLoading: false, hasMusicXml: false,
+  scoreBpm: null,
   musicXmlLoadError: null, audioLoadError: null, partsDeselectedError: null,
   showInstrumentPicker: false, setShowInstrumentPicker: jest.fn(),
   editMode: false, setEditMode: jest.fn(),

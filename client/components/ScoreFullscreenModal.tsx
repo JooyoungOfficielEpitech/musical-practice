@@ -12,15 +12,18 @@ export interface ScoreFullscreenModalProps {
   onClose: () => void;
   musicXml: string;
   positionMs: number;
+  tempoBpm?: number;
   visiblePartIndices?: number[];
   isPlaying: boolean;
   onPlayPause: () => void;
+  /** Tap-to-seek, same as the inline score. */
+  onNotePress?: (noteIndex: number, timeMs: number | null) => void;
 }
 
 /** Full-screen score view — read the sheet music large, with a floating
  *  play/pause to listen while reading. Read-only (no note editing). */
 export function ScoreFullscreenModal({
-  visible, onClose, musicXml, positionMs, visiblePartIndices, isPlaying, onPlayPause,
+  visible, onClose, musicXml, positionMs, tempoBpm, visiblePartIndices, isPlaying, onPlayPause, onNotePress,
 }: ScoreFullscreenModalProps): React.JSX.Element | null {
   const { colors } = useTheme();
   const { isLandscape, toggleLandscape } = useLandscape();
@@ -43,7 +46,13 @@ export function ScoreFullscreenModal({
     <Modal visible={visible} animationType="fade" onRequestClose={onClose} presentationStyle="fullScreen">
       <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundDefault }]} edges={["top", "bottom"]}>
         <View style={styles.scoreArea}>
-          <InteractiveScore musicXml={musicXml} positionMs={positionMs} visiblePartIndices={visiblePartIndices} />
+          <InteractiveScore
+            musicXml={musicXml}
+            positionMs={positionMs}
+            tempoBpm={tempoBpm}
+            visiblePartIndices={visiblePartIndices}
+            onNotePress={onNotePress}
+          />
         </View>
         <Pressable
           onPress={onClose}

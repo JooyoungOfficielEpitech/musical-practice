@@ -47,7 +47,7 @@ function PracticeBrowseViewComponent({
 
   const {
     setShowEdit, musicXmlContent, musicXmlLoading,
-    hasMusicXml, synthPlayer, handleNotePress, handleSynthPlayPause,
+    hasMusicXml, scoreBpm, synthPlayer, handleNotePress, handleSynthPlayPause,
     handleDeletePress,
     playback, loop, soloPart, extras, omrRetrying, handleRetryOmr,
     partInfos, partNoteCounts, visiblePartIds, togglePartVisibility,
@@ -92,6 +92,7 @@ function PracticeBrowseViewComponent({
                     <InteractiveScore
                       musicXml={musicXmlContent}
                       positionMs={synthPlayer.positionMs * synthPlayer.tempo}
+                      tempoBpm={scoreBpm ?? undefined}
                       visiblePartIndices={visiblePartIndices}
                       onNotePress={handleNotePress}
                     />
@@ -215,9 +216,11 @@ function PracticeBrowseViewComponent({
         visible={fullscreenVisible}
         musicXml={musicXmlContent ?? ""}
         positionMs={synthPlayer.positionMs * synthPlayer.tempo}
+        tempoBpm={scoreBpm ?? undefined}
         visiblePartIndices={visiblePartIndices}
         isPlaying={synthPlayer.isPlaying}
         onPlayPause={handleSynthPlayPause}
+        onNotePress={handleNotePress}
         onClose={() => setFullscreenVisible(false)}
       />
     </>

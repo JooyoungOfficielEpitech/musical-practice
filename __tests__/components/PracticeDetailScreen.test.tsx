@@ -230,6 +230,7 @@ jest.mock("../../client/hooks/usePracticeDetail", () => ({
     handleDeleteConfirm: jest.fn(),
     handleEdit: jest.fn(),
     musicXmlContent: null,
+    scoreBpm: null,
     partInfos: [],
     visiblePartIds: new Set(),
     togglePartVisibility: jest.fn(),

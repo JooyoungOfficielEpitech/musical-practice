@@ -6,7 +6,7 @@ import { usePlaybackOptions, type PlaybackOptionsState } from "@/hooks/usePlayba
 import { usePlaybackNotes } from "@/hooks/usePlaybackNotes";
 import { useLoopControls, type LoopControlsState } from "@/hooks/useLoopControls";
 import { usePracticeExtras, type PracticeExtrasState } from "@/hooks/usePracticeExtras";
-import { parseMusicXml } from "@/lib/audio/musicXmlParser";
+import { parseMusicXml, parseTempo } from "@/lib/audio/musicXmlParser";
 import { originalToScaledMs } from "@/lib/audio/transportMath";
 import { downloadResult } from "@/lib/omrQueue";
 import { buildRetryPatch } from "@/lib/omrRetry";
@@ -20,6 +20,8 @@ export interface PracticeDetailState {
   showEdit: boolean; setShowEdit: (v: boolean) => void;
   showDeleteConfirm: boolean; setShowDeleteConfirm: (v: boolean) => void;
   musicXmlContent: string | null; musicXmlLoading: boolean; hasMusicXml: boolean;
+  /** Sanitized score BPM — the WebView cursor must use the SAME tempo as audio. */
+  scoreBpm: number | null;
   musicXmlLoadError: string | null;
   partsDeselectedError: string | null;
   partInfos: PartInfo[];
@@ -58,6 +60,11 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
   const [partNoteCounts, setPartNoteCounts] = useState<Record<string, number>>({});
   const [visiblePartIds, setVisiblePartIds] = useState<Set<string>>(new Set());
   const notePartIndicesRef = useRef<number[]>([]);
+
+  const scoreBpm = useMemo(
+    () => (musicXmlContent ? parseTempo(musicXmlContent) : null),
+    [musicXmlContent],
+  );
 
   const playback = usePlaybackOptions(sheet, patchSheet);
   const notesForPlayer = usePlaybackNotes({
@@ -238,7 +245,7 @@ export function usePracticeDetail(sheetId: string): PracticeDetailState {
   return {
     showEdit, setShowEdit,
     showDeleteConfirm, setShowDeleteConfirm,
-    musicXmlContent, musicXmlLoading, hasMusicXml, musicXmlLoadError, partsDeselectedError,
+    musicXmlContent, musicXmlLoading, hasMusicXml, scoreBpm, musicXmlLoadError, partsDeselectedError,
     noteSequence,
     partInfos, partNoteCounts, visiblePartIds, togglePartVisibility,
     synthPlayer,

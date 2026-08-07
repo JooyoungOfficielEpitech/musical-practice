@@ -322,3 +322,17 @@ describe("InteractiveScore — accessibility (score-viewer-not-accessible)", () 
     expect(json).toContain("accessibilityLiveRegion");
   });
 });
+
+describe("InteractiveScore — authoritative tempo", () => {
+  it("injects the RN-owned bpm plumbing into the WebView page", async () => {
+    const { toJSON } = await renderScore(
+      <InteractiveScore musicXml={testMusicXml} tempoBpm={100} />
+    );
+    const html = JSON.stringify(toJSON());
+    // The page must prefer the bpm the RN side sends with loadXml and mirror
+    // the audio parser's sanity clamp — never OSMD's unclamped default.
+    expect(html).toContain("authoritativeBpm");
+    expect(html).toContain("loadXml(m.xml,m.bpm)");
+    expect(html).toContain("bpm>=40&&bpm<=200");
+  });
+});

@@ -16,6 +16,10 @@ import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 interface InteractiveScoreProps {
   musicXml: string;
   positionMs?: number;   // score time (ms) — drives cursor position directly
+  /** Authoritative BPM from the audio parser. OSMD's own reading defaults to
+   *  120 and never sanity-clamps, so without this the cursor timeline can run
+   *  at a different rate than the audio (parser default is 100, clamped 40–200). */
+  tempoBpm?: number;
   visiblePartIndices?: number[];
   /** timeMs = the tapped step's original-score time from the WebView's bar-grid
    *  time table — the reliable coordinate; step index alone is ambiguous. */
@@ -58,14 +62,17 @@ function buildHtml(isDark: boolean, osmdJs: string | null): string {
   <div id="error"></div>
   ${osmdScript}
   <script>
-    var osmd=null,timeTable=[],currentStep=0,cursorColor='${cursorColor}';
+    var osmd=null,timeTable=[],currentStep=0,cursorColor='${cursorColor}',authoritativeBpm=null;
     function sendMsg(m){window.ReactNativeWebView.postMessage(JSON.stringify(m));}
     console.log('[InteractiveScore:WebView] JS init ok, waiting for loadXml');
     function showErr(e){document.getElementById('error').style.display='block';document.getElementById('error').textContent=e;sendMsg({type:'error',message:e});}
     function buildTimeTable(){
       timeTable=[];
       if(!osmd||!osmd.cursor)return;
-      var bpm=(osmd.Sheet&&osmd.Sheet.DefaultStartTempoInBpm)||120;
+      // The RN side owns the tempo (same value the audio scheduler uses).
+      // Fallback mirrors the parser's rules: clamp 40-200, else 100.
+      var bpm=authoritativeBpm||(osmd.Sheet&&osmd.Sheet.DefaultStartTempoInBpm)||100;
+      if(!(bpm>=40&&bpm<=200))bpm=100;
       var secPerWholeNote=4*60/bpm;
       // Anchor each measure to a fixed bar length from its time signature — the
       // SAME shared bar grid the audio player uses — so the cursor stays locked to
@@ -104,7 +111,7 @@ function buildHtml(isDark: boolean, osmdJs: string | null): string {
     function stepCursor(step){if(!osmd||!osmd.cursor)return;if(step<currentStep){osmd.cursor.reset();currentStep=0;}while(currentStep<step&&!osmd.cursor.Iterator.EndReached){osmd.cursor.next();currentStep++;}osmd.cursor.show();var el=osmd.cursor.cursorElement;if(el){el.style.backgroundColor='rgba(37,99,235,0.12)';el.style.borderLeft='4px solid '+cursorColor;el.style.boxShadow='0 0 8px rgba(37,99,235,0.8)';el.style.opacity='1';el.scrollIntoView({behavior:'smooth',block:'nearest'});}}
     function seekToMs(ms){if(!osmd||!osmd.cursor||timeTable.length===0)return;var lo=0,hi=timeTable.length-1,step=0;while(lo<=hi){var mid=(lo+hi)>>1;if(timeTable[mid]<=ms){step=mid;lo=mid+1;}else{hi=mid-1;}}if(step===currentStep)return;sendMsg({type:'debug',msg:'seek ms='+ms.toFixed(0)+' step='+step+' tbl='+timeTable[step].toFixed(0)+' prev='+currentStep});stepCursor(step);}
     function clickInit(){var sc=document.getElementById('score');if(!sc)return;sc.addEventListener('click',function(e){if(!osmd||!osmd.cursor)return;var cx=e.pageX,cy=e.pageY,best=-1,dist=Infinity;osmd.cursor.reset();var i=0;while(!osmd.cursor.Iterator.EndReached){var el=osmd.cursor.cursorElement;if(el){var r=el.getBoundingClientRect(),cX=r.left+r.width/2+window.scrollX,cY=r.top+r.height/2+window.scrollY,d=Math.sqrt(Math.pow(cx-cX,2)+Math.pow(cy-cY,2));if(d<dist){dist=d;best=i;}}osmd.cursor.next();i++;}if(best>=0&&dist<80){stepCursor(best);sendMsg({type:'notePress',noteIndex:best,timeMs:(typeof timeTable[best]==='number'?timeTable[best]:null)});}});}
-    function loadXml(xml){currentStep=0;try{if(!osmd)osmd=new opensheetmusicdisplay.OpenSheetMusicDisplay('score',{autoResize:true,backend:'svg',drawTitle:false,drawComposer:false,drawCredits:false,drawPartNames:false,drawPartAbbreviations:false,zoom:0.65});osmd.load(xml).then(function(){osmd.render();osmd.cursor.show();stepCursor(0);buildTimeTable();clickInit();sendMsg({type:'ready'});sendMsg({type:'debug',tbl0:timeTable[0],tbl1:timeTable[1],tbl10:timeTable[10],tblN:timeTable[timeTable.length-1],len:timeTable.length,bpm:(osmd.Sheet&&osmd.Sheet.DefaultStartTempoInBpm)||120});}).catch(function(e){showErr('Render failed: '+e.message);});}catch(e){showErr('Load failed: '+e.message);}}
+    function loadXml(xml,bpm){currentStep=0;authoritativeBpm=(typeof bpm==='number'&&bpm>0)?bpm:null;try{if(!osmd)osmd=new opensheetmusicdisplay.OpenSheetMusicDisplay('score',{autoResize:true,backend:'svg',drawTitle:false,drawComposer:false,drawCredits:false,drawPartNames:false,drawPartAbbreviations:false,zoom:0.65});osmd.load(xml).then(function(){osmd.render();osmd.cursor.show();stepCursor(0);buildTimeTable();clickInit();sendMsg({type:'ready'});sendMsg({type:'debug',tbl0:timeTable[0],tbl1:timeTable[1],tbl10:timeTable[10],tblN:timeTable[timeTable.length-1],len:timeTable.length,bpm:(osmd.Sheet&&osmd.Sheet.DefaultStartTempoInBpm)||120});}).catch(function(e){showErr('Render failed: '+e.message);});}catch(e){showErr('Load failed: '+e.message);}}
     function setVisibleParts(indices){if(!osmd||!osmd.Sheet)return;try{var inst=osmd.Sheet.Instruments;for(var i=0;i<inst.length;i++){inst[i].Visible=indices.indexOf(i)>=0;}osmd.render();}catch(e){sendMsg({type:'debug',msg:'setVisibleParts failed: '+e.message});}}
     function setTheme(dark){
       cursorColor=dark?'#F59E0B':'#D97706';
@@ -114,7 +121,7 @@ function buildHtml(isDark: boolean, osmdJs: string | null): string {
       if(el){el.style.borderLeft='4px solid '+cursorColor;}
     }
     function handleMsg(m){
-      if(m.type==='loadXml'){loadXml(m.xml);}
+      if(m.type==='loadXml'){loadXml(m.xml,m.bpm);}
       else if(m.type==='setPositionMs'){seekToMs(m.positionMs);}
       else if(m.type==='setVisibleParts'){setVisibleParts(m.visibleIndices);}
       else if(m.type==='setTheme'){setTheme(!!m.isDark);}
@@ -129,6 +136,7 @@ function buildHtml(isDark: boolean, osmdJs: string | null): string {
 export const InteractiveScore = memo(function InteractiveScore({
   musicXml,
   positionMs,
+  tempoBpm,
   visiblePartIndices,
   onNotePress,
   onReady,
@@ -169,9 +177,9 @@ export const InteractiveScore = memo(function InteractiveScore({
 
   const handleWebViewLoad = useCallback(() => {
     if (musicXml) {
-      sendToWebView({ type: "loadXml", xml: musicXml });
+      sendToWebView({ type: "loadXml", xml: musicXml, bpm: tempoBpm ?? null });
     }
-  }, [musicXml, sendToWebView]);
+  }, [musicXml, tempoBpm, sendToWebView]);
 
   // Store the latest handleWebViewLoad function for retry button
   useEffect(() => {
@@ -220,8 +228,8 @@ export const InteractiveScore = memo(function InteractiveScore({
   useEffect(() => {
     if (!readyRef.current || musicXml === prevXmlRef.current) return;
     prevXmlRef.current = musicXml;
-    sendToWebView({ type: "loadXml", xml: musicXml });
-  }, [musicXml, sendToWebView]);
+    sendToWebView({ type: "loadXml", xml: musicXml, bpm: tempoBpm ?? null });
+  }, [musicXml, tempoBpm, sendToWebView]);
 
   // Send cursor position to WebView whenever positionMs changes
   const prevPositionRef = useRef<number | undefined>(undefined);
