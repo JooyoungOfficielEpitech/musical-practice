@@ -40,7 +40,7 @@ def _process_vocal_page(
         logger.warning("Could not read PNG: %s — skipping", png_path)
         return {}, []
 
-    staves_dict, _ = crop_all_vocal_staves(img)
+    staves_dict, system_info = crop_all_vocal_staves(img)
     if not staves_dict:
         logger.warning("No vocal staves detected in %s — skipping", png_path)
         return {}, []
@@ -72,8 +72,55 @@ def _process_vocal_page(
                 logger.warning("Staff processing failed: %s — skipping", exc)
 
     _refine_page_with_audiveris(png_path, char_sys)
+    _attach_page_lyrics(png_path, img, system_info, local_to_global, char_sys)
 
     return char_sys, global_indices
+
+
+def _attach_page_lyrics(
+    png_path: str,
+    img,
+    system_info: list[dict],
+    local_to_global: dict[int, int],
+    char_sys: dict,
+) -> None:
+    """OCR the page and attach lyric syllables onto the measure elements.
+
+    Strictly additive — any failure (no Vision, OCR empty, geometry or
+    barline mismatch) leaves the measures untouched.
+    """
+    try:
+        from core.staff_cropper import _binarize, _to_gray
+        from pipeline.lyrics import StaffBand, attach_lyrics_for_page
+        from pipeline.vision_ocr import ocr_page_tokens, vision_available
+
+        if not vision_available() or not char_sys:
+            return
+        tokens = ocr_page_tokens(png_path)
+        if not tokens:
+            return
+        bands = [
+            (
+                StaffBand(
+                    char=st["char"], top=st["top"], bottom=st["bottom"],
+                    band_bottom=st["band_bottom"],
+                ),
+                local_to_global[entry["system_index"]],
+            )
+            for entry in system_info
+            for st in entry.get("staves", [])
+            if entry["system_index"] in local_to_global
+        ]
+        if not bands:
+            return
+        bw = _binarize(_to_gray(img))
+        attached = attach_lyrics_for_page(tokens, bw, bands, char_sys)
+        if attached:
+            logger.info(
+                "lyrics: attached %d syllables on %s", attached, png_path.split("/")[-1]
+            )
+    except Exception as exc:
+        logger.warning("lyric pass failed for %s: %s — continuing without lyrics", png_path, exc)
 
 
 def _refine_page_with_audiveris(png_path: str, char_sys: dict) -> None:

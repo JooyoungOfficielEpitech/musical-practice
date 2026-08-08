@@ -359,6 +359,7 @@ def crop_all_vocal_staves(
         assignments = normalized
 
         sys_characters: set[str] = set()
+        sys_staves: list[dict] = []
         for staff_idx, char_name in assignments.items():
             staff = staves[staff_idx]
             idx_in_system = system.index(staff_idx)
@@ -377,12 +378,22 @@ def crop_all_vocal_staves(
             cropped = _crop_single_staff(img, staff, h, w, staves, staff_idx, prev_bottom, next_top, padding_factor)
             result.setdefault(char_name, []).append((cropped, sys_idx))
             sys_characters.add(char_name)
+            # Page-space geometry for the lyric pass: the strip between this
+            # staff's bottom line and the next staff holds its lyrics.
+            s_top = staff[0][0]
+            s_bottom = staff[-1][1]
+            band_bottom = next_top if next_top is not None else s_bottom + 2.5 * max(1, s_bottom - s_top)
+            sys_staves.append({
+                "char": char_name, "top": s_top, "bottom": s_bottom,
+                "band_bottom": band_bottom,
+            })
 
         system_info.append({
             "system_index": sys_idx,
             "characters": sys_characters,
             "num_staves": len(system),
             "num_vocal_staves": len(assignments),
+            "staves": sys_staves,
         })
 
     # Lead-sheet fallback: no character labels anywhere (e.g. a piano-vocal
@@ -402,11 +413,18 @@ def crop_all_vocal_staves(
                     prev_bottom, next_top, padding_factor,
                 )
                 result.setdefault("Voice", []).append((cropped, sys_idx))
+                staff = staves[staff_idx]
+                s_top, s_bottom = staff[0][0], staff[-1][1]
                 system_info.append({
                     "system_index": sys_idx,
                     "characters": {"Voice"},
                     "num_staves": len(system),
                     "num_vocal_staves": 1,
+                    "staves": [{
+                        "char": "Voice", "top": s_top, "bottom": s_bottom,
+                        "band_bottom": next_top if next_top is not None
+                        else s_bottom + 2.5 * max(1, s_bottom - s_top),
+                    }],
                 })
 
     return result, system_info
