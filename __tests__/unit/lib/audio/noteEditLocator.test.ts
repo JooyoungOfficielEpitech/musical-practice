@@ -149,3 +149,16 @@ describe("findXmlNoteIndex — tied notes", () => {
     expect(findXmlNoteIndex(TIE_XML, { partIndex: 0, midiNumber: 64, occurrence: 0 })).toBe(3);
   });
 });
+
+describe("findXmlNoteIndex — lyric-bearing notes", () => {
+  it("locates and matches notes regardless of <lyric> children", () => {
+    const xml = `<score-partwise><part id="P1"><measure number="1">
+      <attributes><divisions>1</divisions><key><fifths>0</fifths></key></attributes>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration>
+        <lyric><syllabic>single</syllabic><text>가</text></lyric></note>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration>
+        <lyric><syllabic>single</syllabic><text>나</text></lyric></note>
+    </measure></part></score-partwise>`;
+    expect(findXmlNoteIndex(xml, { partIndex: 0, midiNumber: 60, occurrence: 1 })).toBe(1);
+  });
+});

@@ -1144,3 +1144,31 @@ describe("parseMusicXml — part metadata (Phase 1)", () => {
     });
   });
 });
+
+describe("parseMusicXml — lyric-bearing XML (server lyric pipeline)", () => {
+  const LYRIC_XML = `<?xml version="1.0"?>
+<score-partwise version="3.1">
+  <part-list><score-part id="P1"><part-name>Hermes</part-name></score-part></part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>1</divisions><key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+      <direction><sound tempo="120"/></direction>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration>
+        <lyric><syllabic>single</syllabic><text>옛</text></lyric></note>
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>1</duration>
+        <lyric><syllabic>begin</syllabic><text>Chuck</text></lyric></note>
+      <note><rest/><duration>2</duration></note>
+    </measure>
+  </part>
+</score-partwise>`;
+
+  it("parses notes identically with lyrics present", () => {
+    const parsed = parseMusicXml(LYRIC_XML);
+    expect(parsed.notes).toHaveLength(2);
+    expect(parsed.notes[0].pitch).toBe("C4");
+    expect(parsed.notes[0].startTime).toBeCloseTo(0);
+    expect(parsed.notes[1].pitch).toBe("D4");
+    expect(parsed.notes[1].startTime).toBeCloseTo(0.5);
+  });
+});
