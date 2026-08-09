@@ -88,6 +88,7 @@ describe("buildRetryPatch", () => {
       omrJobId: "new-job-id",
       omrStatus: "processing",
       omrProgress: 0,
+      hasLocalEdits: false,
     });
   });
 

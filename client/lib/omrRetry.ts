@@ -76,5 +76,8 @@ export async function buildRetryPatch(sheet: SheetMusic): Promise<Partial<SheetM
     throw new OmrRetryError("This score has no scan job to retry — re-import the PDF.");
   }
   const newJobId = await resubmitOmrJob(sheet.omrJobId);
-  return { omrJobId: newJobId, omrStatus: "processing", omrProgress: 0 };
+  // A rescan is an explicit "give me a fresh result": clear the local-edits
+  // flag so the new server result (e.g. with lyrics) can actually download —
+  // and so reconcile overwriting the local file is intentional, not data loss.
+  return { omrJobId: newJobId, omrStatus: "processing", omrProgress: 0, hasLocalEdits: false };
 }
