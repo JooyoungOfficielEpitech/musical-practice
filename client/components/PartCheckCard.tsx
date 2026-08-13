@@ -133,46 +133,43 @@ const PartRow = React.memo(function PartRow({
     ? undefined
     : { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.borderLight };
 
-  const content = (
-    <>
-      <View style={styles.rowText}>
-        <Text style={[styles.partName, { color: colors.text }]} numberOfLines={1}>
-          {part.name}
-        </Text>
-        <Text style={[styles.partCount, { color: colors.textSecondary }]}>{count} notes</Text>
-      </View>
-      {onSoloPart && (
-        <Pressable
-          onPress={() => onSoloPart(part.id)}
-          accessibilityRole="button"
-          accessibilityLabel={isSoloed ? `Unsolo ${part.name}` : `Solo ${part.name}`}
-          hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-          style={[
-            styles.soloPill,
-            { borderColor: isSoloed ? colors.primary : colors.borderLight,
-              backgroundColor: isSoloed ? colors.primary : "transparent" },
-          ]}
-        >
-          <Text style={[styles.soloPillText, { color: isSoloed ? colors.buttonText ?? "#fff" : colors.textSecondary }]}>
-            {isSoloed ? "All" : "Solo"}
-          </Text>
-        </Pressable>
-      )}
-      {selectable && (
-        <Ionicons
-          testID={`partcheck-icon-${part.id}`}
-          name={isVisible ? "checkmark-circle" : "ellipse-outline"}
-          size={22}
-          color={isVisible ? colors.primary : colors.textSecondary}
-        />
-      )}
-    </>
+  // The solo pill must be a SIBLING of the checkbox pressable, never a child:
+  // a pressable with an accessibility label flattens its subtree on iOS, which
+  // makes a nested button unreachable for VoiceOver (and UI tests).
+  const soloPill = onSoloPart ? (
+    <Pressable
+      onPress={() => onSoloPart(part.id)}
+      accessibilityRole="button"
+      accessibilityLabel={isSoloed ? `Unsolo ${part.name}` : `Solo ${part.name}`}
+      hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+      style={[
+        styles.soloPill,
+        { borderColor: isSoloed ? colors.primary : colors.borderLight,
+          backgroundColor: isSoloed ? colors.primary : "transparent" },
+      ]}
+    >
+      <Text style={[styles.soloPillText, { color: isSoloed ? colors.buttonText ?? "#fff" : colors.textSecondary }]}>
+        {isSoloed ? "All" : "Solo"}
+      </Text>
+    </Pressable>
+  ) : null;
+
+  const textBlock = (
+    <View style={styles.rowText}>
+      <Text style={[styles.partName, { color: colors.text }]} numberOfLines={1}>
+        {part.name}
+      </Text>
+      <Text style={[styles.partCount, { color: colors.textSecondary }]}>{count} notes</Text>
+    </View>
   );
 
   if (!selectable) {
     return (
       <View style={borderStyle}>
-        <View style={styles.row}>{content}</View>
+        <View style={styles.row}>
+          {textBlock}
+          {soloPill}
+        </View>
         {volumeRow}
       </View>
     );
@@ -180,16 +177,25 @@ const PartRow = React.memo(function PartRow({
 
   return (
     <View style={borderStyle}>
-      <Pressable
-        onPress={handlePress}
-        accessibilityRole="checkbox"
-        accessibilityLabel={part.name}
-        accessibilityHint={isLastVisible ? "At least one part must be selected" : undefined}
-        accessibilityState={{ checked: isVisible, disabled: isLastVisible }}
-        style={({ pressed }) => [styles.row, { opacity: isLastVisible ? 0.6 : (pressed ? 0.7 : 1) }]}
-      >
-        {content}
-      </Pressable>
+      <View style={styles.row}>
+        <Pressable
+          onPress={handlePress}
+          accessibilityRole="checkbox"
+          accessibilityLabel={part.name}
+          accessibilityHint={isLastVisible ? "At least one part must be selected" : undefined}
+          accessibilityState={{ checked: isVisible, disabled: isLastVisible }}
+          style={({ pressed }) => [styles.rowMain, { opacity: isLastVisible ? 0.6 : (pressed ? 0.7 : 1) }]}
+        >
+          {textBlock}
+          <Ionicons
+            testID={`partcheck-icon-${part.id}`}
+            name={isVisible ? "checkmark-circle" : "ellipse-outline"}
+            size={22}
+            color={isVisible ? colors.primary : colors.textSecondary}
+          />
+        </Pressable>
+        {soloPill}
+      </View>
       {volumeRow}
     </View>
   );
@@ -216,6 +222,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     minHeight: 44,
   },
+  rowMain: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   rowText: { flex: 1, marginRight: Spacing.sm },
   volumeRow: {
     flexDirection: "row",

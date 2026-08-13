@@ -1,0 +1,67 @@
+appId: com.musicalpractice
+---
+- launchApp
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Library"
+    timeout: 20000
+- takeScreenshot: e2e/results/smoke/01_library
+- tapOn: "Open Hadestown — Wait For Me"
+- extendedWaitUntil:
+    visible: "PLAYBACK"
+    timeout: 30000
+- takeScreenshot: e2e/results/smoke/02_practice
+# A-B loop arm + score-tap hint
+- tapOn: "Set loop start"
+- assertVisible: "Tap two notes on the score to set the loop"
+- takeScreenshot: e2e/results/smoke/03_loop_armed
+# metronome + tempo + transpose
+- tapOn: "Toggle metronome"
+- tapOn: "Increase tempo"
+- tapOn: "Transpose up"
+- assertVisible: "[+-]?[0-9]+ st"
+# settings persist per sheet — undo so reruns stay idempotent
+- tapOn: "Transpose down"
+- tapOn: "Decrease tempo"
+# play / pause
+- tapOn: "Play"
+- extendedWaitUntil:
+    visible: "Pause"
+    timeout: 10000
+- waitForAnimationToEnd
+- takeScreenshot: e2e/results/smoke/04_playing
+- tapOn: "Pause"
+# tools row sits below the fold; swipe OUTSIDE the score WebView (it eats
+# scroll gestures) — start low on the transport area
+- swipe:
+    start: 50%, 88%
+    end: 50%, 40%
+- tapOn: "Fix wrong notes"
+- assertVisible: "Tap a note on the score to fix it. Solo your part first if notes overlap."
+- takeScreenshot: e2e/results/smoke/05_editmode
+- tapOn: "Exit note editing"
+# sing along (mic pre-granted)
+- tapOn: "Start sing along scoring"
+- extendedWaitUntil:
+    visible: "Stop sing along scoring"
+    timeout: 25000
+- takeScreenshot: e2e/results/smoke/06_singalong
+- tapOn: "Stop sing along scoring"
+# parts sheet: volume slider + solo
+- swipe:
+    start: 50%, 88%
+    end: 50%, 55%
+- tapOn: "Select parts to practice"
+- extendedWaitUntil:
+    visible: "Soprano"
+    timeout: 10000
+- takeScreenshot: e2e/results/smoke/07_parts
+- tapOn: "(Un)?[Ss]olo Soprano"
+- takeScreenshot: e2e/results/smoke/08_solo
+- tapOn: "Done"
+# back out
+- tapOn: "Go back to library"
+- extendedWaitUntil:
+    visible: "Library"
+    timeout: 10000
+- takeScreenshot: e2e/results/smoke/09_back

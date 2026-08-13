@@ -6,7 +6,8 @@ import { usePdfImport } from "@/hooks/usePdfImport";
 import { useMultiOmrJobs } from "@/hooks/useMultiOmrJobs";
 import { usePractice } from "@/context/PracticeContext";
 import { UploadingView } from "@/components/PdfImportProgressViews";
-import { ErrorView, IdleView } from "@/components/PdfImportStateViews";
+import { ErrorView } from "@/components/PdfImportStateViews";
+import { ImportLandingView, ImportConfirmView } from "@/components/PdfImportSetupViews";
 
 /**
  * Non-blocking import: pick → upload → queue jobs, then IMMEDIATELY return to
@@ -20,7 +21,15 @@ export default function PdfImportScreen() {
   // Local sheet IDs per section index — sheets are persisted at queue time.
   const sheetIdsRef = useRef<Record<number, string>>({});
 
-  const { state, sectionTitles, pdfB64, fileName, error, startImport, reset: resetPdf } = usePdfImport();
+  const {
+    state, sectionTitles, pdfB64, fileName, fileSizeBytes, pageCount, defaultTitle,
+    error, startImport, confirmImport, reset: resetPdf,
+  } = usePdfImport();
+  const [titleDraft, setTitleDraft] = useState("");
+  // Prefill the editable title whenever a newly picked file reaches confirm.
+  useEffect(() => {
+    if (state === "confirm") setTitleDraft(defaultTitle);
+  }, [state, defaultTitle]);
   const multiOmrJobs = useMultiOmrJobs();
 
   // If the user backs out BEFORE jobs are queued (cancel mid-upload), tear the
@@ -37,19 +46,8 @@ export default function PdfImportScreen() {
     };
   }, []);
 
-  // Auto-start on mount
-  useEffect(() => {
-    void hapticFeedback.triggerLight();
-    startImport();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Auto-back on file picker cancel
-  useEffect(() => {
-    if (state === "error" && error === "No file selected") {
-      navigation.goBack();
-    }
-  }, [state, error, navigation]);
+  // No surprise picker on mount and no silent pop on cancel — the landing
+  // screen explains what to pick and stays put until the user chooses.
 
   // Jobs are queued and persisted — hand the user back to the library where
   // the card shows progress. No blocking "processing" screen.
@@ -193,9 +191,30 @@ export default function PdfImportScreen() {
     );
   }
 
-  // ── Idle/Picking (flash screen only) ─────────────────────────────────────
+  // ── Confirm (file picked — name it, see size/pages, start the scan) ──────
+  if (state === "confirm" && fileName) {
+    return (
+      <ImportConfirmView
+        fileName={fileName}
+        fileSizeBytes={fileSizeBytes}
+        pageCount={pageCount}
+        title={titleDraft}
+        onTitleChange={setTitleDraft}
+        onStart={() => confirmImport(titleDraft)}
+        onChooseDifferent={() => {
+          void startImport();
+        }}
+      />
+    );
+  }
+
+  // ── Landing (idle/picking) ───────────────────────────────────────────────
   return (
-    <IdleView
+    <ImportLandingView
+      isPicking={state === "picking"}
+      onChoose={() => {
+        void startImport();
+      }}
       onGoBack={() => navigation.goBack()}
     />
   );

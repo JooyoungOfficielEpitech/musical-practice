@@ -1,5 +1,5 @@
 import React from "react";
-import { render } from "@testing-library/react-native";
+import { render, fireEvent } from "@testing-library/react-native";
 
 // ── Navigation ───────────────────────────────────────────────────────────────
 const mockGoBack = jest.fn();
@@ -77,8 +77,12 @@ const idlePdfHook = {
   sectionTitles: [],
   pdfB64: null,
   fileName: null,
+  fileSizeBytes: null,
+  pageCount: null,
+  defaultTitle: "",
   error: null,
   startImport: jest.fn(),
+  confirmImport: jest.fn(),
   reset: jest.fn(),
 };
 
@@ -106,11 +110,31 @@ beforeEach(() => {
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe("PdfImportScreen — non-blocking import", () => {
-  it("1. auto-starts import on mount", () => {
+  it("1. renders the landing screen — the picker only opens on user action", () => {
     const startImport = jest.fn();
     mockUsePdfImport.mockReturnValue({ ...idlePdfHook, startImport });
-    render(<PdfImportScreen />);
+    const { getByLabelText, getByText } = render(<PdfImportScreen />);
+    expect(startImport).not.toHaveBeenCalled();
+    expect(getByText("Import a PDF score")).toBeTruthy();
+    fireEvent.press(getByLabelText("Choose PDF"));
     expect(startImport).toHaveBeenCalledTimes(1);
+  });
+
+  it("1b. confirm state shows file facts and starts upload with the title", () => {
+    const confirmImport = jest.fn();
+    mockUsePdfImport.mockReturnValue({
+      ...idlePdfHook,
+      state: "confirm" as const,
+      fileName: "Hadestown.pdf",
+      fileSizeBytes: 1024 * 1024,
+      pageCount: 3,
+      defaultTitle: "Hadestown",
+      confirmImport,
+    });
+    const { getByLabelText, getByText } = render(<PdfImportScreen />);
+    expect(getByText("Hadestown.pdf")).toBeTruthy();
+    fireEvent.press(getByLabelText("Start scan"));
+    expect(confirmImport).toHaveBeenCalledWith("Hadestown");
   });
 
   it("2. uploading state renders LoadingOverlay", () => {

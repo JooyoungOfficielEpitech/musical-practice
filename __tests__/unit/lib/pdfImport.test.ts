@@ -47,6 +47,7 @@ describe("pickPdf", () => {
     expect(result).toEqual({
       uri: "file:///cache/DocumentPicker/7F9A2B1C-3D4E.pdf",
       name: "Hermes - Full Score.pdf",
+      size: null,
     });
   });
 
@@ -61,6 +62,7 @@ describe("pickPdf", () => {
     expect(result).toEqual({
       uri: "file:///cache/some-file.pdf",
       name: "some-file.pdf",
+      size: null,
     });
   });
 });
@@ -76,5 +78,23 @@ describe("readFileAsBase64", () => {
 
     expect(result).toBe("bW9ja0Jhc2U2NA==");
     expect(MockFile).toHaveBeenCalledWith("file:///test.pdf");
+  });
+});
+
+describe("estimatePdfPageCount", () => {
+  const b64 = (s: string) => Buffer.from(s, "binary").toString("base64");
+
+  it("counts /Type /Page objects, ignoring the /Pages tree node", () => {
+    const pdf = "%PDF-1.4 1 0 obj <</Type /Pages /Count 3>> " +
+      "2 0 obj <</Type /Page>> 3 0 obj <</Type/Page>> 4 0 obj <</Type  /Page>>";
+    expect(require("../../../client/lib/pdfImport").estimatePdfPageCount(b64(pdf))).toBe(3);
+  });
+
+  it("returns null when no page objects are visible (compressed streams)", () => {
+    expect(require("../../../client/lib/pdfImport").estimatePdfPageCount(b64("%PDF-1.7 binary"))).toBeNull();
+  });
+
+  it("returns null on undecodable input", () => {
+    expect(require("../../../client/lib/pdfImport").estimatePdfPageCount("!!!not-base64!!!")).toBeNull();
   });
 });

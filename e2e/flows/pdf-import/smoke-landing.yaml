@@ -1,0 +1,16 @@
+appId: com.musicalpractice
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Library"
+    timeout: 20000
+- tapOn: "Import PDF score"
+- extendedWaitUntil:
+    visible: "Import a PDF score"
+    timeout: 10000
+- assertVisible: "Choose PDF"
+- takeScreenshot: e2e/results/smoke/10_import_landing
+- tapOn: "Back to library"
+- extendedWaitUntil:
+    visible: "Library"
+    timeout: 10000
