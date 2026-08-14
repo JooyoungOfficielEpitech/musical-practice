@@ -166,3 +166,41 @@ describe("replaceNotePitchAtIndex", () => {
     expect(replaceNotePitchAtIndex(XML, -1, "D", 0, 4)).toBe(XML);
   });
 });
+
+describe("lyric editing at note index", () => {
+  const { lyricTextAtIndex, replaceLyricTextAtIndex } = require("../../../../client/lib/audio/musicXmlEditor");
+  const XML = `<score-partwise><part id="P1"><measure number="1">
+    <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><lyric><syllabic>single</syllabic><text>옛</text></lyric></note>
+    <note><pitch><step>D</step><octave>4</octave></pitch><duration>1</duration></note>
+    <note><rest/><duration>1</duration></note>
+  </measure></part></score-partwise>`;
+
+  it("reads the lyric text of the nth note block", () => {
+    expect(lyricTextAtIndex(XML, 0)).toBe("옛");
+    expect(lyricTextAtIndex(XML, 1)).toBeNull(); // no lyric
+    expect(lyricTextAtIndex(XML, 99)).toBeNull();
+  });
+
+  it("replaces an existing lyric's text only", () => {
+    const out = replaceLyricTextAtIndex(XML, 0, "철");
+    expect(lyricTextAtIndex(out, 0)).toBe("철");
+    expect(out).toContain("<syllabic>single</syllabic>"); // syllabic preserved
+  });
+
+  it("inserts a lyric on a note that has none", () => {
+    const out = replaceLyricTextAtIndex(XML, 1, "간");
+    expect(lyricTextAtIndex(out, 1)).toBe("간");
+    expect(lyricTextAtIndex(out, 0)).toBe("옛"); // neighbour untouched
+  });
+
+  it("removes the lyric when the new text is empty", () => {
+    const out = replaceLyricTextAtIndex(XML, 0, "");
+    expect(lyricTextAtIndex(out, 0)).toBeNull();
+    expect(out).toContain("<step>C</step>"); // note itself intact
+  });
+
+  it("refuses rests and out-of-range indices", () => {
+    expect(replaceLyricTextAtIndex(XML, 2, "가")).toBe(XML);
+    expect(replaceLyricTextAtIndex(XML, 99, "가")).toBe(XML);
+  });
+});

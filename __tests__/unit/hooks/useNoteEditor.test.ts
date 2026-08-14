@@ -121,3 +121,53 @@ describe("useNoteEditor", () => {
     expect(result.current.hasEdits).toBe(false);
   });
 });
+
+describe("useNoteEditor — lyric editing", () => {
+  const LYRIC_XML = `<score-partwise>
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>1</divisions><key><fifths>0</fifths></key></attributes>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><lyric><syllabic>single</syllabic><text>절</text></lyric></note>
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>1</duration></note>
+    </measure>
+  </part>
+</score-partwise>`;
+  const FIRST_C = { partIndex: 0, midiNumber: 60, occurrence: 0, pitch: "C4" };
+  const FIRST_D = { partIndex: 0, midiNumber: 62, occurrence: 0, pitch: "D4" };
+
+  it("exposes the selected note's printed lyric", () => {
+    const { result } = renderHook(() => useNoteEditor(LYRIC_XML));
+    act(() => result.current.selectNote(FIRST_C));
+    expect(result.current.selectedLyric).toBe("절");
+    act(() => result.current.selectNote(FIRST_D));
+    expect(result.current.selectedLyric).toBeNull();
+  });
+
+  it("fixes a misread lyric and notifies with hasEdits", () => {
+    const onXmlChanged = jest.fn();
+    const { result } = renderHook(() => useNoteEditor(LYRIC_XML, onXmlChanged));
+    act(() => result.current.selectNote(FIRST_C));
+
+    let ok = false;
+    act(() => { ok = result.current.applyLyric("철"); });
+
+    expect(ok).toBe(true);
+    expect(result.current.editedMusicXml).toContain("<text>철</text>");
+    expect(result.current.editedMusicXml).not.toContain("<text>절</text>");
+    expect(onXmlChanged).toHaveBeenCalledWith(result.current.editedMusicXml, true);
+  });
+
+  it("adds a missing lyric to a bare note", () => {
+    const { result } = renderHook(() => useNoteEditor(LYRIC_XML));
+    act(() => result.current.selectNote(FIRST_D));
+    act(() => { result.current.applyLyric("간"); });
+    expect(result.current.editedMusicXml).toContain("<text>간</text>");
+  });
+
+  it("empty text removes the lyric", () => {
+    const { result } = renderHook(() => useNoteEditor(LYRIC_XML));
+    act(() => result.current.selectNote(FIRST_C));
+    act(() => { result.current.applyLyric("") ; });
+    expect(result.current.editedMusicXml).not.toContain("<lyric>");
+  });
+});

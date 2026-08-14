@@ -22,12 +22,14 @@ export async function recordSession({
   durationSec,
   accuracy,
   bpm,
+  recordingUri,
 }: {
   sheetId: string;
   sheetTitle: string;
   durationSec: number;
   accuracy?: number;
   bpm?: number;
+  recordingUri?: string;
 }): Promise<PracticeSession | null> {
   // Reject sessions shorter than 30 seconds
   if (durationSec < MIN_SESSION_SEC) {
@@ -44,6 +46,7 @@ export async function recordSession({
     // Canonical unit: 0..1 fraction (the card chip and toast multiply by 100).
     accuracy: accuracy !== undefined ? Math.max(0, Math.min(1, accuracy)) : 0,
     bpm: bpm ?? 100,
+    recordingUri,
   };
 
   // Save the session

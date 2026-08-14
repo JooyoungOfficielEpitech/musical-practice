@@ -1,6 +1,9 @@
-import { useState, useRef, useCallback, useMemo, type RefObject } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect, type RefObject } from "react";
 import { usePitchPractice } from "@/hooks/usePitchPractice";
 import { useAudioPermission } from "@/hooks/useAudioPermission";
+import { useRecording, type FinishedTake } from "@/hooks/useRecording";
+import { useTakePlayback } from "@/hooks/useTakePlayback";
+import { getLatestRecordingForSheet } from "@/lib/recordingStorage";
 import { useNoteEditor, type NoteEditorState } from "@/hooks/useNoteEditor";
 import { usePracticeSessionTracker } from "@/hooks/usePracticeSessionTracker";
 import { buildPlaybackNotes } from "@/lib/audio/playbackNotes";
@@ -38,6 +41,10 @@ export interface PracticeExtrasState {
     /** More than one part is audible — scoring is loose; suggest soloing. */
     multiPartWarning: boolean;
     toggle: () => Promise<void>;
+    /** Latest saved take for this sheet (survives reopening the score). */
+    lastTake: FinishedTake | null;
+    takePlaying: boolean;
+    toggleTakePlayback: () => Promise<void>;
   };
   editor: NoteEditorState & {
     editMode: boolean;
@@ -78,11 +85,32 @@ export function usePracticeExtras(args: PracticeExtrasArgs): PracticeExtrasState
   const getPositionSec = useCallback(() => positionSecRef.current, []);
 
   const permission = useAudioPermission();
+  const recording = useRecording();
+  const takePlayback = useTakePlayback();
   const pitch = usePitchPractice({
     notes: scoringNotes,
     getPositionSec,
     octaveAgnostic: true, // hobby singers routinely sing octave-shifted
+    onAudioData: recording.addAudioData,
   });
+
+  // Restore the last take when (re)opening a score.
+  const [lastTake, setLastTake] = useState<FinishedTake | null>(null);
+  const lastTakeRef = useRef<FinishedTake | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setLastTake(null);
+    lastTakeRef.current = null;
+    if (!sheet?.id) return;
+    getLatestRecordingForSheet(sheet.id).then((r) => {
+      if (!cancelled && r) {
+        const take = { uri: r.fileUri, durationSec: r.duration };
+        setLastTake(take);
+        lastTakeRef.current = take;
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [sheet?.id]);
 
   // Last non-zero accuracy of this visit — survives deactivate() resets so the
   // session record on unmount still carries it.
@@ -103,12 +131,23 @@ export function usePracticeExtras(args: PracticeExtrasArgs): PracticeExtrasState
     sheet: sheet ? { id: sheet.id, title: sheet.title } : undefined,
     getFinishAccuracy: () =>
       lastAccuracyRef.current !== undefined ? lastAccuracyRef.current / 100 : undefined,
+    getFinishRecordingUri: () => lastTakeRef.current?.uri,
   });
 
   const toggleSingAlong = useCallback(async () => {
     if (pitch.active) {
       const accuracy = pitch.accuracyPercent;
       pitch.deactivate();
+      if (sheet?.id) {
+        recording.stopRecording(sheet.id).then((take) => {
+          if (take) {
+            setLastTake(take);
+            lastTakeRef.current = take;
+          }
+        }).catch(() => {});
+      } else {
+        recording.discard();
+      }
       if (accuracy > 0) {
         setSessionToast({
           visible: true,
@@ -125,8 +164,15 @@ export function usePracticeExtras(args: PracticeExtrasArgs): PracticeExtrasState
     }
     const granted = permission.hasPermission || (await permission.requestPermission());
     if (!granted) return;
+    await takePlayback.stop(); // never record while a take is playing back
+    recording.startRecording();
     pitch.activate();
-  }, [pitch, permission, session.elapsedActiveSec]);
+  }, [pitch, permission, session.elapsedActiveSec, recording, takePlayback, sheet?.id]);
+
+  const toggleTakePlayback = useCallback(async () => {
+    if (!lastTakeRef.current) return;
+    await takePlayback.toggle(lastTakeRef.current.uri);
+  }, [takePlayback]);
 
   // ── Fix-a-note editing.
   const [editMode, setEditMode] = useState(false);
@@ -193,6 +239,9 @@ export function usePracticeExtras(args: PracticeExtrasArgs): PracticeExtrasState
       error: permission.error ?? pitch.error,
       multiPartWarning: pitch.active && audibleParts > 1,
       toggle: toggleSingAlong,
+      lastTake,
+      takePlaying: takePlayback.isPlaying,
+      toggleTakePlayback,
     },
     editor: { ...noteEditor, editMode, toggleEditMode, handleEditTap },
     sessionToast,

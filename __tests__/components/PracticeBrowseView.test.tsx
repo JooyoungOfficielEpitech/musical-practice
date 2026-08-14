@@ -103,10 +103,12 @@ const baseState = {
     singAlong: {
       active: false, livePitch: null, accuracyPercent: 0,
       error: null, multiPartWarning: false, toggle: jest.fn().mockResolvedValue(undefined),
+      lastTake: null, takePlaying: false, toggleTakePlayback: jest.fn().mockResolvedValue(undefined),
     },
     editor: {
       editedMusicXml: "", selectedNote: null, selectedPitch: null,
       canEditSelected: null, hasEdits: false,
+      selectedLyric: null, applyLyric: jest.fn(() => true),
       selectNote: jest.fn(), applyPitch: jest.fn(() => true),
       dismiss: jest.fn(), resetEdits: jest.fn(),
       editMode: false, toggleEditMode: jest.fn(),

@@ -18,6 +18,8 @@ interface UsePitchPracticeOptions {
   getPositionSec: () => number;
   toleranceCents?: number;
   octaveAgnostic?: boolean;
+  /** Raw mic chunks, unthrottled — feeds the take recorder. */
+  onAudioData?: (data: Float32Array) => void;
 }
 
 interface UsePitchPracticeReturn {
@@ -43,7 +45,9 @@ export function usePitchPractice(options: UsePitchPracticeOptions): UsePitchPrac
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
-  const { currentPitch, startListening, stopListening, error } = usePitchDetection();
+  const { currentPitch, startListening, stopListening, error } = usePitchDetection({
+    onAudioData: options.onAudioData,
+  });
 
   const reset = useCallback(() => {
     readingsRef.current = [];

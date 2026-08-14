@@ -175,3 +175,62 @@ export function replaceNotePitchAtIndex(
   }
   return xmlString;
 }
+
+
+function noteBlockAtIndex(
+  xmlString: string,
+  xmlNoteIndex: number,
+): { start: number; end: number; block: string } | null {
+  if (xmlNoteIndex < 0) return null;
+  NOTE_BLOCK_RE.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let i = 0;
+  while ((match = NOTE_BLOCK_RE.exec(xmlString)) !== null) {
+    if (i === xmlNoteIndex) {
+      return { start: match.index, end: match.index + match[0].length, block: match[0] };
+    }
+    i++;
+  }
+  return null;
+}
+
+const LYRIC_BLOCK_RE = /<lyric>[\s\S]*?<\/lyric>/;
+const LYRIC_TEXT_RE = /<lyric>[\s\S]*?<text>([\s\S]*?)<\/text>[\s\S]*?<\/lyric>/;
+
+/** Lyric text of the nth <note> block in document order, or null. */
+export function lyricTextAtIndex(xmlString: string, xmlNoteIndex: number): string | null {
+  const found = noteBlockAtIndex(xmlString, xmlNoteIndex);
+  if (!found) return null;
+  const m = found.block.match(LYRIC_TEXT_RE);
+  return m ? m[1] : null;
+}
+
+/**
+ * Set/replace/remove the lyric of the nth <note> block (locator index space).
+ * Empty text removes the lyric; a note without one gains
+ * <lyric><syllabic>single</syllabic><text>…</text></lyric>. Rests and
+ * out-of-range indices return the input unchanged.
+ */
+export function replaceLyricTextAtIndex(
+  xmlString: string,
+  xmlNoteIndex: number,
+  newText: string,
+): string {
+  const found = noteBlockAtIndex(xmlString, xmlNoteIndex);
+  if (!found || found.block.includes("<rest")) return xmlString;
+
+  const trimmed = newText.trim();
+  let updated: string;
+  if (found.block.match(LYRIC_BLOCK_RE)) {
+    updated = trimmed
+      ? found.block.replace(LYRIC_TEXT_RE, (whole, old) => whole.replace(`<text>${old}</text>`, `<text>${trimmed}</text>`))
+      : found.block.replace(LYRIC_BLOCK_RE, "");
+  } else {
+    if (!trimmed) return xmlString;
+    updated = found.block.replace(
+      /<\/note>$/,
+      `<lyric><syllabic>single</syllabic><text>${trimmed}</text></lyric></note>`,
+    );
+  }
+  return xmlString.slice(0, found.start) + updated + xmlString.slice(found.end);
+}

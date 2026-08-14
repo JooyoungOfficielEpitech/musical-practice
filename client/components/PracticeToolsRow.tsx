@@ -11,6 +11,12 @@ export interface PracticeToolsRowProps {
   extras: PracticeExtrasState;
 }
 
+function formatTakeDuration(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 /** Sing-along (mic scoring) and fix-notes (edit mode) toggles + live feedback. */
 export function PracticeToolsRow({ extras }: PracticeToolsRowProps): React.JSX.Element {
   const { colors } = useTheme();
@@ -62,6 +68,26 @@ export function PracticeToolsRow({ extras }: PracticeToolsRowProps): React.JSX.E
         <Text style={[styles.hint, { color: colors.textSecondary }]}>
           Listening… sing your part along with playback
         </Text>
+      )}
+      {!singAlong.active && singAlong.lastTake && (
+        <Pressable
+          onPress={() => {
+            void hapticFeedback.triggerLight();
+            void singAlong.toggleTakePlayback();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={singAlong.takePlaying ? "Pause my last take" : "Play my last take"}
+          style={({ pressed }) => [styles.takeRow, { backgroundColor: colors.surface, opacity: pressed ? 0.85 : 1 }]}
+        >
+          <Ionicons
+            name={singAlong.takePlaying ? "pause-circle" : "play-circle"}
+            size={22}
+            color={colors.primary}
+          />
+          <Text style={[styles.takeText, { color: colors.text }]}>
+            My last take · {formatTakeDuration(singAlong.lastTake.durationSec)}
+          </Text>
+        </Pressable>
       )}
       {singAlong.error && (
         <Text style={[styles.hint, { color: colors.error }]}>
@@ -123,6 +149,12 @@ const styles = StyleSheet.create({
   },
   toolText: { ...Typography.small, fontFamily: Fonts.bodySemiBold, fontWeight: "600" },
   resetBtn: { flexDirection: "row", alignItems: "center", gap: 4, minHeight: 40, paddingHorizontal: Spacing.sm },
+  takeRow: {
+    flexDirection: "row", alignItems: "center", gap: Spacing.sm,
+    paddingHorizontal: Spacing.md, minHeight: 44, borderRadius: BorderRadius.sm,
+    alignSelf: "flex-start",
+  },
+  takeText: { ...Typography.small, fontFamily: Fonts.bodySemiBold, fontWeight: "600" },
   resetText: { ...Typography.small },
   hint: { ...Typography.small, fontSize: 11 },
 });

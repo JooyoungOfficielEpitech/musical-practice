@@ -34,7 +34,8 @@ export const DEFAULT_AUDIO_CONFIG: AudioStreamConfig = {
 
 export interface Recording {
   id: string;
-  sessionId: string;
+  /** Owning score — one latest take is kept per sheet. */
+  sheetId: string;
   title: string;
   fileUri: string;
   duration: number; // seconds

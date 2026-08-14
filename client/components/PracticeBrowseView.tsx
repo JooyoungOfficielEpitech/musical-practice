@@ -205,9 +205,13 @@ function PracticeBrowseViewComponent({
       <NoteEditSheet
         visible={!!extras.editor.selectedNote}
         selectedPitch={extras.editor.selectedPitch}
+        selectedLyric={extras.editor.selectedLyric}
         canEdit={extras.editor.canEditSelected === true}
         onApply={(step, alter, octave) => {
           extras.editor.applyPitch(step, alter, octave);
+        }}
+        onApplyLyric={(text) => {
+          extras.editor.applyLyric(text);
         }}
         onDismiss={extras.editor.dismiss}
       />

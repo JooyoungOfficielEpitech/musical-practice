@@ -11,6 +11,8 @@ interface TrackerArgs {
   sheet: { id: string; title: string } | undefined;
   /** Sampled when a session is finished without an explicit accuracy (unmount). */
   getFinishAccuracy?: () => number | undefined;
+  /** Latest sing-along take to attach to the session record. */
+  getFinishRecordingUri?: () => string | undefined;
 }
 
 export interface UseTrackerReturn {
@@ -22,6 +24,7 @@ export function usePracticeSessionTracker({
   isPlaying,
   sheet,
   getFinishAccuracy,
+  getFinishRecordingUri,
 }: TrackerArgs): UseTrackerReturn {
   const [elapsedActiveSec, setElapsedActiveSec] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -29,6 +32,8 @@ export function usePracticeSessionTracker({
   const elapsedRef = useRef(0);
   const getFinishAccuracyRef = useRef(getFinishAccuracy);
   getFinishAccuracyRef.current = getFinishAccuracy;
+  const getFinishRecordingUriRef = useRef(getFinishRecordingUri);
+  getFinishRecordingUriRef.current = getFinishRecordingUri;
 
   // A different score starts a fresh session clock.
   useEffect(() => {
@@ -67,6 +72,7 @@ export function usePracticeSessionTracker({
       sheetTitle: sheetRef.current.title,
       durationSec,
       accuracy,
+      recordingUri: getFinishRecordingUriRef.current?.(),
     });
   }, []);
 

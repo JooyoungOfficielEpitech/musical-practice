@@ -1,5 +1,10 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { parsePitchString, replaceNotePitchAtIndex } from "../lib/audio/musicXmlEditor";
+import {
+  parsePitchString,
+  replaceNotePitchAtIndex,
+  lyricTextAtIndex,
+  replaceLyricTextAtIndex,
+} from "../lib/audio/musicXmlEditor";
 import { findXmlNoteIndex } from "../lib/audio/noteEditLocator";
 import { playNote, resumeAudioContext } from "../lib/audio/synthEngine";
 
@@ -23,11 +28,15 @@ export interface NoteEditorState {
   editedMusicXml: string;
   selectedNote: NoteIdentity | null;
   selectedPitch: SelectedPitch | null;
+  /** Printed lyric of the selected note (null when it has none). */
+  selectedLyric: string | null;
   /** Null until checked; false when the tapped note can't be safely located. */
   canEditSelected: boolean | null;
   hasEdits: boolean;
   selectNote: (identity: NoteIdentity) => void;
   applyPitch: (step: string, alter: number, octave: number) => boolean;
+  /** Set/replace the lyric text; empty string removes it. */
+  applyLyric: (text: string) => boolean;
   dismiss: () => void;
   resetEdits: () => void;
 }
@@ -59,6 +68,7 @@ export function useNoteEditor(
   const [editedMusicXml, setEditedMusicXml] = useState(initialMusicXml);
   const [selectedNote, setSelectedNote] = useState<NoteIdentity | null>(null);
   const [selectedPitch, setSelectedPitch] = useState<SelectedPitch | null>(null);
+  const [selectedLyric, setSelectedLyric] = useState<string | null>(null);
   const [canEditSelected, setCanEditSelected] = useState<boolean | null>(null);
   const [hasEdits, setHasEdits] = useState(false);
 
@@ -76,6 +86,7 @@ export function useNoteEditor(
     setHasEdits(false);
     setSelectedNote(null);
     setSelectedPitch(null);
+    setSelectedLyric(null);
     setCanEditSelected(null);
   }, [initialMusicXml]);
 
@@ -84,7 +95,9 @@ export function useNoteEditor(
       const pitch = parsePitchString(identity.pitch);
       setSelectedNote(identity);
       setSelectedPitch(pitch);
-      setCanEditSelected(findXmlNoteIndex(editedMusicXml, identity) !== null);
+      const xmlIndex = findXmlNoteIndex(editedMusicXml, identity);
+      setCanEditSelected(xmlIndex !== null);
+      setSelectedLyric(xmlIndex !== null ? lyricTextAtIndex(editedMusicXml, xmlIndex) : null);
       previewMidi(identity.midiNumber);
     },
     [editedMusicXml],
@@ -103,8 +116,26 @@ export function useNoteEditor(
       setHasEdits(true);
       setSelectedNote(null);
       setSelectedPitch(null);
+      setSelectedLyric(null);
       setCanEditSelected(null);
       previewMidi(midiOf(step, alter, octave));
+      lastEmittedRef.current = updated;
+      onXmlChanged?.(updated, true);
+      return true;
+    },
+    [selectedNote, editedMusicXml, onXmlChanged],
+  );
+
+  const applyLyric = useCallback(
+    (text: string): boolean => {
+      if (!selectedNote) return false;
+      const xmlNoteIndex = findXmlNoteIndex(editedMusicXml, selectedNote);
+      if (xmlNoteIndex === null) return false;
+      const updated = replaceLyricTextAtIndex(editedMusicXml, xmlNoteIndex, text);
+      if (updated === editedMusicXml) return false;
+      setEditedMusicXml(updated);
+      setHasEdits(true);
+      setSelectedLyric(text.trim() || null);
       lastEmittedRef.current = updated;
       onXmlChanged?.(updated, true);
       return true;
@@ -115,6 +146,7 @@ export function useNoteEditor(
   const dismiss = useCallback(() => {
     setSelectedNote(null);
     setSelectedPitch(null);
+    setSelectedLyric(null);
     setCanEditSelected(null);
   }, []);
 
@@ -124,13 +156,14 @@ export function useNoteEditor(
     setHasEdits(false);
     setSelectedNote(null);
     setSelectedPitch(null);
+    setSelectedLyric(null);
     setCanEditSelected(null);
     lastEmittedRef.current = baseline;
     onXmlChanged?.(baseline, false);
   }, [onXmlChanged]);
 
   return {
-    editedMusicXml, selectedNote, selectedPitch, canEditSelected, hasEdits,
-    selectNote, applyPitch, dismiss, resetEdits,
+    editedMusicXml, selectedNote, selectedPitch, selectedLyric, canEditSelected, hasEdits,
+    selectNote, applyPitch, applyLyric, dismiss, resetEdits,
   };
 }

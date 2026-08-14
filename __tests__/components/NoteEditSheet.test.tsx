@@ -21,8 +21,10 @@ function makeProps(overrides: Record<string, unknown> = {}) {
   return {
     visible: true,
     selectedPitch: { step: "C", alter: 0, octave: 4 },
+    selectedLyric: null,
     canEdit: true,
     onApply: jest.fn(),
+    onApplyLyric: jest.fn(),
     onDismiss: jest.fn(),
     ...overrides,
   };
@@ -89,5 +91,42 @@ describe("NoteEditSheet", () => {
     fireEvent.press(getByLabelText("Cancel"));
     fireEvent.press(getByLabelText("Close note editor"));
     expect(props.onDismiss).toHaveBeenCalledTimes(2);
+  });
+});
+
+
+describe("NoteEditSheet — lyric editing", () => {
+  it("prefills the printed lyric and applies an edited one (lyric-only closes the sheet)", () => {
+    const props = makeProps({ selectedLyric: "절" });
+    const { getByLabelText, getByDisplayValue } = render(<NoteEditSheet {...(props as any)} />);
+    expect(getByDisplayValue("절")).toBeTruthy();
+
+    fireEvent.changeText(getByLabelText("Lyric text"), "철");
+    fireEvent.press(getByLabelText("Apply note C4"));
+    expect(props.onApplyLyric).toHaveBeenCalledWith("철");
+    expect(props.onApply).not.toHaveBeenCalled(); // pitch untouched
+    expect(props.onDismiss).toHaveBeenCalled(); // lyric-only edit closes
+  });
+
+  it("applies lyric BEFORE pitch when both changed (pitch apply clears selection)", () => {
+    const calls: string[] = [];
+    const props = makeProps({
+      selectedLyric: "가",
+      onApplyLyric: jest.fn(() => calls.push("lyric")),
+      onApply: jest.fn(() => calls.push("pitch")),
+    });
+    const { getByLabelText } = render(<NoteEditSheet {...(props as any)} />);
+    fireEvent.changeText(getByLabelText("Lyric text"), "나");
+    fireEvent.press(getByLabelText("Up semitone"));
+    fireEvent.press(getByLabelText("Apply note C#4"));
+    expect(calls).toEqual(["lyric", "pitch"]);
+  });
+
+  it("adding a lyric to a bare note enables Apply", () => {
+    const props = makeProps({ selectedLyric: null });
+    const { getByLabelText } = render(<NoteEditSheet {...(props as any)} />);
+    fireEvent.changeText(getByLabelText("Lyric text"), "간");
+    fireEvent.press(getByLabelText("Apply note C4"));
+    expect(props.onApplyLyric).toHaveBeenCalledWith("간");
   });
 });

@@ -1,0 +1,38 @@
+appId: com.musicalpractice
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Library"
+    timeout: 20000
+- tapOn: "Open Hadestown — Wait For Me"
+- extendedWaitUntil:
+    visible: "PLAYBACK"
+    timeout: 30000
+- swipe:
+    start: 50%, 88%
+    end: 50%, 40%
+# ── take recording: sing along briefly, stop, replay row appears
+- tapOn: "Start sing along scoring"
+- extendedWaitUntil:
+    visible: "Stop sing along scoring"
+    timeout: 25000
+- extendedWaitUntil:
+    visible: "Listening.*"
+    timeout: 10000
+- tapOn: "Stop sing along scoring"
+- extendedWaitUntil:
+    visible: "Play my last take"
+    timeout: 15000
+- takeScreenshot: e2e/results/smoke/11_last_take
+- tapOn: "Play my last take"
+- extendedWaitUntil:
+    visible: "Pause my last take"
+    timeout: 10000
+- takeScreenshot: e2e/results/smoke/12_take_playing
+# NOTE: the lyric-edit sheet needs a score-note tap, which Maestro coordinate
+# taps cannot deliver into the WKWebView (verified: tap-to-seek is equally
+# unreachable). Covered by unit tests; verify by hand on device.
+- tapOn: "Fix wrong notes"
+- assertVisible: "Tap a note on the score to fix it. Solo your part first if notes overlap."
+- tapOn: "Exit note editing"
+- tapOn: "Go back to library"

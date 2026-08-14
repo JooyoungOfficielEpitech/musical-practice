@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Modal, Pressable, Text } from "react-native";
+import { StyleSheet, View, Modal, Pressable, Text, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { hapticFeedback } from "@/lib/hapticFeedback";
+import { NoteEditStepper } from "@/components/NoteEditStepper";
 import { Spacing, BorderRadius, ClayShadow, Fonts } from "@/constants/theme";
 
 export interface NoteEditSheetProps {
   visible: boolean;
   selectedPitch: { step: string; alter: number; octave: number } | null;
+  /** Printed lyric of the selected note; null = none. */
+  selectedLyric: string | null;
   /** False when the tapped note can't be located safely — editing disabled. */
   canEdit: boolean;
   onApply: (step: string, alter: number, octave: number) => void;
+  /** Set/replace/remove (empty string) the selected note's lyric. */
+  onApplyLyric: (text: string) => void;
   onDismiss: () => void;
 }
 
@@ -43,15 +48,19 @@ function pitchLabelOf(step: string, alter: number, octave: number): string {
  * on a midi basis (a semitone up from C4 is C#4, never D#4), Apply/Cancel.
  */
 export function NoteEditSheet({
-  visible, selectedPitch, canEdit, onApply, onDismiss,
+  visible, selectedPitch, selectedLyric, canEdit, onApply, onApplyLyric, onDismiss,
 }: NoteEditSheetProps): React.JSX.Element | null {
   const { colors } = useTheme();
   const [workingMidi, setWorkingMidi] = useState(60);
+  const [lyricDraft, setLyricDraft] = useState("");
 
   useEffect(() => {
     if (visible && selectedPitch) {
       setWorkingMidi(pitchToMidi(selectedPitch.step, selectedPitch.alter, selectedPitch.octave));
+      setLyricDraft(selectedLyric ?? "");
     }
+    // Sync only when a (new) note is selected, not on every keystroke echo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, selectedPitch]);
 
   if (!visible || !selectedPitch) return null;
@@ -59,7 +68,9 @@ export function NoteEditSheet({
   const working = midiToPitch(workingMidi);
   const pitchLabel = pitchLabelOf(working.step, working.alter, working.octave);
   const originalLabel = pitchLabelOf(selectedPitch.step, selectedPitch.alter, selectedPitch.octave);
-  const changed = workingMidi !== pitchToMidi(selectedPitch.step, selectedPitch.alter, selectedPitch.octave);
+  const pitchChanged = workingMidi !== pitchToMidi(selectedPitch.step, selectedPitch.alter, selectedPitch.octave);
+  const lyricChanged = lyricDraft.trim() !== (selectedLyric ?? "");
+  const changed = pitchChanged || lyricChanged;
 
   const shift = (delta: number) => {
     void hapticFeedback.triggerLight();
@@ -69,7 +80,13 @@ export function NoteEditSheet({
   const handleApply = () => {
     if (!canEdit) return;
     void hapticFeedback.triggerMedium();
-    onApply(working.step, working.alter, working.octave);
+    // Lyric first: applying the pitch clears the selection in the editor.
+    if (lyricChanged) onApplyLyric(lyricDraft);
+    if (pitchChanged) {
+      onApply(working.step, working.alter, working.octave);
+    } else {
+      onDismiss();
+    }
   };
 
   const handleDismiss = () => {
@@ -101,7 +118,7 @@ export function NoteEditSheet({
         <View style={styles.content}>
           <Text style={[styles.title, { color: colors.text }]}>Edit Note</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            {changed ? `${originalLabel} → ${pitchLabel}` : `Scanned as ${originalLabel}`}
+            {pitchChanged ? `${originalLabel} → ${pitchLabel}` : `Scanned as ${originalLabel}`}
           </Text>
 
           <View
@@ -121,7 +138,7 @@ export function NoteEditSheet({
             </Text>
           )}
 
-          <StepperRow
+          <NoteEditStepper
             label="Semitone"
             valueLabel="½ step"
             onDown={() => shift(-1)}
@@ -130,7 +147,7 @@ export function NoteEditSheet({
             upLabel="Up semitone"
             disabled={!canEdit}
           />
-          <StepperRow
+          <NoteEditStepper
             label="Octave"
             valueLabel={`${working.octave}`}
             onDown={() => shift(-12)}
@@ -138,6 +155,17 @@ export function NoteEditSheet({
             downLabel="Decrease octave"
             upLabel="Increase octave"
             disabled={!canEdit}
+          />
+
+          <Text style={[styles.lyricLabel, { color: colors.text }]}>Lyric</Text>
+          <TextInput
+            value={lyricDraft}
+            onChangeText={setLyricDraft}
+            editable={canEdit}
+            placeholder="No lyric — type to add one"
+            placeholderTextColor={colors.textSecondary}
+            accessibilityLabel="Lyric text"
+            style={[styles.lyricInput, { backgroundColor: colors.backgroundSecondary, color: colors.text }]}
           />
         </View>
 
@@ -169,37 +197,6 @@ export function NoteEditSheet({
   );
 }
 
-interface StepperRowProps {
-  label: string;
-  valueLabel: string;
-  onDown: () => void;
-  onUp: () => void;
-  downLabel: string;
-  upLabel: string;
-  disabled: boolean;
-}
-
-function StepperRow({ label, valueLabel, onDown, onUp, downLabel, upLabel, disabled }: StepperRowProps): React.JSX.Element {
-  const { colors } = useTheme();
-  const btnStyle = ({ pressed }: { pressed: boolean }) => [
-    styles.smallBtn,
-    { backgroundColor: colors.backgroundSecondary, opacity: disabled ? 0.4 : pressed ? 0.7 : 1 },
-  ];
-  return (
-    <View style={styles.controlGroup}>
-      <Text style={[styles.controlLabel, { color: colors.text }]}>{label}</Text>
-      <View style={styles.buttonRow}>
-        <Pressable onPress={onDown} disabled={disabled} accessibilityLabel={downLabel} accessibilityRole="button" style={btnStyle}>
-          <Ionicons name="remove-outline" size={18} color={colors.text} />
-        </Pressable>
-        <Text style={[styles.buttonLabel, { color: colors.text }]}>{valueLabel}</Text>
-        <Pressable onPress={onUp} disabled={disabled} accessibilityLabel={upLabel} accessibilityRole="button" style={btnStyle}>
-          <Ionicons name="add-outline" size={18} color={colors.text} />
-        </Pressable>
-      </View>
-    </View>
-  );
-}
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1 },
@@ -216,11 +213,11 @@ const styles = StyleSheet.create({
   pitchDisplay: { paddingVertical: Spacing.lg, paddingHorizontal: Spacing.md, borderRadius: BorderRadius.md, alignItems: "center" },
   pitchText: { fontSize: 36, fontFamily: Fonts.bodyBold, fontWeight: "700" },
   cantEdit: { fontSize: 12, textAlign: "center" },
-  controlGroup: { gap: Spacing.sm },
-  controlLabel: { fontSize: 12, fontFamily: Fonts.bodyBold, fontWeight: "600", marginLeft: Spacing.sm },
-  buttonRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: Spacing.md },
-  smallBtn: { width: 44, height: 44, borderRadius: 50, alignItems: "center", justifyContent: "center" },
-  buttonLabel: { fontSize: 14, fontFamily: Fonts.bodyBold, fontWeight: "600", minWidth: 40, textAlign: "center" },
+  lyricLabel: { fontSize: 12, fontFamily: Fonts.bodyBold, fontWeight: "600", marginLeft: Spacing.sm },
+  lyricInput: {
+    borderRadius: BorderRadius.sm, paddingHorizontal: Spacing.md, paddingVertical: Spacing.md,
+    fontSize: 16, minHeight: 44, textAlign: "center",
+  },
   actionRow: { flexDirection: "row", gap: Spacing.md, paddingHorizontal: Spacing.lg, marginTop: Spacing.md },
   actionBtn: { flex: 1, paddingVertical: Spacing.md, borderRadius: 50, alignItems: "center" },
   actionBtnText: { fontSize: 14, fontFamily: Fonts.bodyBold, fontWeight: "700" },
