@@ -32,7 +32,12 @@ export function SessionCompleteToast({ durationSec, accuracy }: SessionCompleteT
   const accuracyStr = accuracy !== undefined ? `${Math.round(accuracy * 100)}%` : null;
 
   return (
-    <View style={[styles.toast, { backgroundColor: colors.success }, Shadows.md]}>
+    <View
+      style={[styles.toast, { backgroundColor: colors.success }, Shadows.md]}
+      accessible
+      accessibilityRole="alert"
+      accessibilityLiveRegion="polite"
+    >
       <Ionicons name="checkmark-circle-outline" size={20} color={colors.buttonText} />
       <View style={styles.content}>
         <Text style={[styles.mainText, { color: colors.buttonText }]}>

@@ -17,7 +17,7 @@ describe("VolumeSlider", () => {
       <VolumeSlider value={0.6} onChange={jest.fn()} accessibilityLabel="Soprano volume" />,
     );
     const slider = getByLabelText("Soprano volume");
-    expect(slider.props.accessibilityValue).toEqual({ now: 60, min: 0, max: 100 });
+    expect(slider.props.accessibilityValue).toEqual({ now: 60, min: 0, max: 100, text: "60% volume" });
     expect(slider.props.accessibilityRole).toBe("adjustable");
   });
 

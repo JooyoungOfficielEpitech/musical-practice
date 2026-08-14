@@ -77,6 +77,7 @@ export function PracticeToolsRow({ extras }: PracticeToolsRowProps): React.JSX.E
           }}
           accessibilityRole="button"
           accessibilityLabel={singAlong.takePlaying ? "Pause my last take" : "Play my last take"}
+          accessibilityHint="Plays back your recorded singing"
           style={({ pressed }) => [styles.takeRow, { backgroundColor: colors.surface, opacity: pressed ? 0.85 : 1 }]}
         >
           <Ionicons
@@ -126,6 +127,7 @@ function ToolButton({ icon, label, active, onPress, accessibilityLabel }: ToolBu
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
+      android_ripple={{ color: active ? colors.rippleLight : colors.ripple }}
       style={({ pressed }) => [
         styles.toolBtn,
         {
@@ -145,10 +147,10 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, flexWrap: "wrap" },
   toolBtn: {
     flexDirection: "row", alignItems: "center", gap: Spacing.xs,
-    paddingHorizontal: Spacing.md, minHeight: 40, borderRadius: BorderRadius.sm,
+    paddingHorizontal: Spacing.md, minHeight: 44, borderRadius: BorderRadius.sm,
   },
   toolText: { ...Typography.small, fontFamily: Fonts.bodySemiBold, fontWeight: "600" },
-  resetBtn: { flexDirection: "row", alignItems: "center", gap: 4, minHeight: 40, paddingHorizontal: Spacing.sm },
+  resetBtn: { flexDirection: "row", alignItems: "center", gap: 4, minHeight: 44, paddingHorizontal: Spacing.sm },
   takeRow: {
     flexDirection: "row", alignItems: "center", gap: Spacing.sm,
     paddingHorizontal: Spacing.md, minHeight: 44, borderRadius: BorderRadius.sm,

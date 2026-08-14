@@ -78,14 +78,22 @@ function PracticeBrowseViewComponent({
       />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={onRefresh} tintColor={colors.primary} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+            progressBackgroundColor={colors.surface}
+          />
+        }
       >
         {hasMusicXml ? (
           <>
             {/* Score display */}
             <View style={styles.heroWrap}>
               {musicXmlLoading ? (
-                <LoadingSkeleton height={heroHeight} />
+                <LoadingSkeleton height={heroHeight} label="Loading score…" />
               ) : musicXmlContent ? (
                 <>
                   <View style={[styles.hero, { height: heroHeight }]}>
@@ -100,6 +108,7 @@ function PracticeBrowseViewComponent({
                       onPress={handleFullscreenToggle}
                       accessibilityLabel="Expand score to fullscreen"
                       accessibilityRole="button"
+                      android_ripple={{ color: colors.ripple, borderless: true }}
                       hitSlop={8}
                       style={[styles.expandBtn, { backgroundColor: colors.surface }]}
                     >
@@ -120,6 +129,7 @@ function PracticeBrowseViewComponent({
                     message="The score could not be parsed. Try re-importing the PDF."
                     retryLabel="Reload"
                     onRetry={onRefresh}
+                    retrying={loading}
                     icon="alert-circle-outline"
                   />
                 </View>
@@ -161,6 +171,7 @@ function PracticeBrowseViewComponent({
                   style={({ pressed }) => [styles.partsButton, { backgroundColor: colors.primary, opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
                   accessibilityRole="button"
                   accessibilityLabel="Select parts to practice"
+                  android_ripple={{ color: colors.rippleLight }}
                 >
                   <Ionicons name="people-outline" size={18} color={colors.buttonText} />
                   <Text style={[styles.partsButtonText, { color: colors.buttonText }]}>
@@ -239,7 +250,7 @@ const styles = StyleSheet.create({
   heroWrap: { marginHorizontal: Spacing.lg, marginVertical: Spacing.md },
   hero: { borderRadius: BorderRadius.md, overflow: "hidden", position: "relative" },
   errorStateWrap: { marginVertical: Spacing.lg },
-  expandBtn: { position: "absolute", bottom: Spacing.md, right: Spacing.md, width: 40, height: 40, borderRadius: BorderRadius.sm, alignItems: "center", justifyContent: "center" },
+  expandBtn: { position: "absolute", bottom: Spacing.md, right: Spacing.md, width: 44, height: 44, borderRadius: BorderRadius.sm, alignItems: "center", justifyContent: "center" },
   disclaimerRow: { flexDirection: "row", alignItems: "center", gap: Spacing.xs, marginTop: Spacing.xs, paddingHorizontal: Spacing.xs },
   disclaimerText: { ...Typography.small, fontSize: 11, flex: 1 },
   transport: { paddingHorizontal: 0, marginVertical: Spacing.md },

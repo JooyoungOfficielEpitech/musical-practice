@@ -56,6 +56,7 @@ export function ConfirmModal({
               onPress={onCancel}
               accessibilityLabel={cancelLabel}
               accessibilityRole="button"
+              android_ripple={{ color: colors.ripple }}
               style={({ pressed }) => [
                 styles.btn,
                 styles.cancelBtn,
@@ -68,6 +69,8 @@ export function ConfirmModal({
               onPress={onConfirm}
               accessibilityLabel={confirmLabel}
               accessibilityRole="button"
+              accessibilityHint={destructive ? "This cannot be undone" : undefined}
+              android_ripple={{ color: colors.rippleLight }}
               style={({ pressed }) => [
                 styles.btn,
                 styles.confirmBtn,

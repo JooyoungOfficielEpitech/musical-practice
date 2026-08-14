@@ -50,6 +50,8 @@ export function ImportLandingView({ onChoose, onGoBack, isPicking }: LandingView
           disabled={isPicking}
           accessibilityLabel="Choose PDF"
           accessibilityRole="button"
+          accessibilityState={{ disabled: isPicking, busy: isPicking }}
+          android_ripple={{ color: colors.rippleLight }}
           style={({ pressed }) => [
             styles.primaryBtn,
             { backgroundColor: colors.primary, opacity: isPicking ? 0.6 : pressed ? 0.9 : 1 },
@@ -122,6 +124,7 @@ export function ImportConfirmView({
           }}
           accessibilityLabel="Start scan"
           accessibilityRole="button"
+          android_ripple={{ color: colors.rippleLight }}
           style={({ pressed }) => [styles.primaryBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.9 : 1 }]}
         >
           <Ionicons name="sparkles-outline" size={18} color={colors.buttonText} />

@@ -3,6 +3,7 @@ import { StyleSheet, View, Modal, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
+import { hapticFeedback } from "@/lib/hapticFeedback";
 import { useLandscape } from "@/hooks/useLandscape";
 import { InteractiveScore } from "@/components/InteractiveScore";
 import { Spacing } from "@/constants/theme";
@@ -58,6 +59,7 @@ export function ScoreFullscreenModal({
           onPress={onClose}
           accessibilityLabel="Close fullscreen"
           accessibilityRole="button"
+          android_ripple={{ color: colors.ripple, borderless: true }}
           hitSlop={10}
           style={[styles.closeBtn, { backgroundColor: colors.surface }]}
         >
@@ -67,6 +69,7 @@ export function ScoreFullscreenModal({
           onPress={() => { toggleLandscape().catch(() => {}); }}
           accessibilityLabel={isLandscape ? "Rotate to portrait" : "Rotate to landscape"}
           accessibilityRole="button"
+          android_ripple={{ color: colors.ripple, borderless: true }}
           hitSlop={10}
           style={[styles.rotateBtn, { backgroundColor: colors.surface }]}
         >
@@ -77,9 +80,13 @@ export function ScoreFullscreenModal({
           />
         </Pressable>
         <Pressable
-          onPress={onPlayPause}
+          onPress={() => {
+            void hapticFeedback.triggerMedium();
+            onPlayPause();
+          }}
           accessibilityLabel={isPlaying ? "Pause" : "Play"}
           accessibilityRole="button"
+          android_ripple={{ color: colors.rippleLight, borderless: true }}
           style={[styles.playBtn, { backgroundColor: colors.primary }]}
         >
           <Ionicons name={isPlaying ? "pause" : "play"} size={24} color={colors.buttonText} />

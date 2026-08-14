@@ -43,7 +43,7 @@ export default function PracticeDetailScreen() {
     return (
       <View style={[styles.container, { backgroundColor: colors.backgroundDefault, paddingTop: insets.top }]}>
         <View style={styles.loadingWrap}>
-          <LoadingSkeleton height={220} />
+          <LoadingSkeleton height={220} label="Loading score…" />
           <LoadingSkeleton height={64} />
           <LoadingSkeleton height={64} />
         </View>

@@ -29,6 +29,8 @@ const SHARP_NAMES: { step: string; alter: number }[] = [
 ];
 const MIDI_MIN = 24; // C1
 const MIDI_MAX = 108; // C8
+// A lyric here is one note's syllable — a hard cap keeps the MusicXML sane.
+const LYRIC_MAX_LENGTH = 40;
 
 function pitchToMidi(step: string, alter: number, octave: number): number {
   return (octave + 1) * 12 + (STEP_SEMITONES[step] ?? 0) + alter;
@@ -157,11 +159,19 @@ export function NoteEditSheet({
             disabled={!canEdit}
           />
 
-          <Text style={[styles.lyricLabel, { color: colors.text }]}>Lyric</Text>
+          <View style={styles.lyricLabelRow}>
+            <Text style={[styles.lyricLabel, { color: colors.text }]}>Lyric</Text>
+            {lyricDraft.length > 0 && (
+              <Text style={[styles.lyricCounter, { color: colors.textSecondary }]}>
+                {lyricDraft.length}/{LYRIC_MAX_LENGTH}
+              </Text>
+            )}
+          </View>
           <TextInput
             value={lyricDraft}
             onChangeText={setLyricDraft}
             editable={canEdit}
+            maxLength={LYRIC_MAX_LENGTH}
             placeholder="No lyric — type to add one"
             placeholderTextColor={colors.textSecondary}
             accessibilityLabel="Lyric text"
@@ -174,6 +184,7 @@ export function NoteEditSheet({
             onPress={handleDismiss}
             accessibilityLabel="Cancel"
             accessibilityRole="button"
+            android_ripple={{ color: colors.ripple }}
             style={({ pressed }) => [styles.actionBtn, { backgroundColor: colors.backgroundSecondary, opacity: pressed ? 0.7 : 1 }]}
           >
             <Text style={[styles.actionBtnText, { color: colors.text }]}>Cancel</Text>
@@ -184,6 +195,7 @@ export function NoteEditSheet({
             accessibilityLabel={`Apply note ${pitchLabel}`}
             accessibilityRole="button"
             accessibilityState={{ disabled: !canEdit || !changed }}
+            android_ripple={{ color: colors.rippleLight }}
             style={({ pressed }) => [
               styles.actionBtn,
               { backgroundColor: colors.primary, opacity: !canEdit || !changed ? 0.4 : pressed ? 0.9 : 1 },
@@ -213,12 +225,14 @@ const styles = StyleSheet.create({
   pitchDisplay: { paddingVertical: Spacing.lg, paddingHorizontal: Spacing.md, borderRadius: BorderRadius.md, alignItems: "center" },
   pitchText: { fontSize: 36, fontFamily: Fonts.bodyBold, fontWeight: "700" },
   cantEdit: { fontSize: 12, textAlign: "center" },
+  lyricLabelRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginRight: Spacing.sm },
   lyricLabel: { fontSize: 12, fontFamily: Fonts.bodyBold, fontWeight: "600", marginLeft: Spacing.sm },
+  lyricCounter: { fontSize: 11 },
   lyricInput: {
     borderRadius: BorderRadius.sm, paddingHorizontal: Spacing.md, paddingVertical: Spacing.md,
     fontSize: 16, minHeight: 44, textAlign: "center",
   },
   actionRow: { flexDirection: "row", gap: Spacing.md, paddingHorizontal: Spacing.lg, marginTop: Spacing.md },
-  actionBtn: { flex: 1, paddingVertical: Spacing.md, borderRadius: 50, alignItems: "center" },
+  actionBtn: { flex: 1, paddingVertical: Spacing.md, borderRadius: 50, alignItems: "center", justifyContent: "center", minHeight: 44 },
   actionBtnText: { fontSize: 14, fontFamily: Fonts.bodyBold, fontWeight: "700" },
 });

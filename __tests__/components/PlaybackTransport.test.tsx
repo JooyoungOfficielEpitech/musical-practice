@@ -41,6 +41,17 @@ function makeProps(overrides: Record<string, unknown> = {}) {
 }
 
 describe("PlaybackTransport", () => {
+  it("gives every 32px stepper button a hitSlop that reaches the 44dp touch target", () => {
+    const { getByLabelText } = render(<PlaybackTransport {...(makeProps() as any)} />);
+    for (const label of ["Decrease tempo", "Increase tempo", "Transpose down", "Transpose up"]) {
+      const hitSlop = getByLabelText(label).props.hitSlop;
+      expect(hitSlop.top).toBeGreaterThanOrEqual(6);
+      expect(hitSlop.bottom).toBeGreaterThanOrEqual(6);
+      expect(hitSlop.left).toBeGreaterThanOrEqual(6);
+      expect(hitSlop.right).toBeGreaterThanOrEqual(6);
+    }
+  });
+
   it("renders play button and fires onPlayPause", () => {
     const props = makeProps();
     const { getByLabelText } = render(<PlaybackTransport {...(props as any)} />);

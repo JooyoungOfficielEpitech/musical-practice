@@ -9,6 +9,8 @@ import { Spacing, BorderRadius, Typography, Fonts } from "@/constants/theme";
 import type { UseSynthPlayerReturn } from "@/hooks/useSynthPlayer";
 
 const TEMPO_STEP = 0.1, TEMPO_MIN = 0.5, TEMPO_MAX = 2.0;
+// Stepper buttons are 32px; +6 per side reaches the 44dp minimum touch target.
+const STEPPER_HIT_SLOP = { top: 6, bottom: 6, left: 6, right: 6 };
 
 export interface PlaybackTransportProps {
   synthPlayer: UseSynthPlayerReturn;
@@ -78,6 +80,7 @@ function PlaybackTransportComponent({
           }}
           accessibilityLabel={isPlaying ? "Pause" : "Play"}
           accessibilityRole="button"
+          android_ripple={{ color: colors.rippleLight, borderless: true }}
           style={({ pressed }) => [styles.playBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] }]}
         >
           <Ionicons name={isPlaying ? "pause" : "play"} size={22} color={colors.buttonText} />
@@ -90,6 +93,7 @@ function PlaybackTransportComponent({
           }}
           accessibilityLabel={loopLabel}
           accessibilityRole="button"
+          android_ripple={{ color: colors.ripple }}
           style={[styles.toggleBtn, loopActive && { backgroundColor: colors.primarySubtle ?? colors.borderLight }]}
         >
           <Ionicons name="repeat" size={20} color={loopActive ? colors.primary : colors.text} />
@@ -106,6 +110,7 @@ function PlaybackTransportComponent({
           accessibilityLabel="Toggle metronome"
           accessibilityRole="button"
           accessibilityState={{ selected: metronomeOn }}
+          android_ripple={{ color: colors.ripple }}
           style={[styles.toggleBtn, metronomeOn && { backgroundColor: colors.primarySubtle ?? colors.borderLight }]}
         >
           <Ionicons name="pulse" size={20} color={metronomeOn ? colors.primary : colors.text} />
@@ -157,6 +162,8 @@ function Stepper({ label, value, onDecrease, onIncrease, decreaseLabel, increase
           }}
           accessibilityLabel={decreaseLabel}
           accessibilityRole="button"
+          hitSlop={STEPPER_HIT_SLOP}
+          android_ripple={{ color: colors.ripple, borderless: true }}
           style={[styles.stepperBtn, { backgroundColor: colors.backgroundSecondary }]}
         >
           <Ionicons name="remove" size={16} color={colors.text} />
@@ -169,6 +176,8 @@ function Stepper({ label, value, onDecrease, onIncrease, decreaseLabel, increase
           }}
           accessibilityLabel={increaseLabel}
           accessibilityRole="button"
+          hitSlop={STEPPER_HIT_SLOP}
+          android_ripple={{ color: colors.ripple, borderless: true }}
           style={[styles.stepperBtn, { backgroundColor: colors.backgroundSecondary }]}
         >
           <Ionicons name="add" size={16} color={colors.text} />

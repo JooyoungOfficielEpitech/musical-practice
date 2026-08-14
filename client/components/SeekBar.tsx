@@ -66,7 +66,7 @@ function SeekBarComponent({ positionMs, durationMs, loopRange, onSeek }: SeekBar
   return (
     <View
       onLayout={onLayout}
-      hitSlop={{ top: 14, bottom: 14, left: 4, right: 4 }}
+      hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
       accessibilityRole="adjustable"
       accessibilityLabel={`Seek to playback position, currently at ${formatTimeLabel(shownMs)} of ${formatTimeLabel(durationMs)}`}
       accessibilityHint="Drag to scrub through the track"

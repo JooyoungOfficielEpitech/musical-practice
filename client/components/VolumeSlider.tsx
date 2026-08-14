@@ -81,10 +81,10 @@ function VolumeSliderComponent({ value, onChange, accessibilityLabel }: VolumeSl
       onLayout={onLayout}
       accessibilityRole="adjustable"
       accessibilityLabel={accessibilityLabel}
-      accessibilityValue={{ now: Math.round(shown * 100), min: 0, max: 100 }}
+      accessibilityValue={{ now: Math.round(shown * 100), min: 0, max: 100, text: `${Math.round(shown * 100)}% volume` }}
       accessibilityActions={[{ name: "increment" }, { name: "decrement" }]}
       onAccessibilityAction={handleAccessibilityAction}
-      hitSlop={{ top: 12, bottom: 12, left: 4, right: 4 }}
+      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
       style={styles.touch}
       {...responder.panHandlers}
     >

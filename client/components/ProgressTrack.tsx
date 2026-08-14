@@ -42,6 +42,7 @@ export function ProgressTrack({
     <View
       testID="progress-track"
       accessible={true}
+      accessibilityRole="progressbar"
       accessibilityValue={{
         min: 0,
         max: 100,

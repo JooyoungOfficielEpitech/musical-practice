@@ -23,6 +23,7 @@ function PracticeTopBarComponent({
   return (
     <View style={styles.topBar}>
       <Pressable onPress={onGoBack} accessibilityLabel="Go back to library" accessibilityRole="button" hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        android_ripple={{ color: colors.ripple, borderless: true }}
         style={({ pressed }) => [styles.backBtn, { backgroundColor: colors.surface, opacity: pressed ? 0.7 : 1 }]}>
         <Ionicons name="chevron-back" size={24} color={colors.text} />
       </Pressable>
@@ -38,7 +39,8 @@ function PracticeTopBarComponent({
           onBlur={() => setEditBtnFocused(false)}
           accessibilityLabel="Edit score"
           accessibilityRole="button"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          android_ripple={{ color: colors.ripple, borderless: true }}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           style={({ pressed }) => [styles.actionBtn, { opacity: pressed ? 0.7 : 1, borderWidth: editBtnFocused ? 2 : 0, borderColor: editBtnFocused ? colors.primary : "transparent" }]}
         >
           <Ionicons name="create-outline" size={22} color={colors.text} />
@@ -49,7 +51,8 @@ function PracticeTopBarComponent({
           onBlur={() => setDeleteBtnFocused(false)}
           accessibilityLabel="Delete score"
           accessibilityRole="button"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          android_ripple={{ color: colors.ripple, borderless: true }}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           style={({ pressed }) => [styles.actionBtn, { opacity: pressed ? 0.7 : 1, borderWidth: deleteBtnFocused ? 2 : 0, borderColor: deleteBtnFocused ? colors.primary : "transparent" }]}
         >
           <Ionicons name="trash-outline" size={20} color={colors.error} />

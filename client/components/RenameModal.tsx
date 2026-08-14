@@ -34,6 +34,7 @@ export function RenameModal({ visible, initialTitle, initialArtist, onClose, onS
   const [title, setTitle] = useState(initialTitle);
   const [artist, setArtist] = useState(initialArtist ?? "");
   const [titleError, setTitleError] = useState(false);
+  const [focusedField, setFocusedField] = useState<"title" | "artist" | null>(null);
   const titleInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
@@ -82,7 +83,11 @@ export function RenameModal({ visible, initialTitle, initialArtist, onClose, onS
                 ref={titleInputRef}
                 style={[
                   styles.input,
-                  { backgroundColor: colors.backgroundDefault, color: colors.text, borderColor: titleError ? colors.error : colors.borderLight },
+                  {
+                    backgroundColor: colors.backgroundDefault, color: colors.text,
+                    borderColor: titleError ? colors.error : focusedField === "title" ? colors.primary : colors.borderLight,
+                    borderWidth: focusedField === "title" ? 2 : 1,
+                  },
                 ]}
                 placeholder="Score title"
                 placeholderTextColor={colors.textSecondary}
@@ -91,6 +96,9 @@ export function RenameModal({ visible, initialTitle, initialArtist, onClose, onS
                   setTitle(t);
                   if (titleError) setTitleError(false);
                 }}
+                onFocus={() => setFocusedField("title")}
+                onBlur={() => setFocusedField(null)}
+                maxLength={100}
                 returnKeyType="next"
                 accessibilityLabel="Score title"
               />
@@ -102,11 +110,21 @@ export function RenameModal({ visible, initialTitle, initialArtist, onClose, onS
             <View style={styles.formGroup}>
               <Text style={[styles.label, { color: colors.textSecondary }]}>Artist (optional)</Text>
               <TextInput
-                style={[styles.input, { backgroundColor: colors.backgroundDefault, color: colors.text, borderColor: colors.borderLight }]}
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.backgroundDefault, color: colors.text,
+                    borderColor: focusedField === "artist" ? colors.primary : colors.borderLight,
+                    borderWidth: focusedField === "artist" ? 2 : 1,
+                  },
+                ]}
                 placeholder="Artist or composer"
                 placeholderTextColor={colors.textSecondary}
                 value={artist}
                 onChangeText={setArtist}
+                onFocus={() => setFocusedField("artist")}
+                onBlur={() => setFocusedField(null)}
+                maxLength={100}
                 returnKeyType="done"
                 onSubmitEditing={handleSubmit}
                 accessibilityLabel="Artist"
@@ -117,6 +135,7 @@ export function RenameModal({ visible, initialTitle, initialArtist, onClose, onS
               onPress={handleSubmit}
               accessibilityLabel="Save"
               accessibilityRole="button"
+              android_ripple={{ color: colors.rippleLight }}
               style={({ pressed }) => [
                 styles.saveBtn,
                 { backgroundColor: colors.primaryDark, opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
@@ -140,7 +159,7 @@ const styles = StyleSheet.create({
   formGroup: { marginBottom: Spacing.lg },
   label: { ...Typography.small, fontFamily: "Nunito_500Medium", fontWeight: "500", marginBottom: 6 },
   input: { borderRadius: Spacing.sm + 2, paddingHorizontal: Spacing.sm + 6, paddingVertical: Spacing.md, ...Typography.body, borderWidth: 1 },
-  saveBtn: { borderRadius: BorderRadius.sm, paddingVertical: Spacing.lg, alignItems: "center", marginTop: Spacing.sm },
+  saveBtn: { borderRadius: BorderRadius.sm, paddingVertical: Spacing.lg, alignItems: "center", justifyContent: "center", marginTop: Spacing.sm, minHeight: 48 },
   saveBtnText: { ...Typography.subtitle },
   errorText: { ...Typography.small, marginTop: Spacing.xs },
 });

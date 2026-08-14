@@ -1,5 +1,5 @@
 import React, { useCallback } from "react";
-import { StyleSheet, Text, View, Pressable, useWindowDimensions, Platform } from "react-native";
+import { StyleSheet, Text, View, Pressable, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
@@ -33,12 +33,15 @@ function ScoreCoverPlaceholder({ height }: { height: number }) {
 interface SheetCardProps {
   sheet: SheetMusic;
   onPress: () => void;
+  /** Long-press actions (rename/delete). Lives on the card's own Pressable so
+   *  screen readers get ONE element that both opens and exposes the hint. */
+  onLongPress?: () => void;
   onFavorite?: () => void;
   compact?: boolean;
   lastAccuracy?: number;
 }
 
-function SheetCardComponent({ sheet, onPress, onFavorite, compact, lastAccuracy }: SheetCardProps) {
+function SheetCardComponent({ sheet, onPress, onLongPress, onFavorite, compact, lastAccuracy }: SheetCardProps) {
   const { colors } = useTheme();
   const isProcessing = sheet.omrStatus === "processing";
   const smoothProgress = useSmoothProgress(sheet.omrProgress ?? 0, isProcessing);
@@ -64,6 +67,7 @@ function SheetCardComponent({ sheet, onPress, onFavorite, compact, lastAccuracy 
         onPress={handleCardPress}
         accessibilityLabel={`${sheet.title} by ${sheet.artist}`}
         accessibilityRole="button"
+        android_ripple={{ color: colors.ripple }}
         style={({ pressed }) => [
           styles.compactCard,
           { backgroundColor: colors.surface, opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.97 : 1 }], width: compactCardWidth },
@@ -88,8 +92,12 @@ function SheetCardComponent({ sheet, onPress, onFavorite, compact, lastAccuracy 
   return (
     <Pressable
       onPress={handleCardPress}
+      onLongPress={onLongPress}
+      delayLongPress={500}
       accessibilityLabel={`${sheet.title} by ${sheet.artist}`}
       accessibilityRole="button"
+      accessibilityHint={onLongPress ? "Long press to rename or delete" : undefined}
+      android_ripple={{ color: colors.ripple }}
       style={({ pressed }) => [
         styles.card,
         { backgroundColor: colors.surface, opacity: pressed ? 0.95 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
@@ -151,6 +159,7 @@ function SheetCardComponent({ sheet, onPress, onFavorite, compact, lastAccuracy 
               onPress={handleFavoritePress}
               accessibilityLabel={sheet.isFavorite ? "Remove from favorites" : "Add to favorites"}
               accessibilityRole="button"
+              android_ripple={{ color: colors.ripple, borderless: true }}
               hitSlop={16}
               style={[styles.favBtn, { minWidth: 44, minHeight: 44, justifyContent: "center", alignItems: "center" }]}
             >

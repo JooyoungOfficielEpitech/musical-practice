@@ -162,17 +162,6 @@ jest.mock("../../client/context/PracticeContext", () => ({
   }),
 }));
 
-// Mock hooks
-jest.mock("../../client/hooks/useTimer", () => ({
-  useTimer: () => ({
-    seconds: 0,
-    isRunning: false,
-    start: jest.fn(),
-    pause: jest.fn(),
-    formatTime: (s: number) => `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`,
-  }),
-}));
-
 // Mock RenameModal
 jest.mock("../../client/components/RenameModal", () => ({
   RenameModal: () => null,

@@ -28,6 +28,17 @@ describe("SeekBar", () => {
     expect(toJSON()).toBeTruthy();
   });
 
+  it("has a symmetric hitSlop so edge scrubs (0:00 / end) are as easy as the middle", () => {
+    const { getByLabelText } = render(
+      <SeekBar positionMs={0} durationMs={180000} loopRange={null} onSeek={mockOnSeek} />
+    );
+    const hitSlop = getByLabelText(/Seek to playback position/).props.hitSlop;
+    expect(hitSlop.left).toBeGreaterThanOrEqual(14);
+    expect(hitSlop.right).toBeGreaterThanOrEqual(14);
+    expect(hitSlop.top).toBeGreaterThanOrEqual(14);
+    expect(hitSlop.bottom).toBeGreaterThanOrEqual(14);
+  });
+
   it("has accessibilityRole='adjustable'", () => {
     const { toJSON } = render(
       <SeekBar positionMs={0} durationMs={180000} loopRange={null} onSeek={mockOnSeek} />

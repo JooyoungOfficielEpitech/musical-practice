@@ -31,6 +31,7 @@ export function EmptyState({ icon, title, message, actionLabel, onAction }: Empt
           }}
           accessibilityLabel={actionLabel}
           accessibilityRole="button"
+          android_ripple={{ color: colors.rippleLight }}
           style={({ pressed }) => [
             styles.button,
             { backgroundColor: colors.primary, opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
@@ -60,6 +61,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing["2xl"],
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.xs,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
   buttonText: { ...Typography.subtitle },
 });

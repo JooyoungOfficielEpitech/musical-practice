@@ -141,14 +141,14 @@ const PartRow = React.memo(function PartRow({
       onPress={() => onSoloPart(part.id)}
       accessibilityRole="button"
       accessibilityLabel={isSoloed ? `Unsolo ${part.name}` : `Solo ${part.name}`}
-      hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       style={[
         styles.soloPill,
         { borderColor: isSoloed ? colors.primary : colors.borderLight,
           backgroundColor: isSoloed ? colors.primary : "transparent" },
       ]}
     >
-      <Text style={[styles.soloPillText, { color: isSoloed ? colors.buttonText ?? "#fff" : colors.textSecondary }]}>
+      <Text style={[styles.soloPillText, { color: isSoloed ? colors.buttonText : colors.textSecondary }]}>
         {isSoloed ? "All" : "Solo"}
       </Text>
     </Pressable>

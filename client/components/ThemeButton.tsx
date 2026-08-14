@@ -78,6 +78,7 @@ export function ThemeButton({
         onPressOut={handlePressOut}
         style={containerStyle}
         disabled={disabled || loading}
+        android_ripple={{ color: colors.rippleLight }}
         accessibilityRole="button"
         accessibilityState={{ disabled: disabled || loading }}
       >

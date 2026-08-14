@@ -45,7 +45,13 @@ export function PartCheckSheet({
       <SafeAreaView testID="part-check-sheet" style={[styles.sheet, { backgroundColor: colors.surface }]} edges={["bottom"]}>
         <View style={styles.header}>
           <View style={[styles.handle, { backgroundColor: colors.borderLight }]} />
-          <Pressable onPress={onDismiss} accessibilityLabel="Close parts" accessibilityRole="button" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.closeBtn}>
+          <Pressable
+            onPress={onDismiss}
+            accessibilityLabel="Close parts"
+            accessibilityRole="button"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={({ pressed }) => [styles.closeBtn, { opacity: pressed ? 0.6 : 1 }]}
+          >
             <Ionicons name="close" size={22} color={colors.text} />
           </Pressable>
         </View>
@@ -64,6 +70,7 @@ export function PartCheckSheet({
             onDismiss();
           }}
           accessibilityRole="button"
+          android_ripple={{ color: colors.rippleLight }}
           style={({ pressed }) => [styles.doneBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
         >
           <Text style={[styles.doneText, { color: colors.buttonText }]}>Done</Text>
@@ -90,6 +97,8 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     borderRadius: 50,
     alignItems: "center",
+    justifyContent: "center",
+    minHeight: 48,
   },
   doneText: { fontSize: 16, fontFamily: Fonts.bodyBold, fontWeight: "700" },
 });

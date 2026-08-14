@@ -138,20 +138,12 @@ export default function LibraryScreen() {
   }, [navigation]);
 
   const renderItem = useCallback(({ item }: { item: SheetMusic }) => (
-    <Pressable
+    <SheetCard
+      sheet={item}
+      lastAccuracy={accuracyBySheet[item.id]}
+      onPress={() => navigation.navigate("PracticeDetail", { sheetId: item.id })}
       onLongPress={() => handleLongPress(item)}
-      delayLongPress={500}
-      accessibilityLabel={`Open ${item.title}`}
-      accessibilityRole="button"
-      accessibilityHint="Long press to rename or delete"
-      style={({ pressed }) => [pressed && { opacity: 0.7 }]}
-    >
-      <SheetCard
-        sheet={item}
-        lastAccuracy={accuracyBySheet[item.id]}
-        onPress={() => navigation.navigate("PracticeDetail", { sheetId: item.id })}
-      />
-    </Pressable>
+    />
   ), [navigation, handleLongPress, accuracyBySheet]);
 
   return (
@@ -162,6 +154,7 @@ export default function LibraryScreen() {
           onPress={handleAddPress}
           accessibilityLabel="Import PDF score"
           accessibilityRole="button"
+          android_ripple={{ color: colors.ripple, borderless: true }}
           style={({ pressed }) => [styles.addBtn, { width: 44, height: 44, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] }]}
         >
           <Ionicons name="add-circle" size={28} color={colors.primary} />
@@ -175,7 +168,13 @@ export default function LibraryScreen() {
         contentContainerStyle={[styles.listContent, sheets.length === 0 && { flex: 1 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.textSecondary} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.textSecondary}
+            colors={[colors.primary]}
+            progressBackgroundColor={colors.surface}
+          />
         }
         ListHeaderComponent={stats ? <LibraryStatsStrip stats={stats} /> : null}
         ListEmptyComponent={

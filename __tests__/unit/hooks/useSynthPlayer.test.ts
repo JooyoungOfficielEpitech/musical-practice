@@ -375,6 +375,29 @@ describe("useSynthPlayer", () => {
       expect(result.current.positionMs).toBeCloseTo(420, 0);
     });
 
+    it("throttles UI position updates below 100ms deltas while the 50ms tick keeps running", async () => {
+      const { result } = renderHook(() => useSynthPlayer(SAMPLE_NOTES));
+
+      await act(async () => {
+        await result.current.play();
+      });
+
+      // First tick: clock 0.13 → 50ms played — below the 100ms UI threshold,
+      // so the rendered position must NOT update (internal tick still ran).
+      mockCurrentTime = 0.13;
+      await act(async () => {
+        jest.advanceTimersByTime(50);
+      });
+      expect(result.current.positionMs).toBe(0);
+
+      // Second tick: clock 0.19 → 110ms played — crosses the threshold.
+      mockCurrentTime = 0.19;
+      await act(async () => {
+        jest.advanceTimersByTime(50);
+      });
+      expect(result.current.positionMs).toBeCloseTo(110, 0);
+    });
+
     it("stops playback when reaching end of sequence", async () => {
       const { result } = renderHook(() => useSynthPlayer(SAMPLE_NOTES));
 

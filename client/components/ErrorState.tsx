@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, View, Pressable } from "react-native";
+import { StyleSheet, Text, View, Pressable, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { hapticFeedback } from "@/lib/hapticFeedback";
@@ -10,6 +10,8 @@ interface ErrorStateProps {
   message: string;
   retryLabel?: string;
   onRetry?: () => void;
+  /** Disables the retry button and shows a spinner so slow retries can't be double-tapped. */
+  retrying?: boolean;
   icon?: keyof typeof Ionicons.glyphMap;
 }
 
@@ -18,6 +20,7 @@ export function ErrorState({
   message,
   retryLabel = "Try Again",
   onRetry,
+  retrying = false,
   icon = "alert-circle-outline",
 }: ErrorStateProps) {
   const { colors } = useTheme();
@@ -35,18 +38,24 @@ export function ErrorState({
       {onRetry && (
         <Pressable
           onPress={handleRetryPress}
+          disabled={retrying}
           accessibilityLabel={retryLabel}
           accessibilityRole="button"
+          accessibilityState={{ disabled: retrying, busy: retrying }}
+          android_ripple={{ color: colors.rippleLight }}
           style={({ pressed }) => [
             styles.button,
             {
               backgroundColor: colors.primary,
-              opacity: pressed ? 0.9 : 1,
-              transform: [{ scale: pressed ? 0.98 : 1 }],
+              opacity: retrying ? 0.6 : pressed ? 0.9 : 1,
+              transform: [{ scale: pressed && !retrying ? 0.98 : 1 }],
             },
           ]}
         >
-          <Text style={[styles.buttonText, { color: colors.buttonText }]}>{retryLabel}</Text>
+          {retrying && <ActivityIndicator size="small" color={colors.buttonText} />}
+          <Text style={[styles.buttonText, { color: colors.buttonText }]}>
+            {retrying ? "Retrying…" : retryLabel}
+          </Text>
         </Pressable>
       )}
     </View>
@@ -62,6 +71,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing["2xl"],
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.xs,
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
   },
   buttonText: { ...Typography.subtitle },
 });

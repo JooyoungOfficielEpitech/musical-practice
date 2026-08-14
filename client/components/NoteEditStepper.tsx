@@ -21,18 +21,19 @@ export function NoteEditStepper({
   const { colors } = useTheme();
   const btnStyle = ({ pressed }: { pressed: boolean }) => [
     styles.smallBtn,
-    { backgroundColor: colors.backgroundSecondary, opacity: disabled ? 0.4 : pressed ? 0.7 : 1 },
+    { backgroundColor: disabled ? colors.backgroundTertiary : colors.backgroundSecondary, opacity: disabled ? 0.5 : pressed ? 0.7 : 1 },
   ];
+  const iconColor = disabled ? colors.textSecondary : colors.text;
   return (
     <View style={styles.controlGroup}>
       <Text style={[styles.controlLabel, { color: colors.text }]}>{label}</Text>
       <View style={styles.buttonRow}>
-        <Pressable onPress={onDown} disabled={disabled} accessibilityLabel={downLabel} accessibilityRole="button" style={btnStyle}>
-          <Ionicons name="remove-outline" size={18} color={colors.text} />
+        <Pressable onPress={onDown} disabled={disabled} accessibilityLabel={downLabel} accessibilityRole="button" accessibilityState={{ disabled }} style={btnStyle}>
+          <Ionicons name="remove-outline" size={18} color={iconColor} />
         </Pressable>
         <Text style={[styles.buttonLabel, { color: colors.text }]}>{valueLabel}</Text>
-        <Pressable onPress={onUp} disabled={disabled} accessibilityLabel={upLabel} accessibilityRole="button" style={btnStyle}>
-          <Ionicons name="add-outline" size={18} color={colors.text} />
+        <Pressable onPress={onUp} disabled={disabled} accessibilityLabel={upLabel} accessibilityRole="button" accessibilityState={{ disabled }} style={btnStyle}>
+          <Ionicons name="add-outline" size={18} color={iconColor} />
         </Pressable>
       </View>
     </View>

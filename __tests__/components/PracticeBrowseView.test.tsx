@@ -52,7 +52,6 @@ jest.mock("react-native-svg", () => {
 jest.mock("react-native-webview", () => ({ WebView: "WebView" }));
 jest.mock("expo-image", () => ({ Image: "Image" }));
 
-jest.mock("../../client/components/SheetMusicPager", () => ({ SheetMusicPager: () => null }));
 jest.mock("../../client/components/InteractiveScore", () => ({ InteractiveScore: () => null }));
 
 const baseSheet = {

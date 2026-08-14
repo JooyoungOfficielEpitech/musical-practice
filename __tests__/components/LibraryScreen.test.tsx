@@ -44,9 +44,20 @@ jest.mock("../../client/lib/practiceCardUtils", () => ({
 }));
 
 // ── SheetCard ─────────────────────────────────────────────────────────────────
-jest.mock("../../client/components/SheetCard", () => ({
-  SheetCard: () => null,
-}));
+// Minimal stand-in that still exposes the card's press surface — LibraryScreen
+// hands tap AND long-press to SheetCard's own Pressable (no wrapper).
+jest.mock("../../client/components/SheetCard", () => {
+  const React = require("react");
+  const { Pressable, Text } = require("react-native");
+  return {
+    SheetCard: ({ sheet, onPress, onLongPress }: any) =>
+      React.createElement(
+        Pressable,
+        { accessibilityLabel: `${sheet.title} by ${sheet.artist}`, onPress, onLongPress },
+        React.createElement(Text, null, sheet.title),
+      ),
+  };
+});
 
 // ── RenameModal ───────────────────────────────────────────────────────────────
 jest.mock("../../client/components/RenameModal", () => ({
@@ -146,7 +157,7 @@ describe("LibraryScreen — long-press menu", () => {
     mockUsePractice.mockReturnValue({ ...defaultPracticeContext, sheets: [sheet] });
 
     const { getByLabelText } = render(<LibraryScreen />);
-    fireEvent(getByLabelText("Open Test Score"), "longPress");
+    fireEvent(getByLabelText("Test Score by Test Artist"), "longPress");
 
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -163,7 +174,7 @@ describe("LibraryScreen — long-press menu", () => {
     mockUsePractice.mockReturnValue({ ...defaultPracticeContext, sheets: [sheet] });
 
     const { getByLabelText } = render(<LibraryScreen />);
-    fireEvent(getByLabelText("Open Test Score"), "longPress");
+    fireEvent(getByLabelText("Test Score by Test Artist"), "longPress");
 
     expect(alertSpy).toHaveBeenCalledWith(
       "Test Score",

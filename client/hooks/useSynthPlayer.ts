@@ -51,7 +51,11 @@ export interface UseSynthPlayerReturn {
   clearLoopRange: () => void;
 }
 
-const POSITION_UPDATE_INTERVAL = 50; // ms
+const POSITION_UPDATE_INTERVAL = 50; // ms — internal tick (loop/end boundaries, schedule top-up)
+// Renders are ~4x cheaper than the tick: the whole practice tree re-renders on
+// every position set, so the UI only gets a new position every ~100ms while
+// boundary events (play/pause/seek/loop/end) always land immediately.
+const UI_POSITION_UPDATE_MS = 100;
 
 /**
  * Synth-based audio player hook for NoteEvent sequences.
@@ -80,6 +84,13 @@ export function useSynthPlayer(
   const tempoRef = useRef(initialTempo);
   const loopRangeRef = useRef<LoopRange | null>(null);
   const loadedSamplesRef = useRef<Map<number, AudioBuffer> | null>(null);
+  const lastUiPositionMsRef = useRef(0);
+
+  /** Set the rendered position — the throttle base for timer ticks. */
+  const setUiPosition = useCallback((ms: number) => {
+    lastUiPositionMsRef.current = ms;
+    setPositionMs(ms);
+  }, []);
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -287,7 +298,7 @@ export function useSynthPlayer(
         stopAll().then(() => {
           resumeAudioContext().then(() => {
             scheduleFromOffsetRef.current(loopStartSec);
-            setPositionMs(loop.startMs);
+            setUiPosition(loop.startMs);
           });
         });
         return;
@@ -295,7 +306,7 @@ export function useSynthPlayer(
 
       if (currentMs >= currentDurationMs) {
         dlog("player", "playback end", { atMs: currentMs });
-        setPositionMs(currentDurationMs);
+        setUiPosition(currentDurationMs);
         setIsPlaying(false);
         isPlayingRef.current = false;
         if (timerRef.current) {
@@ -310,9 +321,11 @@ export function useSynthPlayer(
         topUpScheduleRef.current();
       }
 
-      setPositionMs(currentMs);
+      if (Math.abs(currentMs - lastUiPositionMsRef.current) >= UI_POSITION_UPDATE_MS) {
+        setUiPosition(currentMs);
+      }
     }, POSITION_UPDATE_INTERVAL);
-  }, [rawDurationMs]);
+  }, [setUiPosition]);
 
   const play = useCallback(async () => {
     if (notes.length === 0) {
@@ -348,7 +361,7 @@ export function useSynthPlayer(
       if (positionMs >= currentDurationMs) {
         const restartMs = loop ? loop.startMs : firstNoteTimeSec * 1000;
         startOffset = restartMs / 1000;
-        setPositionMs(restartMs);
+        setUiPosition(restartMs);
       } else if (positionMs === 0 && firstNoteTimeSec > 0) {
         // Skip initial silence on first play
         startOffset = firstNoteTimeSec;
@@ -360,7 +373,7 @@ export function useSynthPlayer(
       dlog("player", "play", { offset: startOffset, notes: notes.length, tempo: tempoRef.current });
       // Send initial position immediately — don't wait 50ms for first timer
       // tick. startOffset already lives on the tempo-scaled timeline.
-      setPositionMs(startOffset * 1000);
+      setUiPosition(startOffset * 1000);
       setIsPlaying(true);
       isPlayingRef.current = true;
       startTimer();
@@ -370,7 +383,7 @@ export function useSynthPlayer(
       dlog("player", "PLAY ERROR", { msg });
       console.error("[useSynthPlayer] play error:", e);
     }
-  }, [notes, positionMs, rawDurationMs, scheduleFromOffset, startTimer]);
+  }, [notes, positionMs, rawDurationMs, scheduleFromOffset, startTimer, setUiPosition]);
 
   const pause = useCallback(async () => {
 
@@ -381,7 +394,7 @@ export function useSynthPlayer(
     const elapsed = getCurrentTime() - audioStartCtxSec.current;
     const currentSec = playbackOffsetSec.current + elapsed;
     playbackOffsetSec.current = currentSec;
-    setPositionMs(currentSec * 1000);
+    setUiPosition(currentSec * 1000);
     dlog("player", "pause", { pos: currentSec });
 
     await stopAll();
@@ -390,7 +403,7 @@ export function useSynthPlayer(
     // (this listener-driven pause is what runs on background). play() rebuilds it.
     disconnectMasterBus();
     setIsPlaying(false);
-  }, [stopTimer]);
+  }, [stopTimer, setUiPosition]);
 
   const stop = useCallback(async () => {
     dlog("player", "stop");
@@ -399,16 +412,16 @@ export function useSynthPlayer(
     stopTimer();
     disconnectMasterBus();
     setIsPlaying(false);
-    setPositionMs(0);
+    setUiPosition(0);
     playbackOffsetSec.current = 0;
-  }, [stopTimer]);
+  }, [stopTimer, setUiPosition]);
 
   const seekTo = useCallback(
     async (ms: number) => {
       const currentDurationMs = rawDurationMs / tempoRef.current;
       const clampedMs = Math.max(0, Math.min(ms, currentDurationMs));
       dlog("player", "seek", { toMs: clampedMs, playing: isPlayingRef.current });
-      setPositionMs(clampedMs);
+      setUiPosition(clampedMs);
       if (isPlayingRef.current) {
         await stopAll();
         stopTimer();
@@ -419,7 +432,7 @@ export function useSynthPlayer(
         playbackOffsetSec.current = clampedMs / 1000;
       }
     },
-    [rawDurationMs, scheduleFromOffset, startTimer, stopTimer],
+    [rawDurationMs, scheduleFromOffset, startTimer, stopTimer, setUiPosition],
   );
 
   /** Change the instrument. Loads samples asynchronously if needed. */
@@ -491,7 +504,7 @@ export function useSynthPlayer(
         stopTimer();
         await resumeAudioContext();
 
-        setPositionMs(newScaledSec * 1000);
+        setUiPosition(newScaledSec * 1000);
         scheduleFromOffset(newScaledSec);
         startTimer();
       } else {
@@ -500,11 +513,11 @@ export function useSynthPlayer(
         setTempoState(clamped);
         tempoRef.current = clamped;
         const newMs = (originalTimeSec / clamped) * 1000;
-        setPositionMs(newMs);
+        setUiPosition(newMs);
         playbackOffsetSec.current = newMs / 1000;
       }
     },
-    [positionMs, scheduleFromOffset, startTimer, stopTimer],
+    [positionMs, scheduleFromOffset, startTimer, stopTimer, setUiPosition],
   );
 
   const setLoopRange = useCallback((range: LoopRange) => {
