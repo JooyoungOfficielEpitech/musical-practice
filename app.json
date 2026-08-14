@@ -2,7 +2,7 @@
   "expo": {
     "name": "Musical Practice",
     "slug": "musical-practice",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "musicalpractice",
@@ -25,7 +25,10 @@
       "bundleIdentifier": "com.musicalpractice",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Musical Practice needs microphone access to detect your pitch and measure accuracy while singing.",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -52,7 +55,8 @@
         }
       ],
       "expo-audio",
-      "expo-asset"
+      "expo-asset",
+      "expo-notifications"
     ],
     "extra": {
       "eas": {

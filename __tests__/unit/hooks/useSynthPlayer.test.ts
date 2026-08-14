@@ -14,6 +14,11 @@ const mockGetAudioContext = jest.fn(() => ({
 const mockSetInstrumentMode = jest.fn();
 const mockSetInstrumentSamples = jest.fn();
 
+const mockSetAudioMode = jest.fn().mockResolvedValue(undefined);
+jest.mock("expo-audio", () => ({
+  setAudioModeAsync: (opts: unknown) => mockSetAudioMode(opts),
+}));
+
 jest.mock("../../../client/lib/audio/synthEngine", () => ({
   getAudioContext: () => mockGetAudioContext(),
   resumeAudioContext: () => mockResumeAudioContext(),
@@ -489,90 +494,51 @@ describe("useSynthPlayer — currentNoteIndex removal (Phase 2)", () => {
   });
 });
 
-// ─── Phase 3: AppState background pause (RED) ──────────────────────────────────
-// These tests FAIL without AppState listener implementation.
+// ─── Phase 3: background playback continues ─────────────────────────────────
+// Practicing with the screen locked is the point: backgrounding must NOT
+// pause, and play() must request a background-capable audio session.
 
-describe("useSynthPlayer — AppState background pause", () => {
-  let mockAppStateRemove: jest.Mock;
-  let appStateCallback: ((state: string) => void) | null = null;
-
+describe("useSynthPlayer — background playback", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
     mockCurrentTime = 0;
-    mockAppStateRemove = jest.fn();
-
-    // Capture the AppState callback so tests can trigger it
-    const mockAppState = require("react-native").AppState;
-    mockAppState.addEventListener.mockImplementation(
-      (_: string, cb: (state: string) => void) => {
-        appStateCallback = cb;
-        return { remove: mockAppStateRemove };
-      }
-    );
   });
 
   afterEach(() => {
     jest.useRealTimers();
   });
 
-  it("3.1 — registers AppState listener on mount", () => {
+  it("3.1 — registers NO AppState pause listener", () => {
     const mockAppState = require("react-native").AppState;
     mockAppState.addEventListener.mockClear();
 
     renderHook(() => useSynthPlayer(SAMPLE_NOTES));
 
-    expect(mockAppState.addEventListener).toHaveBeenCalledWith(
-      "change",
-      expect.any(Function)
-    );
+    expect(mockAppState.addEventListener).not.toHaveBeenCalled();
   });
 
-  it("3.2 — cleans up AppState listener on unmount", () => {
-    const { unmount } = renderHook(() => useSynthPlayer(SAMPLE_NOTES));
-
-    unmount();
-
-    expect(mockAppStateRemove).toHaveBeenCalled();
-  });
-
-  it("3.3 — calls pause when app backgrounded while playing", async () => {
+  it("3.2 — play() requests a background-capable audio session", async () => {
     const { result } = renderHook(() => useSynthPlayer(SAMPLE_NOTES));
 
     await act(async () => {
       await result.current.play();
     });
 
-    mockStopAll.mockClear();
-    mockDisconnectMasterBus.mockClear();
-
-    // Trigger background event
-    act(() => {
-      appStateCallback?.("background");
-    });
-
-    // The pause() function is async and calls stopAll internally
-    // Give it a tick to complete
-    await act(async () => {
-      jest.advanceTimersByTime(1);
-    });
-
-    expect(mockStopAll).toHaveBeenCalled();
-    // Burst-on-resume guard: the master bus must be severed so notes scheduled
-    // ahead can't fire into the speakers when the app foregrounds.
-    expect(mockDisconnectMasterBus).toHaveBeenCalled();
+    expect(mockSetAudioMode).toHaveBeenCalledWith(
+      expect.objectContaining({ shouldPlayInBackground: true, playsInSilentMode: true }),
+    );
+    expect(result.current.isPlaying).toBe(true);
   });
 
-  it("3.4 — ignores background event when not playing", () => {
-    renderHook(() => useSynthPlayer(SAMPLE_NOTES));
+  it("3.3 — an audio-mode failure does not block playback", async () => {
+    mockSetAudioMode.mockRejectedValueOnce(new Error("nope"));
+    const { result } = renderHook(() => useSynthPlayer(SAMPLE_NOTES));
 
-    mockStopAll.mockClear();
-
-    // Trigger background while not playing
-    act(() => {
-      appStateCallback?.("background");
+    await act(async () => {
+      await result.current.play();
     });
 
-    expect(mockStopAll).not.toHaveBeenCalled();
+    expect(result.current.isPlaying).toBe(true);
   });
 });

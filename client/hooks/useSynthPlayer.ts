@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { AppState } from "react-native";
+import { Platform } from "react-native";
+import { setAudioModeAsync } from "expo-audio";
 import type { NoteEvent } from "../types/music";
 import type { InstrumentMode } from "../lib/audio/synthEngine";
 import {
@@ -321,6 +322,18 @@ export function useSynthPlayer(
 
     try {
       setError(null);
+      // Keep playing with the screen locked / app backgrounded (needs the
+      // UIBackgroundModes=audio entitlement from the 1.1.0+ binary; on older
+      // binaries this is a harmless no-op and iOS suspends as before). The
+      // active audio session also keeps JS timers alive, so the rolling
+      // scheduler continues topping up in the background.
+      if (Platform.OS !== "web") {
+        try {
+          await setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true });
+        } catch {
+          // Non-fatal — foreground playback works regardless.
+        }
+      }
       await resumeAudioContext();
 
       const currentDurationMs = rawDurationMs / tempoRef.current;
@@ -509,18 +522,9 @@ export function useSynthPlayer(
     setInstrumentMode(resolveMode(initialInstrument));
   }, [initialInstrument, resolveMode]);
 
-  // Pause playback when app backgrounds
-  useEffect(() => {
-    const subscription = AppState.addEventListener("change", (state) => {
-      if (state !== "active" && isPlayingRef.current) {
-        pause();
-      }
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, [pause]);
+  // Backgrounding no longer pauses playback — practicing with the screen
+  // locked is the point. (The mic/sing-along session still stops itself on
+  // background via usePitchDetection's own AppState listener.)
 
   // Cleanup on unmount — destroy AudioContext here (the only place it should be closed)
   useEffect(() => {
